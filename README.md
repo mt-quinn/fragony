@@ -1,4 +1,4 @@
-# Dead Heat
+# Fragony
 
 Single-player Three.js arena FPS roguelike. Chalk geometry, ink silhouettes, yellow crash-test dummies.
 
@@ -117,3 +117,9 @@ Controls is available from the main menu and while paused. Every action supports
 `dist/collision.js` uses one upright cylinder footprint for lateral movement, floors, ceilings, step-up clearance and stance changes, including rotated boxes. Movement subdivides high-speed travel, advances to contact and projects remaining movement along walls. Steps up to 0.3 m require clearance both over the approach and at the destination; support checks no longer snap the player upward through nearby horizontal surfaces. Existing shallow intersections resolve to a nearby surface exit rather than a spawn reset. Uncrouching tests the complete standing body and keeps crouch active with `HEAD BLOCKED` while obstructed.
 
 `tests/collision.mjs` covers floor/wall seams, reverse escape from corners, blocked steps below ceilings, high-speed thin walls/floors/ceilings, rotated surfaces, body-radius uncrouch corners, all real staircases, all four player jump-pad landings and 16,800 randomized full-map movement steps. The legacy geometry helpers remain available for map navigation and resource placement.
+
+
+### Fragony interface
+The main menu contains the title and run, Arsenal and Controls actions. The HUD uses large edge-aligned health/ammo numerals, weapon silhouettes, binding-aware equipment prompts and thin resource bars over soft peripheral shading. Persistent instruction strips and opaque HUD cards are removed. Results use aligned score columns; loadout and controls use flat rows and the same ink/chalk/acid palette. Existing save keys are retained so the rename preserves runs and bindings.
+
+Presentation verified in the browser at 1920×1080 and 635×698, including purchases/fitted parts, controls without scrolling, results and the multi-attacker recap. Local presentation fixtures are excluded from deployment.
