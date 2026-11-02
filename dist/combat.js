@@ -10,3 +10,15 @@ export function combineOutcomes(outcomes){
  const live=outcomes.filter(o=>o.damage>0),kills=live.filter(o=>o.killed);
  return{damage:live.reduce((n,o)=>n+o.damage,0),killed:kills.length>0,head:kills.length?kills.some(o=>o.head):live.some(o=>o.head),points:kills.reduce((n,o)=>n+o.points,0),kills:kills.length};
 }
+
+// Credit only health actually removed, once per life or healing interval.
+export function recordDamage(target,attacker,damage){
+ if(!attacker||!(damage>0))return;
+ target.damageCredit??=new Map();
+ target.damageCredit.set(attacker,(target.damageCredit.get(attacker)||0)+damage);
+}
+export function clearDamageCredit(target){target.damageCredit=new Map()}
+export function takeAssists(target,killer){
+ const assists=[...(target.damageCredit||new Map())].filter(([id])=>id!==killer).map(([id,damage])=>({id,points:Math.round(FEEL.score.kill*Math.min(1,damage/(target.maxHealth||100)))})).filter(a=>a.points>0);
+ clearDamageCredit(target);return assists;
+}
