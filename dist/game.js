@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createDummyRig, resetDummyRig, animateDummy, fireDummy, beginRagdoll, stepRagdoll, poseDummy} from './characters.js';
 import { ArenaAI, buildNavigation, nearestNode as nearestAINode, findRoute } from './ai.js';
 import { MAP, ALL_WEAPONS, randomWeaponPair } from './map.js';
 import { COLLISION, canOccupy, moveCharacter } from './collision.js';
@@ -21,7 +22,7 @@ const weapons=[
  {name:'THUMPER',label:'Rocket launcher',damage:110,interval:.85,mag:5,reload:1.8,spread:0,pellets:1,color:0xe6fa80,kick:.16,price:400,desc:'Splash damage and rocket jumps. 5 rockets.'},
  {name:'DOORBREAKER',label:'Pump shotgun',damage:12,interval:.83,mag:8,reload:1.7,spread:.085,pellets:12,color:0xe6fa80,kick:.16,price:300,desc:'12 pellets. Strong up close; tight core retains range.'}
 ];
-let navNodes=[],navigation,opponentAI,playerSpawnAt=0,previewDummy;
+let navNodes=[],navigation,opponentAI,playerSpawnAt=0,previewDummy,previewRig;
 let scene,camera,renderer,weaponGroup,flash,arena,worldMeshes=[],blocks=[],bots=[],effects=[],rockets=[],pickups=[];
 let mode='menu',round=1,credits=0,owned=[0],equipped=0,perks={},time=90,matchKills=0,deathCount=0,streak=0,best=Number(localStorage.getItem('dh-best')||0);
 let builds=normalizeBuilds(),equipment=normalizeEquipment(),startingWeapon=0,shopGun=0,shopSlot='optic',shopCandidate='',shopInspect=false,shopMessage='',shopOffers=null,shownReticle=null;
@@ -44,7 +45,8 @@ const spawnPoints=MAP.spawns;
 const botNames=['CINDER','ROOK','VESPER','STATIC','BRICK'];
 const toonRamp=new THREE.DataTexture(new Uint8Array([70,70,70,255,160,160,160,255,245,245,245,255]),3,1);toonRamp.minFilter=toonRamp.magFilter=THREE.NearestFilter;toonRamp.needsUpdate=true;
 const inkEdges=new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1));const inkLine=new THREE.LineBasicMaterial({color:0x303b40,transparent:true,opacity:.45});
-const matCache=new Map();const botTorsoGeo=new THREE.CylinderGeometry(.85,.72,1,6),botLimbGeo=new THREE.CylinderGeometry(.85,1,1,6),dummyHeadGeo=new THREE.IcosahedronGeometry(1,1),shardGeo=new THREE.TetrahedronGeometry(1);
+const matCache=new Map(),shardGeo=new THREE.TetrahedronGeometry(1);
+const viewHandGeo=new THREE.SphereGeometry(1,10,6),viewArmGeo=new THREE.CylinderGeometry(.75,1,1,10);
 const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.IcosahedronGeometry(1,0);
 // Stable face values keep corners readable even when two surfaces share a light.
 // This shared geometry/material cache adds no lights or post-processing passes.
@@ -67,8 +69,8 @@ function init(){
  try{renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});}catch(e){$('start').textContent='WEBGL REQUIRED';$('start').disabled=true;return}
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;$('viewport').appendChild(renderer.domElement);
- scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,.95));const sun=new THREE.DirectionalLight(0xffffff,2.0);sun.position.set(-24,52,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-57,right:57,top:57,bottom:-57,near:1,far:125});sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewDummy=createDummy().group;camera.add(previewDummy);previewDummy.scale.setScalar(1.55);previewDummy.position.set(1.55,-1.85,-4.6);previewDummy.rotation.y=-.4;
- let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){previewDummy.visible=true;previewDummy.rotation.y=-.4+Math.sin(elapsed*.3)*.12;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(43+Math.sin(elapsed*.055)*3,32,42);camera.lookAt(0,0,-3)}updateEffects(dt*(slow?.25:1));renderer.render(scene,camera)});
+ scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,.95));const sun=new THREE.DirectionalLight(0xffffff,2.0);sun.position.set(-24,52,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-57,right:57,top:57,bottom:-57,near:1,far:125});sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewRig=createDummy();previewDummy=previewRig.group;camera.add(previewDummy);previewDummy.scale.setScalar(1.55);previewDummy.position.set(1.55,-1.85,-4.6);previewDummy.rotation.y=-.4;
+ let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){previewDummy.visible=true;previewDummy.rotation.y=-.4+Math.sin(elapsed*.3)*.12;previewRig.anim.time+=dt;poseDummy(previewRig,{dt,relaxed:true});camera.fov=65;camera.updateProjectionMatrix();camera.position.set(43+Math.sin(elapsed*.055)*3,32,42);camera.lookAt(0,0,-3)}updateEffects(dt*(slow?.25:1));renderer.render(scene,camera)});
 }
 function buildArena(){
  const floor=new THREE.Mesh(new THREE.BoxGeometry(MAP.floor.w,1,MAP.floor.d),mat(0x94a69e));floor.position.y=-.5;floor.receiveShadow=true;arena.add(floor);worldMeshes.push(floor);
@@ -154,8 +156,8 @@ function buildWeapon(state=builds){
  }
  if(![1,4].includes(i)){part(0,-.01,.25,.14,.13,.35,chalk);part(0,-.05,.42,.18,.25,.075,ink)}
  // The player's yellow shell and black wrist joints match the opponents.
- const hand=new THREE.Mesh(dummyHeadGeo,mat(signal));hand.position.set(.015,-.29,.07);hand.scale.set(.115,.15,.13);hand.userData.hand=true;weaponGroup.add(hand);part(.02,-.43,.19,.17,.18,.23).userData.hand=true;part(.02,-.52,.27,.19,.17,.27,signal).userData.hand=true;
- if(i!==1){const support=new THREE.Mesh(dummyHeadGeo,mat(signal));support.position.set(-.03,-.18,i===4?-.41:-.43);support.scale.set(.12,.1,.15);support.userData.hand=true;weaponGroup.add(support)}
+ const hand=new THREE.Mesh(viewHandGeo,mat(signal));hand.position.set(.015,-.29,.07);hand.scale.set(.115,.15,.13);hand.userData.hand=true;weaponGroup.add(hand);const wrist=new THREE.Mesh(viewHandGeo,mat(ink));wrist.position.set(.02,-.42,.16);wrist.scale.set(.09,.09,.10);wrist.userData.hand=true;weaponGroup.add(wrist);const forearm=new THREE.Mesh(viewArmGeo,mat(signal));forearm.position.set(.02,-.51,.25);forearm.rotation.x=.7;forearm.scale.set(.11,.35,.12);forearm.userData.hand=true;weaponGroup.add(forearm);
+ if(i!==1){const support=new THREE.Mesh(viewHandGeo,mat(signal));support.position.set(-.03,-.18,i===4?-.41:-.43);support.scale.set(.12,.1,.15);support.userData.hand=true;weaponGroup.add(support)}
  flash=new THREE.Mesh(sphereGeo,new THREE.MeshBasicMaterial({color:0xf4ffb2}));flash.position.set(0,0,muzzle);flash.scale.set(.18,.15,.3);flash.visible=false;weaponGroup.add(flash);weaponGroup.scale.setScalar(.85);weaponGroup.position.set(.31,-.3,-.5);weaponGroup.visible=false;
 }
 
@@ -177,7 +179,7 @@ function updateHUD(){
 }
 function spawnBot(b){
  const candidates=spawnPoints.map(s=>{const p=new THREE.Vector3(s[0],s[1],s[2]);let safety=Infinity;for(const other of bots)if(other!==b&&!other.dead)safety=Math.min(safety,p.distanceTo(other.pos));if(respawnTime<=0)safety=Math.min(safety,p.distanceTo(playerPos));return{s,safety:safety+Math.random()*2}}).sort((a,b)=>b.safety-a.safety);
- const s=candidates[0].s;b.lifeId=(b.lifeId||0)+1;b.pos.set(s[0],s[1],s[2]);b.hp=100;b.history=new DamageHistory();b.maxHealth=100;clearDamageCredit(b);b.dead=0;b.hitReact=null;b.impactVector=null;b.deathAge=0;b.group.rotation.set(0,0,0);for(const p of Object.values(b.parts))p.rotation.set(0,0,0);b.group.visible=true;b.group.position.copy(b.pos);for(const p of Object.values(b.parts))p.visible=true;b.vy=0;
+ const s=candidates[0].s;b.lifeId=(b.lifeId||0)+1;b.pos.set(s[0],s[1],s[2]);b.hp=100;b.history=new DamageHistory();b.maxHealth=100;clearDamageCredit(b);b.dead=0;b.hitReact=null;b.impactVector=null;b.deathAge=0;b.crouched=undefined;resetDummyRig(b);b.group.visible=true;b.group.position.copy(b.pos);b.vy=0;
  opponentAI?.reset(b,botNames.indexOf(b.name));tintDummy(b);
 }
 
@@ -192,22 +194,7 @@ function calibration(){
 const targetGeo=new THREE.CircleGeometry(1,24);
 function dummyTarget(parent,x,y,z,size,ry=0){const m=new THREE.Mesh(targetGeo,calibration());m.position.set(x,y,z);m.scale.setScalar(size);m.rotation.y=ry;parent.add(m)}
 function createDummy(weapon='rifle'){
- const g=new THREE.Group(),parts={},legs=[];
- const bodyPart=(name,x,y,z)=>{const p=new THREE.Group();p.position.set(x,y,z);p.userData.part=name;g.add(p);parts[name]=p;return p};
- const shell=(parent,geometry,x,y,z,sx,sy,sz,c=0xd9ef45)=>{const m=new THREE.Mesh(geometry,mat(c));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=m.receiveShadow=true;m.userData.healthShell=c===0xd9ef45;parent.add(m);return m};
- const torso=bodyPart('torso',0,1.12,0);shell(torso,botTorsoGeo,0,0,0,.48,.67,.3);dummyTarget(torso,0,.12,.268,.15);cube(0,-.18,.26,.26,.035,.035,0x182127,torso);cube(0,-.25,.26,.16,.025,.035,0x182127,torso);
- const pelvis=bodyPart('pelvis',0,.7,0);shell(pelvis,botTorsoGeo,0,0,0,.36,.26,.26);cube(0,.15,0,.42,.13,.3,0x182127,pelvis);
- const head=bodyPart('head',0,1.71,0);shell(head,dummyHeadGeo,0,.03,0,.255,.32,.245);shell(head,botLimbGeo,0,-.29,0,.12,.14,.12,0x182127);
- // A blank molded face, a nose, and the unmistakable quartered temple targets.
- shell(head,shardGeo,0,.02,.255,.065,.085,.06);cube(0,-.11,.23,.12,.018,.022,0x182127,head);dummyTarget(head,-.239,.04,0,.12,-Math.PI/2);dummyTarget(head,.239,.04,0,.12,Math.PI/2);
- for(const side of [-1,1]){
-  const leg=bodyPart(side<0?'leftLeg':'rightLeg',side*.205,.64,0);legs.push(leg);
-  shell(leg,botLimbGeo,0,-.1,0,.175,.31,.18);shell(leg,sphereGeo,0,-.29,0,.12,.12,.12,0x182127);shell(leg,botLimbGeo,0,-.45,.015,.135,.25,.14);cube(0,-.6,.08,.22,.12,.34,0x182127,leg);dummyTarget(leg,0,-.08,.16,.07);
-  const arm=bodyPart(side<0?'leftArm':'rightArm',side*.46,1.34,0);shell(arm,sphereGeo,0,0,0,.13,.13,.13,0x182127);shell(arm,botLimbGeo,side*.025,-.18,0,.13,.28,.13);shell(arm,sphereGeo,side*.025,-.34,0,.105,.105,.105,0x182127);const forearm=shell(arm,botLimbGeo,side*.015,-.35,.17,.11,.29,.11);forearm.rotation.x=-Math.PI/2;shell(arm,dummyHeadGeo,side*.015,-.35,.36,.1,.1,.13);
- }
- buildDummyGun(parts.rightArm,weapon);
- for(const [name,p]of Object.entries(parts))p.traverse(o=>o.userData.part=name);
- return {group:g,parts,legs};
+ const rig=createDummyRig({mat,target:dummyTarget,weapon});buildDummyGun(rig.parts.rightArm,weapon);return rig;
 }
 const healthColors=Array.from({length:21},(_,i)=>new THREE.Color().setHSL((i/20)*.32,.78,.48).getHex());
 function tintDummy(b){
@@ -218,19 +205,19 @@ function healPlayer(value){if(value>health){health=value;playerCredit.maxHealth=
 function healBot(b,value){if(value>b.hp){b.hp=value;b.maxHealth=Math.max(b.maxHealth||100,value);clearDamageCredit(b);b.history?.clear();tintDummy(b)}}
 function awardAssists(target,killer){for(const a of takeAssists(target,killer)){if(a.id==='player'){matchPoints+=a.points;matchAssists++;if(assistNotice.left<=0)assistNotice={points:0,count:0,left:0};assistNotice.points+=a.points;assistNotice.count++;assistNotice.left=1.5}else{const bot=bots.find(b=>b.name===a.id);if(bot){bot.score+=a.points;bot.assists=(bot.assists||0)+1}}}}
 function buildDummyGun(arm,weapon){
- const old=arm.children.find(c=>c.name==='weapon');if(old)arm.remove(old);const gun=new THREE.Group();gun.name='weapon';arm.add(gun);
- if(weapon==='pistol'){cube(0,-.28,.45,.15,.16,.34,0xe1e5dc,gun);cube(0,-.38,.35,.1,.17,.12,0x182127,gun)}
- else if(weapon==='rocket'){const tube=new THREE.Mesh(barrelGeo,mat(0x182127));tube.position.set(0,-.26,.48);tube.rotation.x=Math.PI/2;tube.scale.set(.17,.68,.17);tube.castShadow=true;gun.add(tube);cube(.18,-.2,.5,.05,.08,.35,0xd9ef45,gun)}
- else if(weapon==='rail'){cube(0,-.29,.47,.16,.16,.5,0x182127,gun);for(const side of [-1,1])cube(side*.065,-.28,.92,.045,.08,.65,0xeef0e6,gun);cube(0,-.16,.5,.11,.1,.24,0x182127,gun)}
- else if(weapon==='shotgun'){cube(0,-.29,.47,.18,.17,.65,0x182127,gun);cube(0,-.32,.86,.13,.15,.4,0x182127,gun);cube(0,-.34,.64,.2,.12,.22,0xd9ef45,gun)}
- else{cube(0,-.29,.43,.15,.17,weapon==='smg'?.4:.64,0x182127,gun);cube(0,-.2,.43,.045,.04,.22,0xeef0e6,gun);if(weapon==='smg')cube(0,-.44,.45,.1,.22,.13,0xeef0e6,gun)}
- return gun;
+ const mount=arm.userData.weaponMount||arm,old=mount.children.find(c=>c.name==='weapon');if(old)mount.remove(old);const gun=new THREE.Group();gun.name='weapon';mount.add(gun);
+ const body=(x,y,z,w,h,d,c=0x182127)=>cube(x,y,z,w,h,d,c,gun);
+ body(0,-.055,0,.075,.14,.09); // firing grip
+ if(weapon==='pistol'){body(0,.02,.09,.10,.105,.31,0xeef0e6);body(0,.08,.055,.07,.016,.19);body(0,.025,.265,.075,.075,.05)}
+ else if(weapon==='rocket'){const tube=new THREE.Mesh(barrelGeo,mat(0x182127));tube.rotation.x=Math.PI/2;tube.scale.set(.115,.7,.115);tube.position.set(0,.06,.17);tube.castShadow=true;gun.add(tube);body(.12,.07,.17,.035,.045,.5,0xd9ef45);body(0,.17,.17,.04,.06,.04)}
+ else{const rail=weapon==='rail',shotgun=weapon==='shotgun',smg=weapon==='smg';body(0,.025,.10,.10,shotgun?.13:.12,smg?.30:.42);body(0,.015,rail?.44:.37,.045,.05,rail?.5:shotgun?.36:.24,0xeef0e6);body(0,.01,-.15,.09,.095,.18);if(rail){for(const side of [-1,1])body(side*.042,.04,.48,.025,.035,.40,0xd9ef45);body(0,.115,.10,.07,.07,.20)}else if(shotgun)body(0,-.025,.30,.115,.09,.17,0xd9ef45);else{body(0,-.10,.13,.07,.18,.08,0xeef0e6);body(0,.10,.08,.035,.025,.16)}}
+ gun.traverse(m=>{m.userData.part='rightArm'});return gun;
 }
 function makeBots(){
  bots.forEach(b=>scene.remove(b.group));bots=[];opponentAI=createOpponentAI();
  botNames.forEach((name,i)=>{const d=createDummy(opponentAI.tuning.profiles[i].weapon);scene.add(d.group);const b={name,loadout:randomWeaponPair(()=>Math.random()),pos:new THREE.Vector3(),...d,hp:100,score:0,frags:0,headshots:0,deaths:0,dead:0,cool:1,side:i%2?1:-1,phase:Math.random()*7,stuck:0};d.group.traverse(o=>o.userData.bot=b);bots.push(b);spawnBot(b)});
 }
-function botHitMeshes(){const meshes=[];for(const b of bots)for(const p of Object.values(b.parts)){if(!p.visible)continue;p.traverse(m=>{if(m.isMesh&&m.visible)meshes.push(m)})}return meshes}
+function botHitMeshes(){const meshes=[];for(const b of bots)for(const p of Object.values(b.parts)){if(!p.visible)continue;p.traverseVisible(m=>{if(m.isMesh)meshes.push(m)})}return meshes}
 function shatterPart(b,name,point){if(!b.dead)return;const part=b.parts[name]||b.parts.torso;if(!part.visible)return;part.getWorldPosition(tmp);const center=point?point.clone().lerp(tmp,.5):tmp.clone();part.visible=false;for(let i=0;i<15;i++){const m=new THREE.Mesh(shardGeo,mat(i%4===0?0x182127:0x858c88));m.position.copy(center).add(new THREE.Vector3((Math.random()-.5)*.25,(Math.random()-.5)*.4,(Math.random()-.5)*.25));m.scale.set(.06+Math.random()*.08,.06+Math.random()*.13,.04+Math.random()*.07);scene.add(m);addEffect({mesh:m,life:.65+Math.random()*.5,max:1.2,vel:new THREE.Vector3((Math.random()-.5)*9,2+Math.random()*6,(Math.random()-.5)*9).addScaledVector(b.impactVector||new THREE.Vector3(),5),spin:new THREE.Vector3(Math.random()*12,Math.random()*10,Math.random()*9)})}playSfx('shatter',{pos:b.pos,volume:.35,curve:'foley',bus:'world',priority:1})}
 
 function blocked(x,z,feet,r=.4,height=1.7){if(Math.abs(x)>MAP.bounds.x-.5||Math.abs(z)>MAP.bounds.z-.5)return true;return blockedAt(blocks,x,z,feet,r,height)}
@@ -302,7 +289,7 @@ function damageBot(b,dmg,killer,part='torso',point=null,options={}){
  if(!result.killed)opponentAI?.damaged(b,killer?{id:killer.name,pos:killer.pos}:{id:'player',pos:playerPos});
  burst(point||b.pos.clone().add(new THREE.Vector3(0,1.3,0)),0xeef0e6,part==='head'?4:2);
  if(result.killed){
-  b.dead=3;b.deathAge=0;b.deaths++;awardAssists(b,killer?killer.name:'player');tintDummy(b);shatterPart(b,part,point);
+  b.dead=3;b.deathAge=0;b.deaths++;beginRagdoll(b,b.impactVector,part);awardAssists(b,killer?killer.name:'player');tintDummy(b);shatterPart(b,part,point);
   if(killer){killer.score=Math.max(0,killer.score+(killer===b?-100:result.points));if(killer!==b){killer.frags=(killer.frags||0)+1;if(head)killer.headshots=(killer.headshots||0)+1}feed(killer.name,b.name)}
   else{matchKills++;matchPoints+=result.points;if(head)headshotKills++;streak++;focus=Math.min(100,focus+18);credits+=25;if(perks.recovery&&respawnTime<=0)healPlayer(Math.max(health,Math.min(perks.armor?140:100,health+20)));
    if(streak>=3&&!streakReady){streakReady=true;notify(EQUIPMENT.streak.find(x=>x.id===equipment.streak).name.toUpperCase()+' READY · '+keyLabel(controls.bindings.streak.find(Boolean)||'' ))}
@@ -339,7 +326,7 @@ function beginDeathView(killer){
 }
 function updateDeathView(dt){
  if(!deathView||respawnTime<=0)return;const d=deathView,b=d.killer,valid=b&&b.lifeId===d.lifeId;
- if(valid)d.lastTarget.copy(b.pos).add(new THREE.Vector3(0,b.dead?.7:1.1,0));
+ if(valid){if(b.dead&&b.ragdoll)d.lastTarget.copy(b.ragdoll.nodes.chest.p);else d.lastTarget.copy(b.pos).add(new THREE.Vector3(0,1.1,0))}
  camera.position.copy(d.position);
  if(d.lastTarget){const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(d.position,d.lastTarget,up));camera.quaternion.slerp(q,1-Math.exp(-dt*12));camera.updateMatrixWorld(true)}
  if(d.highlight){d.highlight.visible=!!valid;if(valid){b.group.updateMatrixWorld(true);for(const p of d.pairs){let visible=true;for(let o=p.original;o&&o!==b.group.parent;o=o.parent)visible=visible&&o.visible;p.ghost.visible=p.edge.visible=visible;p.ghost.matrix.copy(p.original.matrixWorld);p.edge.matrix.copy(p.original.matrixWorld)}const screen=b.pos.clone().add(new THREE.Vector3(0,2.12,0)).project(camera);$('killer-tag').hidden=screen.z>1||screen.z< -1;$('killer-tag').style.left=`${(screen.x*.5+.5)*100}%`;$('killer-tag').style.top=`${(-screen.y*.5+.5)*100}%`}else $('killer-tag').hidden=true}
@@ -395,7 +382,7 @@ function createOpponentAI(){
   projectiles:()=>rockets.map(r=>({pos:r.mesh.position,velocity:r.vel,owner:r.owner,grenade:r.grenade})),
   actors:()=>[
    {id:'player',pos:{x:playerPos.x,y:playerPos.y-eyeHeight,z:playerPos.z},eye:playerPos,hp:health,alive:respawnTime<=0,spawnAge:(opponentAI?.clock||0)-playerSpawnAt},
-   ...bots.map(b=>({id:b.name,pos:b.pos,eye:{x:b.pos.x,y:b.pos.y+1.65,z:b.pos.z},hp:b.hp,alive:!b.dead,spawnAge:(opponentAI?.clock||0)-(b.brain?.spawnAt||0)}))
+   ...bots.map(b=>({id:b.name,pos:b.pos,eye:{x:b.pos.x,y:b.pos.y+1.65-(b.anim?.crouch||0)*.5,z:b.pos.z},hp:b.hp,alive:!b.dead,spawnAge:(opponentAI?.clock||0)-(b.brain?.spawnAt||0)}))
   ],
   canSee:(a,b)=>visible(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z)),
   move:(b,dx,dz)=>move(b.pos,dx,dz,b.pos.y),
@@ -410,19 +397,18 @@ function createOpponentAI(){
   telegraph:(b,point,dt)=>{if(b.brain.charge<=dt*1.5)playSfx('charge',{pos:b.pos.clone().add(new THREE.Vector3(0,1.3,0)),volume:.4,curve:'weapon',bus:'world',priority:3});b.laserIn=(b.laserIn||0)-dt;if(b.laserIn<=0){const origin=b.pos.clone().add(new THREE.Vector3(0,1.3,0)),end=new THREE.Vector3(point.x,point.y,point.z);const dir=end.clone().sub(origin).normalize();ray.set(origin,dir);ray.far=origin.distanceTo(end);const hit=ray.intersectObjects(worldMeshes,false)[0];trail(origin,hit?.point||end,0xd9ef45,.12,.012);b.laserIn=.1}},
   collect:(b,brain)=>{for(const p of pickups){if(p.kind==='pad'||p.kind==='focus'||p.timer>0||b.pos.clone().add(new THREE.Vector3(0,1.15,0)).distanceTo(p.mesh.position)>1.25)continue;if(p.kind==='health'&&b.hp>=100||p.kind==='armor'&&b.hp>=140)continue;healBot(b,Math.max(b.hp,Math.min(p.kind==='health'?100:140,b.hp+(p.kind==='health'?50:40))));p.timer=opponentAI.tuning.navigation.pickupRespawn;p.mesh.visible=false;brain.thinkIn=0;opponentAI.stats.pickups++}},
   animate:(b,brain,dt)=>{
-   b.phase+=dt;b.group.position.copy(b.pos);b.group.rotation.y=brain.facing;b.group.rotation.z=Math.sin(b.phase*9)*.025;
-   const distance=Math.hypot(b.pos.x-brain.previous.x,b.pos.z-brain.previous.z),moving=distance>.005;
-   for(let i=0;i<b.legs.length;i++)b.legs[i].rotation.x=moving&&b.vy===0?Math.sin(b.phase*10+i*Math.PI)*.45:0;
-   if(b.vy===0){brain.stepDistance=(brain.stepDistance||0)+distance;if(brain.stepDistance>1.85){brain.stepDistance=0;const pos=b.pos.clone().add(new THREE.Vector3(0,.15,0));if(!muted)gameAudio.footstep(pos,{metal:b.pos.y>2});opponentAI.hear(pos,b,10)}}else brain.stepDistance=0;
+   animateDummy(b,brain,dt,floorAt);
+   if(b.anim.footfall&&b.vy===0){const pos=b.pos.clone().add(new THREE.Vector3(0,.15,0));if(!muted)gameAudio.footstep(pos,{metal:b.pos.y>2,quiet:b.anim.crouch>.5});opponentAI.hear(pos,b,b.anim.crouch>.5?5:10)}
    if(brain.reload>0&&!brain.wasReloading)playSfx('reload-out',{pos:b.pos.clone().add(new THREE.Vector3(0,1.2,0)),volume:.35,curve:'foley',bus:'world',priority:1});
    if(brain.reload<=0&&brain.wasReloading)playSfx('bolt',{pos:b.pos.clone().add(new THREE.Vector3(0,1.2,0)),volume:.35,curve:'foley',bus:'world',priority:1});brain.wasReloading=brain.reload>0;
-   brain.previous={x:b.pos.x,y:b.pos.y,z:b.pos.z};b.parts.rightArm.rotation.x=brain.reload>0?-.7:brain.charge>0?-.15:0;for(const name of ['head','torso','leftArm'])b.parts[name].rotation.x=0;if(b.hitReact){b.hitReact.left-=dt;const p=b.parts[b.hitReact.part]||b.parts.torso;p.rotation.x=-Math.sin(clamp(b.hitReact.left/.17,0,1)*Math.PI)*b.hitReact.strength;if(b.hitReact.left<=0)b.hitReact=null;}
+   brain.previous={x:b.pos.x,y:b.pos.y,z:b.pos.z};
   }
 
  }});
 }
 function fireBotWeapon(b,point,w){
- const origin=b.pos.clone().add(new THREE.Vector3(0,1.28,0)),aimPoint=new THREE.Vector3(point.x,point.y,point.z);
+ fireDummy(b,w.type);
+ const origin=b.pos.clone().add(new THREE.Vector3(0,1.28-(b.anim?.crouch||0)*.45,0)),aimPoint=new THREE.Vector3(point.x,point.y,point.z);
  opponentAI.hear(b.pos,b);!muted&&gameAudio.weapon(w.type,{pos:origin});
  if(w.type==='rocket'){aimPoint.y-=.65;launchRocket(origin,aimPoint.sub(origin).normalize(),b,false,w.splashScale);return}
  scene.updateMatrixWorld(true);const targets=botHitMeshes().filter(m=>m.userData.bot!==b),playerBox=new THREE.Box3(new THREE.Vector3(playerPos.x-.35,playerPos.y-eyeHeight+.15,playerPos.z-.35),new THREE.Vector3(playerPos.x+.35,playerPos.y+.12,playerPos.z+.35));
@@ -442,7 +428,7 @@ function fireBotWeapon(b,point,w){
  burst(origin,0xf4ffb2,2);
 }
 function updateBots(dt){
- for(const b of bots)if(b.dead){b.dead-=dt;b.deathAge+=dt;b.group.rotation.z=THREE.MathUtils.damp(b.group.rotation.z,(b.impactVector?.x||.5)*.65,7,dt);b.group.position.y=b.pos.y-Math.min(.35,b.deathAge*.4);if(b.dead<=0)spawnBot(b)}
+ for(const b of bots)if(b.dead){b.dead-=dt;b.deathAge+=dt;stepRagdoll(b,dt,blocks);if(b.dead<=0)spawnBot(b)}
  opponentAI?.update(dt);
 }
 

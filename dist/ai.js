@@ -189,6 +189,8 @@ export class ArenaAI{
   }
   navigate(bot,b,dt){
     if(!b.goal)return;
+    // Plant for the final rail wind-up; the visible crouched brace is also a dodge window.
+    if(b.weaponType==='rail'&&b.charge>.2&&b.visible&&b.goal.type==='engage'&&!b.underFire&&!b.dodge&&!b.flight)return;
     if(b.flight){this.world.move(bot,b.flight.vx*dt,b.flight.vz*dt);return}
     if(b.dodge){b.dodge.delay-=dt;if(b.dodge.delay<=0){const d=Math.max(.01,Math.hypot(b.dodge.x,b.dodge.z)),step=this.difficulty.speed*1.2*dt;this.world.move(bot,b.dodge.x/d*step,b.dodge.z/d*step);b.dodge.left-=dt;if(b.dodge.left<=0)b.dodge=null;return}}
     b.pathIn-=dt;
