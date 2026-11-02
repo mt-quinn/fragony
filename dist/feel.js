@@ -36,9 +36,9 @@ export class WeaponMotion{
  blast(distance){this.trauma=Math.min(.8,this.trauma+Math.max(0,1-distance/15)*.5)}
  switch(){this.equip=1;this.kick.reset();this.ads=0}
  reset(){this.kick.reset();this.land.reset();this.ads=this.sprint=this.trauma=0;this.equip=0;this.shotAge=10}
- step(dt,p,{aiming=false,sprinting=false,turnX=0,turnY=0}={}){
+ step(dt,p,{aiming=false,sprinting=false,turnX=0,turnY=0,adsSpeed=1}={}){
   this.shotAge+=dt;this.kick.step(dt,p.stiffness,p.damping);this.land.step(dt,210,24);
-  const blend=1-Math.exp(-dt*15);this.ads+=((aiming?1:0)-this.ads)*blend;this.sprint+=((sprinting?1:0)-this.sprint)*blend;
+  const blend=1-Math.exp(-dt*15*adsSpeed);this.ads+=((aiming?1:0)-this.ads)*blend;this.sprint+=((sprinting?1:0)-this.sprint)*blend;
   this.swayX+=(Math.max(-.045,Math.min(.045,turnX)) - this.swayX)*(1-Math.exp(-dt*12));
   this.swayY+=(Math.max(-.03,Math.min(.03,turnY)) - this.swayY)*(1-Math.exp(-dt*12));
   this.equip=Math.max(0,this.equip-dt*5);this.trauma=Math.max(0,this.trauma-dt*1.8);

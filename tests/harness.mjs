@@ -4,15 +4,17 @@ import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.js';
 import { ArenaAI, AI_TUNING, difficultyForRound, buildNavigation, nearestNode as nearestAINode, findRoute } from '../dist/ai.js';
 import { MAP, ALL_WEAPONS, randomWeaponPair } from '../dist/map.js';
+import { WEAPON_SLOTS,OPTICS,SLOT_LABELS,attachment,fitted,normalizeBuilds,weaponStats,previewBuild,fitAttachment,migrateBuilds,EQUIPMENT,normalizeEquipment } from '../dist/loadout.js';
+import {loadoutHTML,reticleIcon as reticleIconForGame} from '../dist/loadout-view.js';
 import { GameAudio, AUDIO_TUNING } from '../dist/audio.js';
 import { FEEL,HANDLING,Spring,accelerate,WeaponMotion,HitFeedback } from '../dist/feel.js';
 import { resolveDamage,combineOutcomes } from '../dist/combat.js';
 export function createGameHarness(seed=12345){
  const nodes=new Map(),storage=new Map(),events=new Map();
- function element(id){if(!nodes.has(id))nodes.set(id,{style:{},hidden:false,textContent:'',innerHTML:'',querySelector(){return element(id+'child')},querySelectorAll(){this.buttons=[...this.innerHTML.matchAll(/data-buy="([^"]+)"/g)].map(m=>({dataset:{buy:m[1]}}));return this.buttons;}});return nodes.get(id)}
+ function element(id){if(!nodes.has(id))nodes.set(id,{style:{},hidden:false,textContent:'',innerHTML:'',querySelector(){return element(id+'child')},querySelectorAll(selector){const key=selector.match(/data-([a-z]+)/)?.[1]||'buy';if(this.queryHTML!==this.innerHTML){this.queryHTML=this.innerHTML;this.queryCache={}}if(this.queryCache[key])return this.queryCache[key];const buttons=[...this.innerHTML.matchAll(new RegExp('data-'+key+'="([^"]*)"','g'))].map(m=>({dataset:{[key]:m[1]}}));if(key==='buy')this.buttons=buttons;this.queryCache[key]=buttons;return buttons;}});return nodes.get(id)}
  const drawing=new Proxy({},{get:(o,p)=>o[p]||(()=>{})});
  const seededMath=Object.create(Math);seededMath.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
- const context=vm.createContext({events,FEEL,HANDLING,Spring,accelerate,WeaponMotion,HitFeedback,resolveDamage,combineOutcomes,GameAudio,AUDIO_TUNING,MAP,ALL_WEAPONS,randomWeaponPair,THREE,ArenaAI,AI_TUNING,difficultyForRound,buildNavigation,nearestAINode,findRoute,console,assert,results:[],Math:seededMath,innerWidth:1280,innerHeight:800,performance,
+ const context=vm.createContext({events,WEAPON_SLOTS,OPTICS,SLOT_LABELS,attachment,fitted,normalizeBuilds,weaponStats,previewBuild,fitAttachment,migrateBuilds,EQUIPMENT,normalizeEquipment,loadoutHTML,reticleIconForGame,FEEL,HANDLING,Spring,accelerate,WeaponMotion,HitFeedback,resolveDamage,combineOutcomes,GameAudio,AUDIO_TUNING,MAP,ALL_WEAPONS,randomWeaponPair,THREE,ArenaAI,AI_TUNING,difficultyForRound,buildNavigation,nearestAINode,findRoute,console,assert,results:[],Math:seededMath,innerWidth:1280,innerHeight:800,performance,
   document:{body:{classList:{add(){},remove(){}}},getElementById:element,createElement:()=>({getContext:()=>drawing}),addEventListener:(name,handler)=>events.set(name,handler),exitPointerLock(){}},
   window:{addEventListener(){}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}});
  const source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*?;\n/gm,'').replace(/\ninit\(\);\s*$/,'');

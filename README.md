@@ -87,3 +87,27 @@ World impacts leave short-lived marks and chips; firearms eject tumbling cases. 
 The synthesized sound mix includes varied dry hit thwips, a wet headshot layer and a longer metallic kill ring. Confirmation briefly lowers enemy gunfire, preserving spatial footsteps and warnings. Common sounds are prewarmed. Pause offers persistent camera-motion, gun, footstep and feedback controls. Setting motion to zero removes optional sway/bob/trauma while preserving aim and weapon recoil.
 
 `tests/feel.mjs` checks cadence at 30/60/144 FPS, fresh aim, 150-point head kills, corpse suppression, effect limits, jumping, braking, air momentum and comfort behavior. Existing reload, controls, spatial audio, map, combat/progression and nine seeded full-match simulations remain passing.
+
+
+### Loadout bench and attachment system
+
+Between rounds, LOADOUT replaces the former upgrade grid. Weapons, Perks and Equipment use one consistent ink/chalk/acid interface. The weapon bench previews the real procedural model, can rotate it, and shows current versus candidate stats. The full catalog can also be browsed read-only through ARSENAL in the main menu.
+
+Each weapon has five slots. There are three weapon-specific alternatives in each mechanical slot, plus six optics per weapon (three 1× and three 2×). That is 18 choices per weapon, 72 distinct mechanical parts and six shared optic designs. Stock parts are free. Purchased parts belong to that weapon for the run; swapping or removing them is free. Prices, benefits, penalties, fitted state and insufficient-credit states are explicit. RESET BUILD returns to standard without deleting owned parts. Buying additional weapons preserves the initial random pair; all owned guns remain available during a match. The starting weapon selection applies at round start.
+
+| Weapon | Slots |
+| --- | --- |
+| AR-9 | Optic, Muzzle, Barrel, Magazine, Stock |
+| IRON .50 | Optic, Muzzle, Barrel, Magazine, Trigger |
+| WASP | Optic, Muzzle, Barrel, Magazine, Stock |
+| LONGSHOT | Optic, Barrel, Capacitor, Magazine, Stock |
+| THUMPER | Optic, Warhead, Motor, Loader, Grip |
+| DOORBREAKER | Optic, Choke, Barrel, Tube, Pump |
+
+`dist/loadout.js` owns catalog data, stat composition, compatibility, purchase/equip rules, preview builds and normalization. Damage, spread/core spread, recoil, cadence, magazine size, reload, aim time, movement, weapon switching and rocket characteristics connect to the actual game. 2× magnification uses the FOV tangent relationship; optics have distinct open/round/box/tube models and reticles, with scaled aiming sensitivity. Rocket modifiers are snapshotted at launch so switching weapons cannot alter a projectile already in flight. Bots retain their existing tuned weapon stats and random pairs.
+
+Perks include the original movement/armor/reload/focus upgrades and new Quickdraw and Recovery choices. Equipment offers frag, impact and quick-fuse grenades, plus Airstrike, Surge and Rocket Barrage killstreaks. One throwable and one killstreak are selected; purchased alternatives can be swapped free. Bandolier increases grenade allocation. All purchases save immediately. Existing saves migrate the former global gun attachments into compatible owned parts rather than stacking both systems.
+
+The bench creates one preview renderer while open, reuses the main weapon geometries/materials, skips the hidden arena render, and releases its renderer/context on exit. UI and part previews use the same stat resolver as combat. `tests/loadout.mjs` checks all 108 per-weapon choices, transactions, slot validation, migration/restoration, real reload/aim/projectile effects, and procedural model construction for every part.
+
+Design references: [COD BO6 attachment intel](https://www.callofduty.com/blog/2024/10/call-of-duty-black-ops-6-launch-comms-weapons-attachments-intel) and [Modern Warfare loadout guide](https://blog.activision.com/call-of-duty/2019-10/The-Basics-of-Call-of-Duty-Modern-Warfare-Loadouts). Adapted principles: a weapon-centered bench, relevant slot categories, understandable effects, and clear separation of weapons, perks and equipment. No third-party game assets are used.
