@@ -6,7 +6,7 @@ export const FEEL={
   score:{kill:100,headshot:150},maxEffects:190,maxDecals:72
 };
 export const HANDLING=[
- {name:'rifle',stiffness:310,damping:29,kick:.78,aim:.009,rx:.065,ry:-.012,roll:.018,back:.065,lift:.01,adsY:-.11,adsFov:65,reloadRoll:-.35},
+ {name:'rifle',stiffness:310,damping:29,kick:.78,aim:.009,rx:.065,ry:-.012,roll:.018,back:.065,lift:.01,adsY:.13,adsFov:65,reloadRoll:-.35},
  {name:'pistol',stiffness:180,damping:19,kick:1,aim:.032,rx:.3,ry:-.045,roll:-.1,back:.105,lift:.045,adsY:-.12,adsFov:66,reloadRoll:-.6},
  {name:'smg',stiffness:510,damping:36,kick:.63,aim:.004,rx:.045,ry:.018,roll:.025,back:.034,lift:.005,adsY:-.095,adsFov:68,reloadRoll:-.45},
  {name:'rail',stiffness:190,damping:23,kick:1,aim:.018,rx:.1,ry:.012,roll:-.035,back:.14,lift:.016,adsY:-.17,adsFov:35,reloadRoll:-.25},
