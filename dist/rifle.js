@@ -15,17 +15,18 @@ export function createRifle(parent){
  block(body,-.102,.045,-.105,.008,.065,.165,M.bore,.002);
  const bolt=block(body,-.109,.044,-.14,.009,.045,.10,M.steel,.002);block(body,-.12,.048,-.08,.018,.021,.028,M.graphite,.002);
  block(body,-.103,-.044,-.012,.01,.032,.047,M.rubber,.003);tube(body,-.11,-.044,-.012,.009,.012,M.steel).rotation.z=Math.PI/2;
+ const foreEnd=new THREE.Group();foreEnd.name='rifle-fore-end';body.add(foreEnd);
  // Structural handguard shell, open slots and an exposed floated barrel.
- tube(body,0,.017,-.64,.035,.66,M.graphite);
- piece(body,[[-.30,-.035],[-.33,.085],[-.68,.07],[-.735,.02],[-.68,-.065]],.155,M.ceramic);
+ tube(foreEnd,0,.017,-.64,.035,.66,M.graphite);
+ piece(foreEnd,[[-.30,-.035],[-.33,.085],[-.68,.07],[-.735,.02],[-.68,-.065]],.155,M.ceramic);
  for(const side of [-1,1]){
-  for(let i=0;i<4;i++)block(body,side*.080,.009,-.37-i*.074,.009,.038,.045,M.bore,.003);
-  block(body,side*.083,-.032,-.53,.012,.018,.27,M.graphite,.002);
+  for(let i=0;i<4;i++)block(foreEnd,side*.080,.009,-.37-i*.074,.009,.038,.045,M.bore,.003);
+  block(foreEnd,side*.083,-.032,-.53,.012,.018,.27,M.graphite,.002);
  }
- block(body,0,.128,-.5,.055,.025,.31,M.graphite,.003);
- tube(body,0,.018,-.832,.046,.16,M.steel);tube(body,0,.018,-.921,.061,.075,M.graphite);tube(body,0,.018,-.963,.047,.008,M.bore);
- const muzzle=new THREE.Mesh(ring,M.steel);muzzle.position.set(0,.018,-.966);muzzle.scale.setScalar(.055);body.add(muzzle);
- for(const side of [-1,1])block(body,side*.057,.018,-.925,.008,.042,.033,M.bore,.002);
+ block(foreEnd,0,.128,-.5,.055,.025,.31,M.graphite,.003);
+ tube(foreEnd,0,.018,-.832,.046,.16,M.steel);tube(foreEnd,0,.018,-.921,.061,.075,M.graphite);tube(foreEnd,0,.018,-.963,.047,.008,M.bore);
+ const muzzle=new THREE.Mesh(ring,M.steel);muzzle.position.set(0,.018,-.966);muzzle.scale.setScalar(.055);foreEnd.add(muzzle);
+ for(const side of [-1,1])block(foreEnd,side*.057,.018,-.925,.008,.042,.033,M.bore,.002);
  // Pistol grip and open trigger guard have real negative space.
  piece(body,[[.095,-.08],[.02,-.09],[.052,-.31],[.146,-.295]],.10,M.rubber);
  block(body,0,-.303,.10,.105,.025,.095,M.graphite,.003);
@@ -37,9 +38,10 @@ export function createRifle(parent){
  piece(stock,[[.13,.06],[.19,.085],[.45,.025],[.44,-.028],[.18,.018]],.095,M.graphite);
  piece(stock,[[.17,-.065],[.41,-.14],[.455,-.09],[.19,-.02]],.075,M.ceramic);
  piece(stock,[[.43,.035],[.49,.015],[.49,-.18],[.425,-.15]],.13,M.rubber);
+ const irons=new THREE.Group();body.add(irons);
  // Notch/post irons share a sight line at Y=.20.
- block(body,-.055,.19,.105,.025,.09,.045,M.graphite);block(body,.055,.19,.105,.025,.09,.045,M.graphite);block(body,0,.151,.105,.11,.018,.045,M.graphite);
- block(body,0,.19,-.68,.014,.065,.025,M.steel);block(body,0,.153,-.68,.074,.025,.055,M.graphite);
+ block(irons,-.055,.19,.105,.025,.09,.045,M.graphite);block(irons,.055,.19,.105,.025,.09,.045,M.graphite);block(irons,0,.151,.105,.11,.018,.045,M.graphite);
+ block(irons,0,.19,-.68,.014,.065,.025,M.steel);block(irons,0,.153,-.68,.074,.025,.055,M.graphite);
  const magazine=new THREE.Group();parent.add(magazine);
  piece(magazine,[[-.125,-.09],[-.242,-.10],[-.27,-.35],[-.235,-.445],[-.13,-.43],[-.105,-.29]],.115,M.graphite);
  for(const side of [-1,1])for(let i=0;i<3;i++)block(magazine,side*.062,-.18-i*.07,-.185,.008,.012,.106,M.rubber,.002);
@@ -49,7 +51,7 @@ export function createRifle(parent){
  const arm=connect(new THREE.Vector3(.085,-.29,.13),new THREE.Vector3(.15,-.95,.52),.058);
  const supportArm=connect(new THREE.Vector3(-.085,-.18,-.44),new THREE.Vector3(-.16,-.95,.23),.052);
  const charging=block(body,-.126,.09,.035,.035,.022,.04,M.steel,.003);
- return {body,stock,magazine,bolt,trigger,left,right,arm,supportArm,charging,emptyReload:false,magStyle:'standard',leftBase:left.position.clone(),magBase:magazine.position.clone(),boltBase:bolt.position.clone(),chargingBase:charging.position.clone(),recoil:0};
+ return {body,foreEnd,irons,stock,magazine,bolt,trigger,left,right,arm,supportArm,charging,emptyReload:false,magStyle:'standard',leftBase:left.position.clone(),magBase:magazine.position.clone(),boltBase:bolt.position.clone(),chargingBase:charging.position.clone(),recoil:0};
 }
 export function rifleAttachment(hero,a){
  if(a.slot==='magazine'){hero.magStyle=a.visual;if(a.visual==='drum'){hero.magazine.children.forEach(m=>m.visible=false);const drum=tube(hero.magazine,0,-.24,-.17,.14,.20,M.graphite);drum.rotation.set(0,0,Math.PI/2);block(hero.magazine,0,-.11,-.17,.11,.13,.12,M.steel);hero.magazine.scale.y=1}else{hero.magazine.scale.y=a.visual==='fast'?.82:1.26;hero.magBase.y=(hero.magazine.scale.y-1)*.09}return true}

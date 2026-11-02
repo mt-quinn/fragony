@@ -8,6 +8,7 @@ export function surface(color,world=false){
  const material=new THREE.MeshStandardMaterial({color,roughness:signal?.48:l<.16?.68:.73,metalness:0,vertexColors:world});surfaces.set(key,material);return material;
 }
 export const MATERIALS={
+ safety:new THREE.MeshStandardMaterial({color:0xe9b82d,roughness:.38,metalness:.22}),
  ceramic:new THREE.MeshStandardMaterial({color:0xe3e5d8,roughness:.38,metalness:.12}),
  graphite:new THREE.MeshStandardMaterial({color:0x252e32,roughness:.43,metalness:.48}),
  rubber:new THREE.MeshStandardMaterial({color:0x11191d,roughness:.96,metalness:0}),

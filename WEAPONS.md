@@ -11,4 +11,16 @@ All attachment slots have dedicated geometry. Six optics use a fixed bridge with
 
 Long/snub/heavy barrels retain the barrel axis. Crown, brake and slab compensator use real open muzzle geometry, with flash/tracer origins at the fitted muzzle. Larger magazines extend below the grip rather than becoming an unrelated drum; speed magazine and trigger options have their own shapes. Geometry/materials are cached and shared.
 
-Base combat balance is unchanged: 83 damage, 7 rounds, .53 second shot interval, 1.6 second reload. Models for the other five weapons remain for subsequent work; their approved names and slot order are applied.
+Base combat balance is unchanged: 83 damage, 7 rounds, .53 second shot interval, 1.6 second reload. The remaining five weapons now share the approved industrial material language, with distinct construction and purpose-built attachments.
+
+
+## Remaining arsenal
+- Rattler: compact ventilated receiver, folding wire stock, stick/drum magazines, fast cycling bolt.
+- Jackhammer: reinforced full-length rifle, floating barrel and handguard, steel receiver details, skeleton stock, changing magazine and charging handle.
+- Sledgehammer: broad receiver, full shoulder stock, exposed barrel/tube pair, articulated ribbed pump and shell speed-loader reload.
+- Demolisher: open shoulder tube, safety housing and carry handle, offset sight line, five/seven/four-round loading cassette, opening breech and motor/warhead variants.
+- Lancer: open twin accelerator rails, isolating coil bridges, precision stock, scope, detachable side battery and charging mechanism.
+
+Each attachment family has explicit mounting geometry and an aligned sight axis. First-person magnification is separated from housing size for every gun. Matching simpler bot models retain the silhouettes; a simple arm-hit proxy keeps decorative geometry out of bullet-query costs. Static surfaces are merged within their independently moving groups; merged buffers are disposed when a model is replaced. Health colors remain limited to crash-dummy hands/arms. Existing balance, attachment effects, ownership and saved IDs are preserved.
+
+Weapon UI silhouettes are baked from the actual base hero geometry by `node tools/bake-weapon-icons.mjs`. The shared `gunIcon` covers the HUD identity, owned weapon slots, shop offers and Arsenal catalog. Arms and transparent optics are excluded; trigger guards and stock openings remain transparent. Runtime loads only the generated SVG paths.

@@ -2,7 +2,7 @@ import * as THREE from './vendor/three.module.js';
 import {MATERIALS as M} from './presentation.js';
 import {piece,block,tube,palm} from './rifle.js';
 // Shared tooling and materials; component groups own all moving mechanisms.
-const safety=new THREE.MeshStandardMaterial({color:0xe9b82d,roughness:.38,metalness:.22});
+const safety=M.safety;
 const lume=new THREE.MeshBasicMaterial({color:0xd8f7ae,side:THREE.DoubleSide});
 const lens=new THREE.MeshBasicMaterial({color:0x91bfc3,transparent:true,opacity:.075,depthWrite:false,side:THREE.DoubleSide});
 const ring=new THREE.TorusGeometry(1,.13,6,24),openTube=new THREE.CylinderGeometry(1,1,1,20,1,true),disk=new THREE.CircleGeometry(1,24),armGeo=new THREE.CylinderGeometry(1,1,1,12);

@@ -1,3 +1,4 @@
+import {createToolWeapon,animateToolWeapon,createToolWorld,disposeToolModel} from './tool-weapons.js';
 import {chooseSpawn} from './spawns.js';
 import {createNailer,animateNailer,createNailerWorld} from './nailer.js';
 import {WEAPON_ORDER,weaponSlot} from './weapon-order.js';
@@ -122,7 +123,7 @@ function changeArena(id){
  if(id===MAP.id&&arena.children.length)return;
  clearDeathView();for(const r of rockets)scene.remove(r.mesh);rockets=[];for(const e of effects)retireEffect(e);effects=[];
  if(arena.children.length){arenaCache.set(MAP.id,{arena,blocks,worldMeshes,pickups,elevatorSystem,navigation});scene.remove(arena)}
- for(const b of bots)scene.remove(b.group);bots=[];spawnHistory.clear();selectMap(id);spawnPoints=MAP.spawns;
+ for(const b of bots){disposeToolModel(b.group);scene.remove(b.group)}bots=[];spawnHistory.clear();selectMap(id);spawnPoints=MAP.spawns;
  const cached=arenaCache.get(MAP.id);if(cached){({arena,blocks,worldMeshes,pickups,elevatorSystem,navigation}=cached);navNodes=navigation.nodes;scene.add(arena)}
  else{arena=new THREE.Group();scene.add(arena);blocks=[];worldMeshes=[];pickups=[];buildArena();buildNav()}
  elevatorSystem.reset();$('map-select').value=MAP.id;localStorage.setItem('dh-map',MAP.id);scene.updateMatrixWorld(true);
@@ -154,55 +155,17 @@ function batchArena(){
 
 const barrelGeo=new THREE.CylinderGeometry(1,1,1,8),muzzleRingGeo=new THREE.TorusGeometry(1,.14,4,8);
 function buildWeapon(state=builds){
- camera.userData.weaponFovFloor=equipped===1?65:0;
- if(weaponGroup){camera.remove(weaponGroup);flash?.material.dispose()}
+ camera.userData.weaponFovFloor=65;
+ if(weaponGroup){disposeToolModel(weaponGroup);camera.remove(weaponGroup);flash?.material.dispose()}
  weaponGroup=new THREE.Group();camera.add(weaponGroup);if(!camera.parent)scene.add(camera);
- weaponGroup.userData.moving=[];const i=equipped,ink=0x152127,chalk=0xe1e5dc,signal=0xd9ef45;
- const part=(x,y,z,w,h,d,c=ink)=>cube(x,y,z,w,h,d,c,weaponGroup);
- const barrel=(x,y,z,r,length,c=ink)=>{const m=new THREE.Mesh(barrelGeo,typeof c==='number'?mat(c):c);m.position.set(x,y,z);m.scale.set(r,length,r);m.rotation.x=Math.PI/2;weaponGroup.add(m);return m};
- let muzzle=-.9;
- if(i===0){weaponGroup.userData.heroRifle=createRifle(weaponGroup);muzzle=-.985;
- }else if(i===1){weaponGroup.userData.nailer=createNailer(weaponGroup,{attachments:fitted(i,state)});muzzle=weaponGroup.userData.nailer.muzzleZ;
- }else if(i===2){
-  part(0,0,-.17,.16,.16,.4);part(0,.1,-.14,.13,.04,.34,chalk);part(0,-.14,0,.12,.26,.15);const magazine=part(0,-.21,-.18,.11,.31,.13,chalk);magazine.rotation.x=-.22;barrel(0,0,-.48,.075,.26);part(0,-.13,-.4,.1,.16,.12,signal);part(.09,0,-.12,.02,.065,.21,signal);muzzle=-.64;
- }else if(i===3){
-  part(0,-.02,-.18,.24,.2,.55);part(0,-.18,.08,.15,.3,.2);part(0,-.14,-.18,.15,.2,.15,chalk);for(const side of [-1,1]){part(side*.08,.01,-.74,.065,.13,.84,chalk);part(side*.08,.025,-.68,.07,.03,.58,signal)}barrel(0,.01,-.6,.045,.55);part(0,.16,-.14,.14,.1,.19,chalk);barrel(0,.2,-.25,.08,.22);const optic=new THREE.Mesh(muzzleRingGeo,mat(signal));optic.position.set(0,.2,-.365);optic.scale.setScalar(.075);weaponGroup.add(optic);muzzle=-1.18;
- }else if(i===4){
-  barrel(0,.02,-.26,.23,.95);barrel(0,.02,-.65,.26,.16,chalk);barrel(0,.02,-.74,.22,.025);const rim=new THREE.Mesh(muzzleRingGeo,mat(signal));rim.position.set(0,.02,-.765);rim.scale.setScalar(.235);weaponGroup.add(rim);part(0,-.25,.03,.16,.3,.19,chalk);part(.25,.1,-.28,.07,.12,.45,signal);part(0,.28,-.22,.06,.04,.26,chalk);muzzle=-.83;
- }else{
-  part(0,0,-.15,.23,.2,.5,chalk);part(0,-.17,.08,.15,.29,.2);barrel(0,.025,-.73,.073,.75);barrel(0,-.09,-.65,.06,.55);part(0,-.08,-.58,.23,.16,.32,signal);for(let j=0;j<5;j++)part(0,-.08,-.46-j*.055,.24,.17,.014);for(let j=0;j<3;j++)barrel(-.14,.02,-.04-j*.08,.025,.055,signal);part(0,.14,-.23,.04,.04,.24);muzzle=-1.12;
- }
- const moving=weaponGroup.userData.moving;
- for(const mesh of weaponGroup.children){if(mesh.geometry!==boxGeo)continue;const mag=mesh.position.y<-.14&&mesh.position.z<0?1:0,slide=i===1&&mesh.position.y>0?1:0,pump=i===5&&mesh.position.z<-.4&&mesh.position.y<0?1:0;if(mag||slide||pump)moving.push({mesh,base:mesh.position.clone(),mag,slide,pump})}
- const kit=fitted(i,state);weaponGroup.userData.opticY=weaponGroup.userData.nailer?.sightY||.3;
- for(const a of kit){
-  if(i===1)continue;
-  if(i===0&&rifleAttachment(weaponGroup.userData.heroRifle,a))continue;
-  if(a.slot==='optic'){
-   const y=.3,z=i===1?-.17:-.2;part(0,.16,z,.07,.12,.15,ink);
-   if(a.shape==='open'||a.shape==='box'){const w=a.shape==='open'?.22:.25;part(-w/2,y,z,.025,.17,.075,chalk);part(w/2,y,z,.025,.17,.075,chalk);part(0,y+.085,z,w,.025,.075,chalk);part(0,y-.085,z,w,.025,.075,signal)}
-   else{for(const dz of a.shape==='tube'?[-.09,.09]:[0]){const ring=new THREE.Mesh(muzzleRingGeo,mat(chalk));ring.position.set(0,y,z+dz);ring.scale.setScalar(.11);weaponGroup.add(ring)}}
-  }else if(a.slot==='barrel'){
-   const extension=a.visual==='long'?.24:a.visual==='short'?.04:.1;barrel(0,.01,muzzle-extension*.4,a.visual==='heavy'?.1:.065,extension,i===0?MATERIALS.steel:signal);muzzle-=extension*.7;
-  }else if(['muzzle','choke'].includes(a.slot)){
-   barrel(0,0,muzzle-.035,a.visual==='comp'?.11:.09,a.visual==='choke'?.17:.12,i===0?MATERIALS.graphite:signal);for(const x of [-.09,.09])part(x,.01,muzzle-.03,.02,.08,.04,ink);muzzle-=.08;
-  }else if(['magazine','tube','loader'].includes(a.slot)){
-   if(a.visual==='drum'){const m=new THREE.Mesh(barrelGeo,mat(signal));m.position.set(0,-.3,-.15);m.rotation.z=Math.PI/2;m.scale.set(.17,.17,.17);weaponGroup.add(m)}
-   else part(0,i===5?-.13:-.3,i===5?-.6:-.15,.12,a.visual==='fast'?.12:.28,i===5?.7:.17,signal);
-  }else if(a.slot==='stock'){part(0,-.03,.22,.15,.16,a.visual==='light'?.2:.38,signal);if(a.visual==='brace')part(0,-.13,.34,.2,.3,.12,ink)}
-  else if(a.slot==='capacitor'){part(.16,0,-.32,.11,.15,.28,signal);for(let j=0;j<3;j++)part(.22,.01,-.23-j*.08,.02,.11,.02,ink)}
-  else if(a.slot==='motor'){barrel(0,.02,.22,.25,.22,signal)}
-  else if(a.slot==='warhead'){barrel(0,.02,-.77,.17,.12,signal)}
-  else if(a.slot==='trigger'){part(.11,-.14,-.03,.04,.06,.14,signal)}
-  else if(a.slot==='pump'){part(0,-.09,-.58,.27,.19,.25,signal)}
-  else{part(-.08,-.2,-.42,.09,.23,.12,signal)}
- }
- if(i!==0&&![1,4].includes(i)){part(0,-.01,.25,.14,.13,.35,chalk);part(0,-.05,.42,.18,.25,.075,ink)}
- // The player's yellow shell and black wrist joints match the opponents.
- if(i!==0&&i!==1){const hand=new THREE.Mesh(viewHandGeo,mat(signal));hand.position.set(.015,-.29,.07);hand.scale.set(.115,.15,.13);hand.userData.hand=true;weaponGroup.add(hand);const wrist=new THREE.Mesh(viewHandGeo,mat(ink));wrist.position.set(.02,-.42,.16);wrist.scale.set(.09,.09,.10);wrist.userData.hand=true;weaponGroup.add(wrist);const forearm=new THREE.Mesh(viewArmGeo,mat(signal));forearm.position.set(.02,-.51,.25);forearm.rotation.x=.7;forearm.scale.set(.11,.35,.12);forearm.userData.hand=true;weaponGroup.add(forearm);
- if(i!==1){const support=new THREE.Mesh(viewHandGeo,mat(signal));support.position.set(-.03,-.18,i===4?-.41:-.43);support.scale.set(.12,.1,.15);support.userData.hand=true;weaponGroup.add(support)}
- }
- flash=createMuzzleFlash();flash.position.set(0,weaponGroup.userData.nailer?.061:0,muzzle);flash.scale.setScalar(.8);flash.visible=false;weaponGroup.add(flash);weaponGroup.scale.setScalar(.85);weaponGroup.position.set(.31,-.3,-.5);weaponGroup.visible=false;const muzzleLight=new THREE.PointLight(0xffe5a3,0,2.2,2);muzzleLight.position.set(0,.09,muzzle);weaponGroup.add(muzzleLight);weaponGroup.userData.muzzleLight=muzzleLight;weaponGroup.traverse(m=>{m.layers.set(1);if(m.userData.hand&&m.material?.color?.getHex()===signal)m.userData.healthSkin=true});tintPlayerArms();
+ const options={attachments:fitted(equipped,state)},hero=equipped===1?createNailer(weaponGroup,options):createToolWeapon(weaponGroup,equipped,options);
+ if(equipped===1)weaponGroup.userData.nailer=hero;else weaponGroup.userData.heroTool=hero;
+ if(equipped===0)weaponGroup.userData.heroRifle=hero;
+ weaponGroup.userData.opticY=hero.sightY;weaponGroup.userData.sightX=hero.sightX||0;
+ flash=createMuzzleFlash();flash.position.set(hero.muzzleX||0,hero.muzzleY??.061,hero.muzzleZ);flash.scale.setScalar(.8);flash.visible=false;weaponGroup.add(flash);
+ weaponGroup.scale.setScalar(.85);weaponGroup.position.set(.31,-.3,-.5);weaponGroup.visible=false;
+ const light=new THREE.PointLight(0xffe5a3,0,2.2,2);light.position.copy(flash.position);light.position.y+=.06;weaponGroup.add(light);weaponGroup.userData.muzzleLight=light;
+ weaponGroup.traverse(m=>m.layers.set(1));tintPlayerArms();
 }
 
 function playSfx(name,options={}){if(muted)return null;return gameAudio.play(name,{volume:AUDIO_TUNING.volumes.ui,...options})}
@@ -254,19 +217,21 @@ function healPlayer(value){if(value>health){health=value;tintPlayerArms();player
 function healBot(b,value){if(value>b.hp){b.hp=value;b.maxHealth=Math.max(b.maxHealth||100,value);clearDamageCredit(b);b.history?.clear();tintDummy(b)}}
 function awardAssists(target,killer){for(const a of takeAssists(target,killer)){if(a.id==='player'){matchPoints+=a.points;matchAssists++;if(assistNotice.left<=0)assistNotice={points:0,count:0,left:0};assistNotice.points+=a.points;assistNotice.count++;assistNotice.left=1.5}else{const bot=bots.find(b=>b.name===a.id);if(bot){bot.score+=a.points;bot.assists=(bot.assists||0)+1}}}}
 function buildDummyGun(arm,weapon){
- const mount=arm.userData.weaponMount||arm,old=mount.children.find(c=>c.name==='weapon');if(old)mount.remove(old);const gun=new THREE.Group();gun.name='weapon';mount.add(gun);
- const body=(x,y,z,w,h,d,c=0x182127)=>cube(x,y,z,w,h,d,c,gun);
- body(0,-.055,0,.075,.14,.09); // firing grip
- if(weapon==='pistol'){const model=createNailerWorld(gun);model.rotation.y=Math.PI;model.scale.setScalar(.55);model.position.set(0,.075,.045)}
- else if(weapon==='rocket'){const tube=new THREE.Mesh(barrelGeo,mat(0x182127));tube.rotation.x=Math.PI/2;tube.scale.set(.115,.7,.115);tube.position.set(0,.06,.17);tube.castShadow=true;gun.add(tube);body(.12,.07,.17,.035,.045,.5,0xd9ef45);body(0,.17,.17,.04,.06,.04)}
- else{const rail=weapon==='rail',shotgun=weapon==='shotgun',smg=weapon==='smg';body(0,.025,.10,.10,shotgun?.13:.12,smg?.30:.42);body(0,.015,rail?.44:.37,.045,.05,rail?.5:shotgun?.36:.24,0xeef0e6);body(0,.01,-.15,.09,.095,.18);if(rail){for(const side of [-1,1])body(side*.042,.04,.48,.025,.035,.40,0xd9ef45);body(0,.115,.10,.07,.07,.20)}else if(shotgun)body(0,-.025,.30,.115,.09,.17,0xd9ef45);else{body(0,-.10,.13,.07,.18,.08,0xeef0e6);body(0,.10,.08,.035,.025,.16)}}
- gun.traverse(m=>{m.userData.part='rightArm'});return gun;
+ const mount=arm.userData.weaponMount||arm,old=mount.children.find(c=>c.name==='weapon');if(old){disposeToolModel(old);mount.remove(old)}
+ const gun=new THREE.Group();gun.name='weapon';mount.add(gun);const i=ALL_WEAPONS.indexOf(weapon),model=i===1?createNailerWorld(gun):createToolWorld(gun,i<0?0:i);
+ model.rotation.y=Math.PI;model.scale.setScalar(i===1?.55:.60);model.position.set(0,.06,.04);
+ model.traverse(m=>{if(m.isMesh)m.userData.gunVisual=true});
+ // Weapon artwork uses a simple arm-hit proxy, keeping shot tests independent
+ // of decorative screws, rails and merged material geometry.
+ const sizes=[[.22,.30,1.25],[.24,.40,.80],[.22,.34,.85],[.24,.34,1.6],[.50,.45,1.3],[.24,.30,1.4]][i<0?0:i];
+ const proxy=new THREE.Mesh(boxGeo,mat(0x182127));proxy.scale.set(...sizes);proxy.position.set(0,-.025,i===1?-.15:i===2?-.16:i===4?-.22:-.34);proxy.visible=false;model.add(proxy);gun.userData.hitProxy=proxy;return gun;
 }
+
 function makeBots(){
- bots.forEach(b=>scene.remove(b.group));bots=[];opponentAI=createOpponentAI();
+ bots.forEach(b=>{disposeToolModel(b.group);scene.remove(b.group)});bots=[];opponentAI=createOpponentAI();
  botNames.forEach((name,i)=>{const d=createDummy(opponentAI.tuning.profiles[i].weapon);scene.add(d.group);const b={name,loadout:randomWeaponPair(()=>Math.random()),pos:new THREE.Vector3(),...d,hp:100,score:0,frags:0,headshots:0,deaths:0,dead:0,cool:1,side:i%2?1:-1,phase:Math.random()*7,stuck:0};d.group.traverse(o=>o.userData.bot=b);bots.push(b);spawnBot(b)});
 }
-function botHitMeshes(){const meshes=[];for(const b of bots)for(const p of Object.values(b.parts)){if(!p.visible)continue;p.traverseVisible(m=>{if(m.isMesh)meshes.push(m)})}return meshes}
+function botHitMeshes(){const meshes=[];for(const b of bots)for(const p of Object.values(b.parts)){if(!p.visible)continue;p.traverseVisible(m=>{if(m.userData.hitProxy)meshes.push(m.userData.hitProxy);if(m.isMesh&&!m.userData.gunVisual)meshes.push(m)})}return meshes}
 function shatterPart(b,name,point){if(!b.dead)return;const part=b.parts[name]||b.parts.torso;if(!part.visible)return;part.getWorldPosition(tmp);const center=point?point.clone().lerp(tmp,.5):tmp.clone();part.visible=false;for(let i=0;i<15;i++){const m=new THREE.Mesh(shardGeo,mat(i%4===0?0x182127:0x858c88));m.position.copy(center).add(new THREE.Vector3((Math.random()-.5)*.25,(Math.random()-.5)*.4,(Math.random()-.5)*.25));m.scale.set(.06+Math.random()*.08,.06+Math.random()*.13,.04+Math.random()*.07);scene.add(m);addEffect({mesh:m,life:.65+Math.random()*.5,max:1.2,vel:new THREE.Vector3((Math.random()-.5)*9,2+Math.random()*6,(Math.random()-.5)*9).addScaledVector(b.impactVector||new THREE.Vector3(),5),spin:new THREE.Vector3(Math.random()*12,Math.random()*10,Math.random()*9)})}playSfx('shatter',{pos:b.pos,volume:.35,curve:'foley',bus:'world',priority:1})}
 
 function blocked(x,z,feet,r=.4,height=1.7){if(Math.abs(x)>MAP.bounds.x-.5||Math.abs(z)>MAP.bounds.z-.5)return true;return blockedAt(blocks,x,z,feet,r,height)}
@@ -318,7 +283,7 @@ function shoot(){
  confirmOutcomes(outcomes);return true;
 }
 
-function reload(){if(reloading>0||ammo===playerWeapon().mag)return;if(weaponGroup.userData.heroRifle)weaponGroup.userData.heroRifle.emptyReload=ammo===0;if(weaponGroup.userData.nailer)weaponGroup.userData.nailer.emptyReload=ammo===0;reloading=playerWeapon().reload*(perks.reload?.65:1);reloadLength=reloading;reloadStage=0;playSfx('reload-out',{volume:.45})}
+function reload(){if(reloading>0||ammo===playerWeapon().mag)return;if(weaponGroup.userData.heroRifle)weaponGroup.userData.heroRifle.emptyReload=ammo===0;if(weaponGroup.userData.nailer)weaponGroup.userData.nailer.emptyReload=ammo===0;if(weaponGroup.userData.heroTool)weaponGroup.userData.heroTool.emptyReload=ammo===0;reloading=playerWeapon().reload*(perks.reload?.65:1);reloadLength=reloading;reloadStage=0;playSfx('reload-out',{volume:.45})}
 function switchWeapon(i){if(!owned.includes(i)||equipped===i)return;magazines[equipped]=ammo;equipped=i;ammo=magazines[i]??playerWeapon(i).mag;reloading=0;shotTimer=.22*playerWeapon(i).switch*(perks.quickdraw?.65:1);weaponMotion.switch();aimSpring.reset();buildWeapon();weaponGroup.visible=true;playSfx('equip',{volume:.4})}
 function confirmOutcomes(outcomes){
  const event=combineOutcomes(outcomes);if(!feedback.resolve(event))return;
@@ -406,10 +371,10 @@ function present(dt){
  const ads=weaponMotion.ads,k=weaponMotion.kick.x,land=weaponMotion.land.x,m=settings.motion,phase=moveClock*1.7;
  const reloadP=reloading>0?1-reloading/reloadLength:0,reloadPose=Math.sin(reloadP*Math.PI),pump=equipped===5?Math.sin(clamp((weaponMotion.shotAge-.12)/.25,0,1)*Math.PI):0;
  ray.set(camera.position,camera.getWorldDirection(aim));ray.far=1.4;nearWall=THREE.MathUtils.damp(nearWall,ray.intersectObjects(worldMeshes,false)[0]?1:0,12,dt);
- weaponGroup.position.set(.31*(1-ads)+Math.sin(phase*.5)*.012*m*(1-ads)-weaponMotion.swayX*m,-.3+(w.optic?(.3-weaponGroup.userData.opticY*.85):h.adsY)*ads+Math.abs(Math.cos(phase))*.012*m*(1-ads)-land*.18-k*h.lift-reloadPose*(weaponGroup.userData.heroRifle?.04:weaponGroup.userData.nailer?.065:.16)-weaponMotion.equip*.5,-.5+k*h.back+nearWall*.28);
- weaponGroup.rotation.set(k*h.rx-reloadPose*(weaponGroup.userData.heroRifle?.18:weaponGroup.userData.nailer?.24:.55)+weaponMotion.sprint*.16+nearWall*.55+land*.12, k*h.ry+weaponMotion.swayX*m, k*h.roll+reloadPose*h.reloadRoll+weaponMotion.sprint*.12);
+ weaponGroup.position.set(.31*(1-ads)-(weaponGroup.userData.sightX||0)*.85*ads+Math.sin(phase*.5)*.012*m*(1-ads)-weaponMotion.swayX*m,-.3+(.3-weaponGroup.userData.opticY*.85)*ads+Math.abs(Math.cos(phase))*.012*m*(1-ads)-land*.18-k*h.lift-reloadPose*(weaponGroup.userData.nailer?.065:.055)-weaponMotion.equip*.5,-.5+k*h.back+nearWall*.28);
+ weaponGroup.rotation.set(k*h.rx-reloadPose*(weaponGroup.userData.nailer?.24:.25)+weaponMotion.sprint*.16+nearWall*.55+land*.12, k*h.ry+weaponMotion.swayX*m, k*h.roll+reloadPose*h.reloadRoll+weaponMotion.sprint*.12);
  if(weaponGroup.userData.nailer)animateNailer(weaponGroup.userData.nailer,{reload:reloadP,reloading:reloading>0,shotAge:weaponMotion.shotAge,ammo});
- if(weaponGroup.userData.heroRifle)animateRifle(weaponGroup.userData.heroRifle,{reload:reloadP,reloading:reloading>0,shotAge:weaponMotion.shotAge,ammo});
+ if(weaponGroup.userData.heroTool)animateToolWeapon(weaponGroup.userData.heroTool,{reload:reloadP,reloading:reloading>0,shotAge:weaponMotion.shotAge,ammo});
  weaponGroup.rotation.z+=Math.sin(elapsed*49)*weaponMotion.trauma*.012*m;
  const moving=weaponGroup.userData.moving;if(moving)for(const part of moving){part.mesh.position.copy(part.base);part.mesh.position.y-=reloadPose*part.mag*.25;part.mesh.position.z+=pump*part.pump*.16+Math.max(0,1-weaponMotion.shotAge/.07)*part.slide*.06}
  camera.fov=THREE.MathUtils.damp(camera.fov,85+((w.optic||equipped===3?THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(65)/2)/w.zoom)):h.adsFov)-85)*ads+(slow?6:0)+weaponMotion.sprint*3,12,dt);camera.updateProjectionMatrix();camera.getWorldDirection(aim);gameAudio.updateListener(camera.position,aim);gameAudio.setSlow(slow);
