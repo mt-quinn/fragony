@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory dist",
-    "test": "node tests/map.mjs && node tests/ai.mjs && node tests/controls.mjs && node tests/audio.mjs && node tests/reload.mjs && node tests/integration.mjs && node tests/feel.mjs && node tests/loadout.mjs && node tests/shop.mjs && node tests/assists.mjs && node tests/hurt.mjs && node tests/recap.mjs && node tests/bindings.mjs && node tests/collision.mjs && node tests/characters.mjs && node tests/settings.mjs && node tests/presentation.mjs && node tests/reservoir.mjs",
+    "test": "node tests/map.mjs && node tests/ai.mjs && node tests/controls.mjs && node tests/audio.mjs && node tests/reload.mjs && node tests/integration.mjs && node tests/feel.mjs && node tests/loadout.mjs && node tests/shop.mjs && node tests/assists.mjs && node tests/hurt.mjs && node tests/recap.mjs && node tests/bindings.mjs && node tests/collision.mjs && node tests/characters.mjs && node tests/settings.mjs && node tests/presentation.mjs && node tests/reservoir.mjs && node tests/nailer.mjs",
     "test:simulation": "node tests/ai-simulation.mjs",
     "bake:reservoir": "node tools/bake-reservoir-nav.mjs"
   }

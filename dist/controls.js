@@ -1,7 +1,7 @@
 export const ACTIONS=[
  ['forward','Move forward','Movement','KeyW','KeyW'],['back','Move backward','Movement','KeyS','KeyS'],['left','Strafe left','Movement','KeyA','KeyA'],['right','Strafe right','Movement','KeyD','KeyD'],['jump','Jump / swim up','Movement','Space','Space'],['sprint','Sprint','Movement','ShiftLeft','ShiftLeft','ShiftRight'],['crouch','Crouch / swim down','Movement','KeyC','KeyC','ControlLeft'],
  ['fire','Fire','Combat','MouseLeft','MouseLeft'],['aim','Aim','Combat','MouseRight','MouseRight'],['reload','Reload','Combat','KeyR','KeyR'],['grenade','Throw grenade','Combat','KeyG','KeyG'],['streak','Use killstreak','Combat','KeyF','KeyF'],['slow','Slow motion','Combat','KeyQ','KeyQ'],
- ...Array.from({length:6},(_,i)=>['weapon'+(i+1),'Weapon '+(i+1),'Weapons','Digit'+(i+1),'Digit'+(i+1)]),['previous','Previous weapon','Weapons','PreviousWeapon','WheelUp'],['next','Next weapon','Weapons','NextWeapon','WheelDown'],
+ ...Array.from({length:6},(_,i)=>['weapon'+(i+1),['Nailer','Rattler','Jackhammer','Sledgehammer','Demolisher','Lancer'][i],'Weapons','Digit'+(i+1),'Digit'+(i+1)]),['previous','Previous weapon','Weapons','PreviousWeapon','WheelUp'],['next','Next weapon','Weapons','NextWeapon','WheelDown'],
  ['scores','Scoreboard','Game','Tab','Tab'],['pause','Pause','Game','Escape','Escape'],['lookLeft','Look left','Look keys','ArrowLeft','ArrowLeft'],['lookRight','Look right','Look keys','ArrowRight','ArrowRight'],['lookUp','Look up','Look keys','ArrowUp','ArrowUp'],['lookDown','Look down','Look keys','ArrowDown','ArrowDown']
 ].map(([id,label,group,code,first,second=''])=>({id,label,group,code,defaults:[first,second]}));
 export const mouseCode=button=>['MouseLeft','MouseMiddle','MouseRight','Mouse4','Mouse5'][button]||'Mouse'+(button+1);

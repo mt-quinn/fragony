@@ -43,6 +43,12 @@ void main(){
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
 }`;
+// Keep magnified targets independent of the first-person optic housing.
+export function renderWeaponView(renderer,scene,camera){
+ const fov=camera.fov,viewFov=Math.max(fov,camera.userData.weaponFovFloor||fov);
+ if(viewFov!==fov){camera.fov=viewFov;camera.updateProjectionMatrix()}
+ try{renderer.render(scene,camera)}finally{if(camera.fov!==fov){camera.fov=fov;camera.updateProjectionMatrix()}}
+}
 export class FrameRenderer{
  constructor(renderer,worldScene,worldCamera){
   this.renderer=renderer;this.slow=0;this.scene=new THREE.Scene();this.camera=new THREE.Camera();this.quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),null);this.quad.frustumCulled=false;this.scene.add(this.quad);
@@ -66,7 +72,7 @@ export class FrameRenderer{
   camera.layers.set(0);r.setRenderTarget(this.world);r.setClearColor(0x182127,1);r.render(scene,camera);
   const autoShadow=r.shadowMap.autoUpdate;r.shadowMap.autoUpdate=false;scene.background=null;
   if(this.gtao)this.gtao.render(r,this.ambientTarget,this.world);else{r.setRenderTarget(this.ambientTarget);r.setClearColor(0xffffff,1);r.clear()}
-  camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();r.render(scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
+  camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
   this.pass(this.prefilter,this.bloomA);this.blur.uniforms.image.value=this.bloomA.texture;this.blur.uniforms.direction.value.set(1/this.bloomA.width,0);this.pass(this.blur,this.bloomB);this.blur.uniforms.image.value=this.bloomB.texture;this.blur.uniforms.direction.value.set(0,1/this.bloomB.height);this.pass(this.blur,this.bloomA);this.pass(this.output,null);r.setClearColor(0x182127,1);
  }
  dispose(){for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
