@@ -17,7 +17,7 @@ export function attenuation(distance,curve){
   for(let i=1;i<curve.length;i++)if(distance<=curve[i][0]){const t=(distance-curve[i-1][0])/(curve[i][0]-curve[i-1][0]);return curve[i-1][1]+(curve[i][1]-curve[i-1][1])*t}
   return 0;
 }
-const lengths={rifle:.24,pistol:.38,smg:.14,rail:.42,rocket:.5,shotgun:.65,explosion:.85,'step-solid':.15,'step-metal':.21,'land-solid':.25,'land-metal':.3,'reload-out':.12,'reload-in':.14,bolt:.12,equip:.12,frag:.13,hit:.055,kill:.22,pickup:.25,pad:.38,shatter:.2,damage:.14,charge:.5,'slow-on':.26,'slow-off':.22,'confirm-hit':.075,'confirm-head':.105,'confirm-kill':.24,'confirm-headkill':.28,whiz:.14,'low-ammo':.045,impact:.08,stinger:.36};
+const lengths={rifle:.24,pistol:.38,smg:.14,rail:.42,rocket:.5,shotgun:.65,explosion:.85,'step-solid':.15,'step-metal':.21,'land-solid':.25,'land-metal':.3,'reload-out':.12,'reload-in':.14,bolt:.12,equip:.12,frag:.13,hit:.055,kill:.22,pickup:.25,pad:.38,shatter:.2,damage:.14,heartbeat:.34,charge:.5,'slow-on':.26,'slow-off':.22,'confirm-hit':.075,'confirm-head':.105,'confirm-kill':.24,'confirm-headkill':.28,whiz:.14,'low-ammo':.045,impact:.08,stinger:.36};
 // Deterministic, original layered effects. No continuous buzz/sawtooth waveform.
 export function synthesize(name,sampleRate=32000,seed=17){
   const out=new Float32Array(Math.ceil((lengths[name]||.2)*sampleRate));
@@ -55,6 +55,7 @@ export function synthesize(name,sampleRate=32000,seed=17){
   else if(name==='pickup'){body(0,.16,.28,350,345);body(.065,.18,.25,525,520)}
   else if(name==='pad'){noise(0,.28,.6,1600);body(0,.32,.4,140,350)}
   else if(name==='shatter'){clack(0,.5);clack(.035,.35);clack(.08,.25);noise(.015,.15,.4,2700)}
+  else if(name==='heartbeat'){body(0,.1,.55,85,48);body(.16,.12,.35,74,42)}
   else if(name==='damage'){body(0,.13,.5,105,45);noise(0,.05,.45,1600)}
   else if(name==='charge'){noise(0,.48,.32,2100,.12);body(0,.48,.12,180,350,.14)}
   else if(name==='slow-on'||name==='slow-off'){noise(0,.18,.3,1500);body(0,.22,.28,name==='slow-on'?260:100,name==='slow-on'?80:280,.008)}
@@ -63,7 +64,7 @@ export function synthesize(name,sampleRate=32000,seed=17){
   let mean=0;for(const v of out)mean+=v;mean/=out.length;let peak=0;
   for(let i=0;i<out.length;i++){out[i]=Math.tanh((out[i]-mean)*1.1);peak=Math.max(peak,Math.abs(out[i]))}
   // Preserve category loudness rather than peak-normalizing footsteps to gunshots.
-  const target=name.startsWith('confirm')?.68:name.startsWith('step')?.45:name.startsWith('land')?.62:['hit','kill','pickup','damage','shatter','charge'].includes(name)?.42:.88;
+  const target=name.startsWith('confirm')?.68:name.startsWith('step')?.45:name.startsWith('land')?.62:['hit','kill','pickup','damage','heartbeat','shatter','charge'].includes(name)?.42:.88;
   const gain=Math.min(1.6,target/Math.max(.001,peak));const fade=Math.floor(sampleRate*.006);
   for(let i=0;i<out.length;i++)out[i]*=gain*Math.min(1,i/Math.max(1,fade*.15),(out.length-1-i)/fade);
   return out;
