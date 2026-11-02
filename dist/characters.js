@@ -1,9 +1,10 @@
 import {nearBlocks} from './geometry.js';
+import {resetImpact,stepImpact,impactPose} from './impact.js';
 import * as THREE from './vendor/three.module.js';
 
 // The same joint endpoints drive living poses, hit regions and the death solver.
 const UP=new THREE.Vector3(0,1,0),DOWN=new THREE.Vector3(0,-1,0),FORWARD=new THREE.Vector3(0,0,1);
-const v=new THREE.Vector3(),v2=new THREE.Vector3(),v3=new THREE.Vector3(),q=new THREE.Quaternion(),basis=new THREE.Matrix4();
+const v=new THREE.Vector3(),v2=new THREE.Vector3(),v3=new THREE.Vector3(),q=new THREE.Quaternion(),gunQ=new THREE.Quaternion(),gunEuler=new THREE.Euler(0,0,0,'YXZ'),basis=new THREE.Matrix4();
 const collisionProbe={p:new THREE.Vector3(),radius:.05,contact:new THREE.Vector3()},probeBefore=new THREE.Vector3();
 const clamp=THREE.MathUtils.clamp,damp=THREE.MathUtils.damp;
 const lathe=points=>new THREE.LatheGeometry(points.map(([y,r])=>new THREE.Vector2(r,y)),12);
@@ -61,9 +62,10 @@ function setLimb(root,hinge,start,end,pole,l1,l2){
  q.copy(root.quaternion).invert();v.copy(end).sub(v3).normalize().applyQuaternion(q);hinge.quaternion.setFromUnitVectors(DOWN,v);
 }
 export function resetDummyRig(b){
+ resetImpact(b);
  b.ragdoll=null;b.group.rotation.set(0,0,0);if(b.pos)b.group.position.copy(b.pos);for(const p of Object.values(b.parts)){p.visible=true;p.rotation.set(0,0,0)}
  b.weaponMount.visible=true;for(const p of Object.values(b.joints))p.rotation.set(0,0,0);
- Object.assign(b.anim,{phase:0,speed:0,crouch:0,shot:0,land:0,air:0,time:0,feet:{},initialized:false});
+ Object.assign(b.anim,{phase:0,speed:0,crouch:0,shot:0,land:0,air:0,time:0,feet:{},twist:0,accelX:0,accelZ:0,initialized:false});
  poseDummy(b,{dt:1,dx:0,dz:0,speed:0,grounded:true,crouch:0,pitch:0,reload:0,weapon:b.brain?.weaponType||b.weapon||'rifle'});
 }
 export function fireDummy(b,type){b.anim.shot=type==='rocket'||type==='shotgun'?1:type==='pistol'?.8:type==='rail'?.9:.45}
@@ -75,26 +77,32 @@ export function animateDummy(b,brain,dt,groundAt){
  const run=clamp((a.speed-3.2)/3,0,1);a.phase+=Math.hypot(dx,dz)/(2.2+run*1.2)*Math.PI*2;a.footfall=false;
  a.velocity??=new THREE.Vector3();a.velocity.set(dx/dt,0,dz/dt);
  const target=brain.aim||brain.memory?.get(brain.target)?.eye,pitch=target?clamp(Math.atan2(target.y-(b.pos.y+1.3),Math.hypot(target.x-b.pos.x,target.z-b.pos.z)),-.75,.75):0;
- b.group.position.copy(b.pos);b.group.rotation.set(0,brain.facing,0);
+ const travel=Math.atan2(dx,dz),delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),moving=clamp(speed/3,0,1);
+ if(!a.initialized){a.bodyYaw=brain.facing;a.lastVX=a.lastVZ=0;a.accelX=a.accelZ=0}
+ // Aim can remain on a threat while hips lead a lateral step. Backpedaling
+ // keeps the body facing the threat instead of rotating through 180 degrees.
+ const travelOffset=Math.abs(delta(travel,brain.facing))>2.2?0:clamp(delta(travel,brain.facing),-.65,.65)*moving;
+ a.bodyYaw+=delta(brain.facing+travelOffset,a.bodyYaw)*(1-Math.exp(-dt*9));a.twist=clamp(delta(brain.facing,a.bodyYaw),-.85,.85);
+ const vx=dx/Math.max(dt,.001),vz=dz/Math.max(dt,.001);a.accelX=damp(a.accelX,clamp((vx-a.lastVX)/Math.max(dt,.001),-16,16),10,dt);a.accelZ=damp(a.accelZ,clamp((vz-a.lastVZ)/Math.max(dt,.001),-16,16),10,dt);a.lastVX=vx;a.lastVZ=vz;
+ b.group.position.copy(b.pos);b.group.rotation.set(0,a.bodyYaw,0);stepImpact(b,dt);
  poseDummy(b,{dt,dx,dz,speed:a.speed,grounded,crouch:a.crouch,pitch,reload:brain.reload>0?1-brain.reload/brain.weapon.reload:0,weapon:brain.weaponType,groundAt});
  b.group.updateMatrixWorld(true);a.jointPosition??={};a.jointVelocity??={};
  for(const [name,marker]of Object.entries(b.markers)){
-  const now=marker.getWorldPosition(v3),last=a.jointPosition[name];
+  const now=v3.setFromMatrixPosition(marker.matrixWorld),last=a.jointPosition[name];
   if(last&&a.initialized){v.copy(now).sub(last).multiplyScalar(1/dt).sub(a.velocity);v.y-=(b.pos.y-a.lastPos.y)/dt;v.clampLength(0,6);(a.jointVelocity[name]??=new THREE.Vector3()).copy(a.velocity).add(v);a.jointVelocity[name].y+=b.vy||0}
   if(last)last.copy(now);else a.jointPosition[name]=now.clone();
  }
- b.hitReact&&(b.hitReact.left-=dt);if(b.hitReact?.left<=0)b.hitReact=null;
  a.lastPos.copy(b.pos);a.initialized=true;
 }
 export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,pitch=0,reload=0,weapon='rifle',groundAt,relaxed=false}={}){
  const a=b.anim,run=clamp((speed-3.2)/3,0,1),moving=clamp(speed/2,0,1),yaw=b.group.rotation.y,c=Math.cos(yaw),s=Math.sin(yaw);
+ const hit=impactPose(b,a.impactPose??={}),twist=a.twist||0,bank=clamp((c*(a.accelX||0)-s*(a.accelZ||0))*.006,-.075,.075),drive=clamp((s*(a.accelX||0)+c*(a.accelZ||0))*.005,-.07,.07);
  const lx=c*dx-s*dz,lz=s*dx+c*dz,d=Math.hypot(lx,lz)||1,dirX=lx/d,dirZ=lz/d,phase=a.phase;
  const bob=(Math.cos(phase*2)*.018*moving+a.land)*(1-crouch*.6),hipY=.9-crouch*.43-bob-moving*(.035+run*.035),lean=clamp(speed*.012,0,.10)*(1-crouch*.7);
- const hip=b.parts.pelvis;hip.position.set(0,hipY,-crouch*.07);hip.rotation.set(lean+crouch*.13,Math.sin(phase)*.035*moving,Math.sin(phase)*.025*moving);
+ const hip=b.parts.pelvis;hip.position.set(hit.x*.035,hipY-hit.balance*.045,-crouch*.07+hit.z*.035);hip.rotation.set(lean+crouch*.13+drive,Math.sin(phase)*.035*moving,Math.sin(phase)*.025*moving-bank);
  const chest=b.parts.torso;chest.position.set(0,hipY+.4-crouch*.06+Math.sin(a.time*2.2)*.004*(1-moving),.015+crouch*.04);chest.rotation.set(lean+crouch*.19-pitch*.16,-Math.sin(phase)*.045*moving,Math.sin(phase)*.016*moving);
- const flinch=b.hitReact?Math.sin(clamp(b.hitReact.left/.17,0,1)*Math.PI)*b.hitReact.strength:0;
- chest.rotation.x-=flinch*.55;chest.rotation.z+=(b.hitReact?.direction?.x||0)*flinch*.6;
- b.parts.head.position.set(0,hipY+.835-crouch*.09,.012+crouch*.075);b.parts.head.rotation.set(-pitch*.55-flinch*(b.hitReact?.part==='head'?1:.35),Math.sin(a.time*.6)*.025*(1-moving),0);
+ chest.position.x+=hit.x*.08;chest.position.z+=hit.z*.07;chest.rotation.x+=hit.z*.9+drive;chest.rotation.z-=hit.x*.9+bank;chest.rotation.y+=twist+hit.twist;
+ b.parts.head.position.set(hit.x*.10,hipY+.835-crouch*.09-hit.balance*.035,.012+crouch*.075+hit.z*.06);b.parts.head.rotation.set(-pitch*.55+hit.z*.3+hit.head*.35,twist+hit.twist*.5+Math.sin(a.time*.6)*.025*(1-moving),-hit.x*.25);
  const legTargets=[];
  for(const side of [-1,1]){
   const pre=side<0?'left':'right',p=phase+(side<0?0:Math.PI),cycle=((p/(Math.PI*2))%1+1)%1,stance=.28-run*.06,stride=(2.2+run*1.2)*stance*.5*moving*(1-crouch*.45),inStance=cycle<stance;
@@ -107,7 +115,7 @@ export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,pi
    if(inStance){if(!plant||!plant.stance){a.footfall=true;plant={x:wx,z:wz,y:b.pos.y+footY,stance:true};a.feet[pre]=plant}const px=plant.x-b.pos.x,pz=plant.z-b.pos.z;footX=c*px-s*pz;footZ=s*px+c*pz;footY=plant.y-b.pos.y}
    else a.feet[pre]={x:wx,z:wz,y:b.pos.y+footY,stance:false};
   }else if(a.feet[pre])a.feet[pre].stance=false;
-  const start=new THREE.Vector3(side*.165,hipY-.02,-crouch*.07),end=new THREE.Vector3(footX,footY,footZ),pole=new THREE.Vector3(side*(.10+(b.hitReact?.part===pre+'Leg'?flinch*1.6:0)),0,1);
+  const start=new THREE.Vector3(side*.165,hipY-.02,-crouch*.07),end=new THREE.Vector3(footX,footY,footZ),pole=new THREE.Vector3(side*(.10+hit[pre+'Leg']*.8),0,1);
   legTargets.push({pre,start,end,pole,toe:(inStance?0:lift*.2)*moving*(1-crouch)});
   setLimb(b.parts[pre+'Leg'],b.joints[pre+'Knee'],start,end,pole,.4,.39);
   const ankle=b.joints[pre+'Foot'];ankle.position.set(0,-.39,0);q.copy(b.parts[pre+'Leg'].quaternion).multiply(b.joints[pre+'Knee'].quaternion).invert();ankle.quaternion.copy(q);ankle.rotation.x+=(inStance?0:lift*.2)*moving*(1-crouch);
@@ -121,10 +129,13 @@ export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,pi
  const supportOffset=new THREE.Vector3(-.27,-.015,weapon==='rocket'?.16:weapon==='pistol'?.03:.13).applyAxisAngle(new THREE.Vector3(1,0,0),gunPitch);
  const leftTarget=relaxed?new THREE.Vector3(-.33,shoulderY-.53,.015):weapon==='pistol'?new THREE.Vector3(-.25,shoulderY-.37,.20):gunCenter.clone().add(supportOffset);
  if(reloadPose>.01){leftTarget.set(-.10-reloadPose*.1,gunCenter.y-.17*reloadPose,gunCenter.z+.04);leftTarget.x-=Math.sin(reload*Math.PI*2)*.05}
- for(const side of [-1,1]){const pre=side<0?'left':'right',start=new THREE.Vector3(side*.325,shoulderY,0),end=side<0?leftTarget:gunCenter,pole=new THREE.Vector3(side, -.45,-.2);end.y-=flinch*(b.hitReact?.part===pre+'Arm'?1:.15);setLimb(b.parts[pre+'Arm'],b.joints[pre+'Elbow'],start,end,pole,.29,.27);b.joints[pre+'Hand'].position.set(0,-.27,0)}
+ gunCenter.applyAxisAngle(UP,twist);leftTarget.applyAxisAngle(UP,twist);gunCenter.x+=hit.x*.10;gunCenter.z+=hit.z*.08;leftTarget.x+=hit.x*.10;leftTarget.z+=hit.z*.08;
+ for(const side of [-1,1]){const pre=side<0?'left':'right',start=new THREE.Vector3(side*.325,shoulderY,0).applyAxisAngle(UP,twist),end=side<0?leftTarget:gunCenter,pole=new THREE.Vector3(side, -.45,-.2).applyAxisAngle(UP,twist);start.x+=hit.x*.08;start.z+=hit.z*.07;end.y-=hit[pre+'Arm']*.35+hit.balance*.04;setLimb(b.parts[pre+'Arm'],b.joints[pre+'Elbow'],start,end,pole,.29,.27);b.joints[pre+'Hand'].position.set(0,-.27,0)}
  // Mount is under the right-arm region but takes the solved grip's local transform.
- b.group.updateMatrixWorld(true);const world=gunCenter.clone().applyMatrix4(b.group.matrixWorld);b.weaponMount.position.copy(b.parts.rightArm.worldToLocal(world));
- q.setFromEuler(new THREE.Euler(gunPitch,0,-reloadPose*.45));q.premultiply(b.group.getWorldQuaternion(new THREE.Quaternion()));const parentQ=b.parts.rightArm.getWorldQuaternion(new THREE.Quaternion()).invert();b.weaponMount.quaternion.copy(parentQ.multiply(q));
+ // Both solved grip and arm are in group space. Converting locally avoids a
+ // second recursive world-matrix update for every bot and simulation step.
+ q.copy(b.parts.rightArm.quaternion).invert();b.weaponMount.position.copy(gunCenter).sub(b.parts.rightArm.position).applyQuaternion(q);
+ gunQ.setFromEuler(gunEuler.set(gunPitch+hit.z*.3,twist,-reloadPose*.45-hit.x*.3));b.weaponMount.quaternion.copy(q).multiply(gunQ);
 }
 
 const nodeNames=['pelvis','chest','neck','head',...['left','right'].flatMap(s=>[s+'Shoulder',s+'Elbow',s+'Wrist',s+'Hip',s+'Knee',s+'Ankle',s+'Toe'])];

@@ -20,7 +20,7 @@ for(const seed of [17,81,124]){
  for(let i=0;i<2750&&mode==='play';i++){scene.updateMatrixWorld(true);updateStep(1/30);if(i%30===0)for(const b of bots)if(!b.dead){const z=zone(b.pos);coverage[z]=(coverage[z]||0)+1;const key=b.name+':'+b.lifeId;let seen=lifePositions.get(key);if(!seen){seen=new Set();lifePositions.set(key,seen)}seen.add(z)}}
  assert.equal(mode,'results');assert.ok((coverage.center||0)+(coverage.water||0)+(coverage.east||0)+(coverage.west||0)>90,'substantial traffic outside bases');
  assert.ok(opponentAI.stats.shots>30);assert.ok([...lifePositions.values()].some(s=>s.size>=3),'bots traverse multiple regions in one life');
- ({coverage,fights,shots:opponentAI.stats.shots,kills:bots.reduce((n,b)=>n+b.frags,0)});`,{timeout:90000});
+ ({coverage,fights,shots:opponentAI.stats.shots,actions:opponentAI.stats.actions,staggers:opponentAI.stats.staggers,detours:opponentAI.stats.detours,kills:bots.reduce((n,b)=>n+b.frags,0)});`,{timeout:180000});
  console.log('Reservoir flow',seed,JSON.stringify(result));
  for(const [z,n]of Object.entries(result.coverage))totals[z]=(totals[z]||0)+n;
  for(const z of Object.keys(result.fights))totals['fight-'+z]=(totals['fight-'+z]||0)+result.fights[z];

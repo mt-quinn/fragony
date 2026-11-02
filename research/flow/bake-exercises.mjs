@@ -1,0 +1,12 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import {EXERCISES} from './original-blockouts.mjs';import {buildNavigation,findRoute,nearestNode} from '../../dist/ai.js';import {canOccupy} from '../../dist/collision.js';
+const cache={};
+for(const m of EXERCISES){
+ for(const p of [...m.spawns.map(([x,y,z])=>({x,y,z})),...m.pickups,...m.landmarks])assert.ok(canOccupy(m.brushes,{x:p.x,z:p.z,feet:p.y,radius:.4,height:1.9}),m.id+' occupied endpoint');
+ assert.equal(m.pickups.filter(p=>p.amount===50).length,1);assert.ok(m.pickups.every(p=>[5,25,50].includes(p.amount)&&p.overhealth===(p.amount!==25)));
+ const nav=buildNavigation(m.brushes,[],m.anchors,{bounds:m.bounds,maxHeight:m.maxHeight,noGround:true,stepHeight:m.stepHeight,elevators:m.elevators});
+ for(const p of [...m.spawns.map(([x,y,z])=>({x,y,z})),...m.pickups,...m.landmarks]){const n=nearestNode(nav,p);assert.ok(n&&Math.abs(n.y-p.y)<.32&&Math.hypot(n.x-p.x,n.z-p.z)<1.2,m.id+' endpoint mismatch '+JSON.stringify(p)+' vs '+JSON.stringify(n&&[n.x,n.y,n.z]));}
+ for(const a of m.spawns)for(const b of m.spawns)assert.ok(findRoute(nav,{x:a[0],y:a[1],z:a[2]},{x:b[0],y:b[1],z:b[2]}).length,m.id+' disconnected spawn '+a+' → '+b);
+ const actions=['walk','jump','drop','swim','elevator'],ec=nav.nodes.reduce((s,n)=>s+n.edges.length,0),buffer=Buffer.alloc(8+nav.nodes.length*12+ec*8);buffer.writeUInt32LE(nav.nodes.length,0);buffer.writeUInt32LE(ec,4);let edgeIndex=0;
+ for(const n of nav.nodes){const i=8+n.id*12;buffer.writeInt8(n.x,i);buffer.writeInt8(n.z,i+1);buffer.writeUInt16LE(Math.round(n.y*1000),i+2);buffer.writeUInt8(n.wet?1:0,i+4);buffer.writeUInt16LE(n.edges.length,i+6);buffer.writeUInt32LE(edgeIndex,i+8);for(const e of n.edges){const k=8+nav.nodes.length*12+edgeIndex++*8;buffer.writeUInt16LE(e.node.id,k);buffer.writeUInt16LE(Math.round(e.cost*100),k+2);buffer.writeUInt8(actions.indexOf(e.action),k+4);buffer.writeUInt8(e.lift?m.elevators.findIndex(l=>l.id===e.lift.id)+1:0,k+5);buffer.writeUInt16LE(Math.round((e.fromY||0)*1000),k+6)}}
+ cache[m.id]={navigation:buffer.toString('base64'),geometryHash:createHash('sha256').update(JSON.stringify([m.brushes,m.pickups,m.elevators])).digest('hex'),nodes:nav.nodes.length,edges:ec};fs.writeFileSync(new URL('exercise-cache.json',import.meta.url),JSON.stringify(cache));console.log(m.id,nav.nodes.length,'nodes',ec,'edges; all endpoints and 144 directed spawn pairs connect');
+}

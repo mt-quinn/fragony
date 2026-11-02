@@ -148,3 +148,19 @@ Muzzle flashes are directional bright blades with a brief viewmodel light; trace
 `tests/presentation.mjs` checks the rifle geometry/layers, magazine/bolt/hand stages, empty reload, all six first-person skin colors and physical fixtures. The full suite passes, including all 108 attachment choices and movement/collision tests. Browser review included irons, reload stages, effects, normal gameplay and a sustained five-bot 1920×1080 combat view: the final 240-frame sample averaged 16.67 ms with 16.8 ms at the 95th percentile in this session. These are local frame intervals, not a guarantee for other hardware. Temporary review controls/files are excluded from deployment.
 
 The six vendored GTAO support modules are from the official Three.js r182 examples and share the license in `dist/vendor/THREE-LICENSE.txt`; only core-module import paths were adjusted for the existing buildless layout.
+
+### Elite Force map design investigation
+
+[Spatial investigation conclusions](MAPS.md#lessons-from-the-elite-force-spatial-investigation) records the deeper route, geometry, entity-link and traversal work. The earlier [21-map slice atlas](research/elite-force/study.html) is a preliminary structural reference, not a completed flow analysis. The pickup rules are 5 HP overhealing fragments, 25 HP recovery capped at normal health, and exactly one contested 50 HP overhealing pickup per map. The study distinguishes measured source evidence from design hypotheses; geometry slices omit patches and do not prove playability. Six original research blockouts now exercise court, room-network and ship-interior relationships in the native game, with 300 completed directed controller trips and 28 isolated simulation matches including calibration and layout revisions. [Transfer lessons and limits](MAPS.md#original-layout-transfer-exercises) record what worked and what failed. Run `node research/flow/prepare-play-exercises.mjs` against the existing local isolated simulation/cache and open `/research/flow/play-exercises.html` on the local repository server to inspect or play them.
+
+
+### Dynamic fights and hit reactions
+
+Opponents share attack, brace, reposition, pursuit, retreat and recovery actions. Recent pressure and changing range can move a fight to another supported angle; longer exchanges can become moving disengagements. Movement accelerates and changes direction deliberately, while hips and upper-body aim turn independently. Bots can take small health-fragment detours along a larger route. Full-match summaries report actions, staggers and detours.
+
+Six weapon impact profiles give resolved shots distinct local body and limb responses. Heavy impacts briefly interrupt firing and charged shots, with a cooldown preventing repeated stagger lock; reload progress continues. Grouped pellets produce one body reaction. Respawning clears impact state, and deaths retain the existing posed momentum and shattering rules. [Implementation and tuning](docs/dynamic-combat.md) · [Research background](docs/bot-behavior-research.md).
+
+
+### Three original arenas
+
+All five maps—**Test Works**, **Reservoir**, **Tidal Lock**, **Parallax**, and **Foundry**—rotate automatically from a persistent shuffled bag, with no repeat until all five appear and no immediate repeat across bag boundaries. New runs keep the bag; continuing a saved match keeps its current map. Tidal Lock is a symmetric waterworks with layered crossings; Parallax uses paired tower/launch/drop cycles; Foundry interlocks asymmetric rooms and three floor levels. They use the current AI, shared native movement, water, lifts, pads and the exact5/25/one50 health economy. [Layouts, iteration and validation](MAPS.md#tidal-lock). Run `npm run test:maps` for geometry, sightlines, symmetry,402 controller routes and real player water/launch checks.

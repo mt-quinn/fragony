@@ -6,16 +6,25 @@ export function buildBrushMap(arena,map,blocks,worldMeshes){
  for(const [kind,g] of Object.entries(map.groups)){
   if(kind==='water')continue;
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(g.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(g.n,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(g.c,3));geometry.computeBoundingSphere();
-  const material=new THREE.MeshStandardMaterial({color:kind==='ink'?0x354447:kind==='light'?0xebf5b5:0xffffff,vertexColors:kind!=='ink'&&kind!=='light',roughness:kind==='glass'||kind==='water'?.25:.8,metalness:kind==='ink'?.25:.08,side:THREE.DoubleSide});
+  const material=new THREE.MeshStandardMaterial({color:kind==='ink'?0x354447:kind==='light'?0xebf5b5:0xffffff,vertexColors:kind!=='ink'&&kind!=='light',roughness:kind==='glass'||kind==='water'?.25:.8,metalness:kind==='ink'?.25:.08,side:THREE.DoubleSide,...map.materials?.[kind]});
   if(kind==='light'){material.emissive.setHex(0xd9ef45);material.emissiveIntensity=.65}
   if(kind==='glass'||kind==='water'){material.transparent=true;material.opacity=kind==='water'?.46:.26;material.color.setHex(kind==='water'?0x70b8a8:0xb5dbd8);material.depthWrite=false}
   const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=kind!=='glass'&&kind!=='water'&&kind!=='light';mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh);if(kind!=='water')worldMeshes.push(mesh);
  }
  for(const volume of map.water||[])arena.add(createWaterSurface(volume));
+ if(map.lights){
+  for(const p of map.lights){const light=new THREE.PointLight(p.color,p.intensity,p.distance,2);light.position.set(p.x,p.y,p.z);arena.add(light)}
+ }else{
  // Broad ceiling washes distinguish the two ends without adding decorative clutter.
  for(const z of [-40,0,40]){const light=new THREE.PointLight(z<0?0xb6e4eb:0xe5efbf,100,30,2);light.position.set(0,42,z);arena.add(light)}
  for(const z of [-18,18]){const light=new THREE.PointLight(0x80c6bd,100,26,2);light.position.set(0,9,z);arena.add(light)}
  for(const z of [-43,0,43]){const bar=new THREE.Mesh(new THREE.BoxGeometry(3.5,.04,.35),new THREE.MeshStandardMaterial({color:0xd9ef45,emissive:0xd9ef45,emissiveIntensity:2.4}));bar.position.set(0,z===0?39.85:43.85,z);arena.add(bar)}
+ }
+ for(const p of typeof document==='undefined'?[]:map.signs||[]){
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const ctx=canvas.getContext('2d');ctx.fillStyle='#24393b';ctx.fillRect(0,0,1024,192);ctx.fillStyle='#'+p.color.toString(16).padStart(6,'0');ctx.fillRect(0,0,16,192);ctx.font='800 112px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.text,520,103,945);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(p.width,p.width*192/1024),new THREE.MeshBasicMaterial({map:texture}));mesh.position.set(p.x,p.y,p.z);mesh.rotation.y=p.rotation;arena.add(mesh);
+ }
+
 }
 export function dressElevators(arena,system,worldMeshes){
  const pitMaterial=new THREE.MeshStandardMaterial({color:0x53615c,roughness:.88,metalness:.1});

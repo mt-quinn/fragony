@@ -1,3 +1,4 @@
+import {ORIGINAL_ARENAS} from './maps/original-arenas.js';
 import {RESERVOIR} from './maps/reservoir.js';
 import {healthPickup} from './pickups.js';
 // TEST WORKS — three interlocking circuits, stacked circulation, distinct combat rooms.
@@ -79,7 +80,7 @@ const TEST_WORKS={
  spawns:[[-30,0,12],[-18,0,-2],[-31,4,-18],[-30,0,-28],[-5,0,-29],[12,4,-26],[30,8,-29],[34,4,-11],[33,0,10],[21,0,-13],[29,0,26],[6,0,30],[-10,0,23],[-30,0,26]],
  anchors:[[-30,0,12],[-19,0,6],[-30,4,-17],[-30,0,-28],[-5,0,-28],[11,4,-25],[28,8,-29],[22,8,-26],[33,8,-26],[33,4,-10],[33,4,8],[33,0,10],[21,0,-13],[28,0,27],[6,0,30],[-10,0,23],[-28,0,28],[-4,.5,7],[0,4,-12],[0,4,3],[20,4,-6],[7,0,-14],[7,0,12],[-7,0,-8]]
 };
-export const MAPS=[TEST_WORKS,RESERVOIR];
+export const MAPS=[TEST_WORKS,RESERVOIR,...ORIGINAL_ARENAS];
 // Keep a stable object so gameplay, tests and preview tools share the selected map.
 export const MAP={...TEST_WORKS};
 export function selectMap(id){const chosen=MAPS.find(m=>m.id===id)||TEST_WORKS;for(const key of Object.keys(MAP))delete MAP[key];Object.assign(MAP,chosen);return MAP}

@@ -1,0 +1,15 @@
+# Rebuildable local inspection caches and copied analysis modules
+*.json
+ai-*-proxy.js
+__pycache__/
+
+# Generated local copies of the actual game entry
+play-exercises.js
+play-exercises.html
+
+frozen-harness.mjs
+
+frozen-sim/
+
+# Browser adapters share the isolated simulation imports
+browser-*.mjs

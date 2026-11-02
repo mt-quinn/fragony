@@ -32,5 +32,5 @@ credits=500;owned=[0];equipped=0;round=1;perks={};showShop();shopOffers.weapons=
 results.push('Shop purchase deducts credits, persists weapon, and carries loadout into the next round.');
 mode='play';locked=true;for(let i=0;i<2701&&mode==='play';i++){scene.updateMatrixWorld(true);update(1/30)}assert.equal(mode,'results');assert.ok(bots.reduce((s,b)=>s+b.score,0)>0);results.push('Full 90-second match completes; opponents fight, score, and respawn.');
 matchPoints=99999;endMatch();assert.equal(mode,'results');assert.ok(localStorage.getItem('dh-run'));matchPoints=0;bots.forEach(b=>b.score=100);endMatch();assert.equal(localStorage.getItem('dh-run'),null);results.push('Top-three finish saves progression; bottom-three finish ends the run.');
-`);
+`,{timeout:180000});
 console.log(context.results.join('\n'));

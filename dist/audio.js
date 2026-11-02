@@ -1,7 +1,8 @@
+import { MusicPlaylist } from './music.js';
 // Mono source effects -> occlusion EQ -> HRTF position -> category bus -> limiter.
 // Distance attenuation is applied exactly once, by these editable game curves.
 export const AUDIO_TUNING={
-  master:.7,
+  master:.7,music:.28,
   volumes:{selfWeapon:.68,enemyWeapon:.7,enemyFootstep:.95,selfFootstep:.22,explosion:.85,ui:.42,foley:.5},
   curves:{
     footstep:[[0,1],[2,1],[5,.8],[10,.38],[17,.1],[23,0]],
@@ -71,22 +72,23 @@ export function synthesize(name,sampleRate=32000,seed=17){
 }
 export class GameAudio{
   constructor({createContext=null,visibility=null}={}){
-    this.createContext=createContext||(()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context({latencyHint:'interactive'}):null});this.visibility=visibility;this.context=null;this.cache=new Map();this.voices=new Set();this.listener={x:0,y:0,z:0};this.muted=false;this.slow=false;this.stepIndex=0;this.feedbackIndex=0;this.levels={guns:1,steps:1,feedback:1};this.warmed=false;
+    this.createContext=createContext||(()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context({latencyHint:'interactive'}):null});this.visibility=visibility;this.context=null;this.cache=new Map();this.voices=new Set();this.listener={x:0,y:0,z:0};this.muted=false;this.slow=false;this.stepIndex=0;this.feedbackIndex=0;this.levels={guns:1,steps:1,feedback:1,music:1};this.warmed=false;this.music=null;this.musicRequested=false;
   }
   unlock(){
-    if(!this.context){let c;try{c=this.createContext()}catch{return}if(!c)return;this.context=c;this.master=c.createGain();this.master.gain.value=AUDIO_TUNING.master;
+    if(!this.context){let c;try{c=this.createContext()}catch{return}if(!c)return;this.context=c;this.master=c.createGain();this.master.gain.value=this.muted?0:AUDIO_TUNING.master;
       const highpass=c.createBiquadFilter();highpass.type='highpass';highpass.frequency.value=32;
       const limiter=c.createDynamicsCompressor();limiter.threshold.value=-8;limiter.knee.value=4;limiter.ratio.value=12;limiter.attack.value=.002;limiter.release.value=.13;
-      this.buses={};for(const key of ['self','world','gunfire','steps','ui','explosions']){this.buses[key]=c.createGain();this.buses[key].connect(highpass)}highpass.connect(limiter);limiter.connect(this.master);this.master.connect(c.destination);this.applySettings(this.levels);
+      this.buses={};for(const key of ['self','world','gunfire','steps','ui','explosions']){this.buses[key]=c.createGain();this.buses[key].connect(highpass)}highpass.connect(limiter);limiter.connect(this.master);this.master.connect(c.destination);this.musicGain=c.createGain();this.musicGain.connect(this.master);this.applySettings(this.levels);
     }
     if(this.context.state==='suspended')this.context.resume()?.catch?.(()=>{});
   }
   buffer(name,variant=0){const key=name+variant;if(!this.cache.has(key)){const data=synthesize(name,this.context.sampleRate,17+variant*991),buffer=this.context.createBuffer(1,data.length,this.context.sampleRate);buffer.copyToChannel(data,0);this.cache.set(key,buffer)}return this.cache.get(key)}
   warm(){if(!this.context||this.warmed)return;this.warmed=true;for(const name of ['rifle','pistol','smg','rail','rocket','shotgun','explosion','reload-out','reload-in','bolt','impact','whiz','low-ammo','charge','stinger','slow-on','slow-off'])this.buffer(name);for(let i=0;i<4;i++)for(const name of ['confirm-hit','confirm-head','confirm-kill','confirm-headkill','step-solid','step-metal'])this.buffer(name,i)}
-  applySettings(levels){this.levels={...this.levels,...levels};if(!this.context)return;for(const [bus,value]of Object.entries({self:this.levels.guns,gunfire:this.levels.guns,steps:this.levels.steps,ui:this.levels.feedback,explosions:this.levels.guns}))this.buses[bus].gain.setTargetAtTime(value,this.context.currentTime,.02)}
+  startMusic(){this.musicRequested=true;if(this.muted)return;this.unlock();if(!this.context)return;this.music??=new MusicPlaylist(this.context,this.musicGain);this.music.start().catch(error=>console.warn('Background music unavailable:',error))}
+  applySettings(levels){this.levels={...this.levels,...levels};if(!this.context)return;for(const [bus,value]of Object.entries({self:this.levels.guns,gunfire:this.levels.guns,steps:this.levels.steps,ui:this.levels.feedback,explosions:this.levels.guns}))this.buses[bus].gain.setTargetAtTime(value,this.context.currentTime,.02);this.musicGain.gain.setTargetAtTime(AUDIO_TUNING.music*this.levels.music,this.context.currentTime,.03)}
   duck(bus,factor=.7,duration=.1){if(!this.context)return;const t=this.context.currentTime,g=this.buses[bus].gain,base=bus==='self'||bus==='gunfire'?this.levels.guns:1;g.cancelScheduledValues(t);g.setTargetAtTime(base*factor,t,.005);g.setTargetAtTime(base,t+duration,.055)}
   confirmation(kind){this.duck('gunfire',kind.includes('kill')?.62:.84,kind.includes('kill')?.14:.06);return this.play('confirm-'+kind,{volume:kind.includes('kill')?.62:.47,bus:'ui',priority:kind.includes('kill')?9:6,variant:this.feedbackIndex++%4})}
-  setMuted(muted){this.muted=muted;if(this.master)this.master.gain.setTargetAtTime(muted?0:AUDIO_TUNING.master,this.context.currentTime,.015);if(muted)this.stopWorld()}
+  setMuted(muted){this.muted=muted;if(this.master)this.master.gain.setTargetAtTime(muted?0:AUDIO_TUNING.master,this.context.currentTime,.015);if(muted)this.stopWorld();else if(this.musicRequested)this.startMusic()}
   setSlow(slow){if(this.slow===slow)return;this.slow=slow;for(const v of this.voices)v.source.playbackRate.setTargetAtTime(v.rate*(slow?(v.bus==='self'?.92:v.bus==='ui'?1:.78):1),this.context.currentTime,.07)}
   updateListener(pos,forward){
     this.listener={x:pos.x,y:pos.y,z:pos.z};if(!this.context)return;const l=this.context.listener,c=this.context,t=c.currentTime;
