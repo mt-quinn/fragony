@@ -23,3 +23,9 @@ header{height:88px;border:0;background:none;padding:0 5%}.brand{font-size:37px}.
 #healthDanger i{position:absolute;width:clamp(30px,5vw,72px);height:clamp(30px,7vh,60px);border:solid #ff795b;border-width:5px 0 0 5px;left:14px;top:14px}
 #healthDanger i:nth-child(2){left:auto;right:14px;transform:rotate(90deg)}#healthDanger i:nth-child(3){top:auto;bottom:14px;transform:rotate(-90deg)}#healthDanger i:nth-child(4){left:auto;top:auto;right:14px;bottom:14px;transform:rotate(180deg)}
 #healthDanger.critical i{border-width:8px 0 0 8px}
+
+/* Separate radial lanes preserve overlapping shooters; white broken arcs mean a near miss. */
+.damage-arc.hit .arc-color{stroke:#ff6652;stroke-width:7}.damage-arc.near .arc-color{stroke:#eef0e6;stroke-width:3;stroke-dasharray:17 6}.damage-arc.near .arc-outline{stroke-width:7;stroke-dasharray:17 6}
+
+#damageDirection{width:clamp(240px,52vh,440px);height:clamp(240px,52vh,440px)}
+.damage-arc.hit .arc-outline,.damage-arc.hit .arc-color{display:none}.damage-arc.hit .arc-crescent{fill:#ff6652;stroke:#182127;stroke-width:1.8;stroke-linejoin:round}.damage-arc.near .arc-crescent{display:none}

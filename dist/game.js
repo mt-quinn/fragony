@@ -3,7 +3,7 @@ import { ArenaAI, buildNavigation, nearestNode as nearestAINode, findRoute } fro
 import { MAP, ALL_WEAPONS, randomWeaponPair } from './map.js';
 import { inBlock, blockedAt, surfaceAt, ceilingAt, launchTime } from './geometry.js';
 import { GameAudio, AUDIO_TUNING } from './audio.js';
-import { HurtFeedback } from './hurt.js';
+import { HurtFeedback, HURT, nearMissSegment } from './hurt.js';
 import { FEEL, HANDLING, Spring, accelerate, WeaponMotion, HitFeedback } from './feel.js';
 import { resolveDamage, combineOutcomes, recordDamage, clearDamageCredit, takeAssists } from './combat.js';
 import { WEAPON_SLOTS, OPTICS, SLOT_LABELS, attachment, fitted, normalizeBuilds, weaponStats, previewBuild, fitAttachment, migrateBuilds, EQUIPMENT, normalizeEquipment } from './loadout.js';
@@ -234,7 +234,7 @@ function enableDragLook(){
  if(mode!=='play')return;dragLook=true;locked=true;lastPointer=null;$('panel').hidden=true;renderer.domElement.style&&(renderer.domElement.style.cursor='none');notify('MOUSE AIM · ARROWS TURN');$('hud').querySelector('.hudhint').textContent='WASD MOVE · MOUSE AIM · ARROWS TURN · CLICK FIRE · Q SLOW MOTION · ESC PAUSE';
 }
 
-function spawnPlayer(){hurtFeedback.reset();$('damage').style.opacity=0;$('healthDanger').style.opacity=0;for(let i=0;i<3;i++)$('damageArc'+i).style.opacity=0;weaponMotion.reset();aimSpring.reset();jumpBuffered=coyoteTime=0;lastJumpHeld=false;viewHeight=playerPos.y;stepDistance=0;playerPadFlight=null;magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));playerSpawnAt=opponentAI?.clock||0;let s=spawnPoints[4];for(const test of [...spawnPoints].sort(()=>Math.random()-.5)){if(bots.every(b=>b.pos.distanceTo(new THREE.Vector3(test[0],0,test[2]))>8)){s=test;break}}playerPos.set(s[0],s[1]+1.7,s[2]);health=perks.armor?140:100;playerCredit.maxHealth=health;clearDamageCredit(playerCredit);vy=0;vel.set(0,0,0);yaw=Math.atan2(playerPos.x,playerPos.z);pitch=0;ammo=playerWeapon().mag;reloading=0;shotTimer=.2;respawnTime=0;viewHeight=playerPos.y;syncAimCamera()}
+function spawnPlayer(){hurtFeedback.reset();$('damage').style.opacity=0;$('healthDanger').style.opacity=0;for(let i=0;i<HURT.maxDirections;i++)$('damageArc'+i).style.opacity=0;weaponMotion.reset();aimSpring.reset();jumpBuffered=coyoteTime=0;lastJumpHeld=false;viewHeight=playerPos.y;stepDistance=0;playerPadFlight=null;magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));playerSpawnAt=opponentAI?.clock||0;let s=spawnPoints[4];for(const test of [...spawnPoints].sort(()=>Math.random()-.5)){if(bots.every(b=>b.pos.distanceTo(new THREE.Vector3(test[0],0,test[2]))>8)){s=test;break}}playerPos.set(s[0],s[1]+1.7,s[2]);health=perks.armor?140:100;playerCredit.maxHealth=health;clearDamageCredit(playerCredit);vy=0;vel.set(0,0,0);yaw=Math.atan2(playerPos.x,playerPos.z);pitch=0;ammo=playerWeapon().mag;reloading=0;shotTimer=.2;respawnTime=0;viewHeight=playerPos.y;syncAimCamera()}
 function shoot(){
  const w=playerWeapon(),handling=playerHandling();
  if(shotTimer>1e-7||reloading>0||respawnTime>0)return false;if(ammo<=0){reload();return false}
@@ -299,7 +299,7 @@ function damageBot(b,dmg,killer,part='torso',point=null,options={}){
 }
 function damagePlayer(dmg,killer,options={}){
  if(respawnTime>0||health<=0||!Number.isFinite(dmg)||dmg<=0)return;const before=health;health=Math.max(0,health-dmg);if(killer)recordDamage(playerCredit,killer.name,before-health);
- const source=options.origin||killer?.pos;const bearing=source&&Math.hypot(source.x-playerPos.x,source.z-playerPos.z)>.1?Math.atan2(source.x-playerPos.x,source.z-playerPos.z):null;hurtFeedback.hit(before-health,perks.armor?140:100,bearing);
+ const source=options.origin||killer?.pos;const bearing=source&&Math.hypot(source.x-playerPos.x,source.z-playerPos.z)>.1?Math.atan2(source.x-playerPos.x,source.z-playerPos.z):null;hurtFeedback.hit(before-health,perks.armor?140:100,bearing,killer?`${killer.name}:${killer.lifeId||0}`:'blast');
  if(hurtSoundCooldown<=0){playSfx('damage',{volume:.25});hurtSoundCooldown=.15}
  if(killer){weaponMotion.trauma=Math.min(.45,weaponMotion.trauma+.12)}
  if(health<=0&&before>0){awardAssists(playerCredit,killer?.name);deathCount++;streak=0;respawnTime=2.2;mouseDown=false;
@@ -344,7 +344,7 @@ function present(dt){
  assistNotice.left=Math.max(0,assistNotice.left-dt);$('assistpop').textContent=assistNotice.count?`+${assistNotice.points} ${assistNotice.count>1?assistNotice.count+' ASSISTS':'ASSIST'}`:'';$('assistpop').style.opacity=Math.min(1,assistNotice.left*4);
  const hurt=hurtFeedback.step(dt,health,perks.armor?140:100,yaw,{alive:respawnTime<=0&&health>0,motion:settings.motion});
  $('damage').style.opacity=hurt.flash*.55;$('healthDanger').style.opacity=hurt.edge;$('healthDanger').className=hurt.critical?'critical':'';
- for(let i=0;i<3;i++){const cue=hurt.directions[i],node=$('damageArc'+i);node.style.opacity=cue?cue.opacity:0;if(cue)node.style.transform=`rotate(${cue.rotation}rad)`}
+ for(let i=0;i<HURT.maxDirections;i++){const cue=hurt.directions[i],node=$('damageArc'+i);node.style.opacity=cue?cue.opacity:0;if(cue){node.className='damage-arc '+cue.kind;node.style.transform=`rotate(${cue.rotation}rad) scale(${cue.scale})`}}
  $('health').style.color=hurt.critical?'#ff7863':health<=(perks.armor?140:100)*.55?'#ffc183':'';
  if(hurt.beat)playSfx('heartbeat',{volume:.22,bus:'ui',priority:1});
  $('toast').style.opacity=toastTime>0?1:0;
@@ -388,15 +388,19 @@ function fireBotWeapon(b,point,w){
  opponentAI.hear(b.pos,b);!muted&&gameAudio.weapon(w.type,{pos:origin});
  if(w.type==='rocket'){aimPoint.y-=.65;launchRocket(origin,aimPoint.sub(origin).normalize(),b,false,w.splashScale);return}
  scene.updateMatrixWorld(true);const targets=botHitMeshes().filter(m=>m.userData.bot!==b),playerBox=new THREE.Box3(new THREE.Vector3(playerPos.x-.35,playerPos.y-1.55,playerPos.z-.35),new THREE.Vector3(playerPos.x+.35,playerPos.y+.12,playerPos.z+.35));
- const dir=aimPoint.sub(origin).normalize(),hits=new Map();let playerHits=0,playerHead=false;
+ const dir=aimPoint.sub(origin).normalize(),hits=new Map();let playerHits=0,playerHead=false,nearShot=null;
  for(let i=0;i<(w.pellets||1);i++){
   const shot=dir.clone().add(new THREE.Vector3((Math.random()-.5)*w.spread,(Math.random()-.5)*w.spread,(Math.random()-.5)*w.spread)).normalize();ray.set(origin,shot);ray.far=w.range;
   const hit=ray.intersectObjects([...worldMeshes,...targets],false)[0],playerPoint=respawnTime<=0&&opponentAI.clock-playerSpawnAt>=opponentAI.tuning.fairness.spawnGrace?ray.ray.intersectBox(playerBox,new THREE.Vector3()):null;
   const pd=playerPoint?origin.distanceTo(playerPoint):Infinity,hitDistance=hit?origin.distanceTo(hit.point):Infinity;let end=origin.clone().addScaledVector(shot,w.range);
   if(pd<=w.range&&pd<hitDistance){playerHits++;playerHead=playerHead||playerPoint.y>playerPos.y-.22;end=playerPoint}else if(hit){end=hit.point;const victim=hit.object.userData.bot;if(victim){const head=hit.object.userData.part==='head',entry=hits.get(victim)||{damage:0,headDamage:0,part:hit.object.userData.part,point:hit.point};const damage=w.damage*(head?1.5:1);entry.damage+=damage;if(head){entry.headDamage+=damage;entry.part='head'}hits.set(victim,entry)}else impactEffect(hit,w.type==='rail'?2:1)}
+  if(respawnTime<=0&&opponentAI.clock-playerSpawnAt>=opponentAI.tuning.fairness.spawnGrace){const near=nearMissSegment(origin,end,playerPos);if(near&&(!nearShot||near.distance<nearShot.distance))nearShot=near}
   if(i===0||w.type==='shotgun'&&i===4)trail(origin,end,0xe9f69a,w.type==='rail'?.23:.07,w.type==='rail'?.035:.012);
  }
- if(playerHits)damagePlayer(w.damage*playerHits*(playerHead?1.5:1),b,{head:playerHead});else if(nearMissCooldown<=0&&respawnTime<=0){const toPlayer=playerPos.clone().sub(origin),along=toPlayer.dot(dir),miss=origin.clone().addScaledVector(dir,along).distanceTo(playerPos);if(along>0&&along<w.range&&miss<1.8&&visible(origin,playerPos)){nearMissCooldown=.3;playSfx('whiz',{pos:playerPos.clone().addScaledVector(dir,-.8),volume:.35,bus:'world',priority:4})}}for(const [victim,hit]of hits)damageBot(victim,hit.damage,b,hit.part,hit.point,{head:hit.headDamage>0,headKill:hit.headDamage>0&&hit.damage-hit.headDamage<victim.hp,origin});
+ if(playerHits)damagePlayer(w.damage*playerHits*(playerHead?1.5:1),b,{head:playerHead});else if(nearShot&&respawnTime<=0){
+  hurtFeedback.nearMiss(Math.atan2(origin.x-playerPos.x,origin.z-playerPos.z),`${b.name}:${b.lifeId||0}`);
+  if(nearMissCooldown<=0){nearMissCooldown=.2;playSfx('whiz',{pos:nearShot.point,volume:.35,bus:'world',priority:4})}
+ }for(const [victim,hit]of hits)damageBot(victim,hit.damage,b,hit.part,hit.point,{head:hit.headDamage>0,headKill:hit.headDamage>0&&hit.damage-hit.headDamage<victim.hp,origin});
  burst(origin,0xf4ffb2,2);
 }
 function updateBots(dt){
