@@ -24,23 +24,52 @@ const toonRamp=new THREE.DataTexture(new Uint8Array([70,70,70,255,160,160,160,25
 const inkEdges=new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1));const inkLine=new THREE.LineBasicMaterial({color:0x303b40,transparent:true,opacity:.45});
 const matCache=new Map();const botTorsoGeo=new THREE.CylinderGeometry(.85,.72,1,6),botLimbGeo=new THREE.CylinderGeometry(.85,1,1,6),dummyHeadGeo=new THREE.IcosahedronGeometry(1,1),shardGeo=new THREE.TetrahedronGeometry(1);
 const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.IcosahedronGeometry(1,0);
+// Stable face values keep corners readable even when two surfaces share a light.
+// This shared geometry/material cache adds no lights or post-processing passes.
+const worldBoxGeo=boxGeo.clone(),faceValues=new Float32Array(worldBoxGeo.attributes.position.count*3);
+for(let i=0;i<worldBoxGeo.attributes.normal.count;i++){
+ const n=worldBoxGeo.attributes.normal,x=n.getX(i),y=n.getY(i),z=n.getZ(i);
+ const value=y>.5?[1,1,.96]:y<-.5?[.38,.46,.46]:x>.5?[.56,.68,.72]:x<-.5?[.76,.83,.84]:z>.5?[.91,.94,.89]:[.67,.76,.79];
+ faceValues.set(value,i*3);
+}
+worldBoxGeo.setAttribute('color',new THREE.BufferAttribute(faceValues,3));
+const worldMatCache=new Map();
+function worldMat(c){if(!worldMatCache.has(c))worldMatCache.set(c,new THREE.MeshToonMaterial({color:c,gradientMap:toonRamp,vertexColors:true}));return worldMatCache.get(c)}
 function mat(c){if(!matCache.has(c))matCache.set(c,new THREE.MeshToonMaterial({color:c,gradientMap:toonRamp}));return matCache.get(c)}
-function cube(x,y,z,w,h,d,c,parent=arena,solid=false){const m=new THREE.Mesh(boxGeo,mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=parent!==weaponGroup;m.receiveShadow=true;parent.add(m);if(solid){const edge=new THREE.LineSegments(inkEdges,inkLine);m.add(edge);blocks.push({x,z,w,d,top:y+h/2,bottom:y-h/2});worldMeshes.push(m)}return m}
+function cube(x,y,z,w,h,d,c,parent=arena,solid=false){const m=new THREE.Mesh(solid?worldBoxGeo:boxGeo,solid?worldMat(c):mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=parent!==weaponGroup;m.receiveShadow=true;parent.add(m);if(solid){const edge=new THREE.LineSegments(inkEdges,inkLine);m.add(edge);blocks.push({x,z,w,d,top:y+h/2,bottom:y-h/2});worldMeshes.push(m)}return m}
 function label(text,x,y,z,width,height,rotation=0,bg='#182127',fg='#eef0e6'){const cv=document.createElement('canvas');cv.width=1024;cv.height=256;const c=cv.getContext('2d');c.fillStyle=bg;c.fillRect(0,0,1024,256);c.fillStyle=fg;c.font='900 170px Impact, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,512,140,970);const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:tx}));mesh.position.set(x,y,z);mesh.rotation.y=rotation;arena.add(mesh);return mesh}
 function init(){
  gameAudio.visibility=(a,b)=>visible(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z));
- scene=new THREE.Scene();scene.background=new THREE.Color(0x182127);scene.fog=new THREE.Fog(0x182127,48,110);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x182127);scene.fog=new THREE.Fog(0x182127,28,95);
  camera=new THREE.PerspectiveCamera(85,innerWidth/innerHeight,.07,160);camera.rotation.order='YXZ';
  try{renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});}catch(e){$('start').textContent='WEBGL REQUIRED';$('start').disabled=true;return}
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;$('viewport').appendChild(renderer.domElement);
- scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,1.55));const sun=new THREE.DirectionalLight(0xffffff,2.3);sun.position.set(-18,32,16);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-34,right:34,top:34,bottom:-34,near:1,far:90});sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewDummy=createDummy().group;camera.add(previewDummy);previewDummy.scale.setScalar(1.55);previewDummy.position.set(1.55,-1.85,-4.6);previewDummy.rotation.y=-.4;
+ scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,.95));const sun=new THREE.DirectionalLight(0xffffff,2.0);sun.position.set(-18,32,16);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-34,right:34,top:34,bottom:-34,near:1,far:90});sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewDummy=createDummy().group;camera.add(previewDummy);previewDummy.scale.setScalar(1.55);previewDummy.position.set(1.55,-1.85,-4.6);previewDummy.rotation.y=-.4;
  let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.04);last=now;elapsed+=dt;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){previewDummy.visible=true;previewDummy.rotation.y=-.4+Math.sin(elapsed*.3)*.12;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(29+Math.sin(elapsed*.055)*3,21,31);camera.lookAt(0,0,-3)}updateEffects(dt*(slow?.25:1));renderer.render(scene,camera)});
 }
 function buildArena(){
- const floor=new THREE.Mesh(new THREE.BoxGeometry(48,1,48),mat(0xd8ddd2));floor.position.y=-.5;floor.receiveShadow=true;arena.add(floor);worldMeshes.push(floor);
- const colors={chalk:0xe5e8df,ink:0x182127,stair:0xd9ddd2};
- for(const b of MAP.solids){cube(b.x,b.y,b.z,b.w,b.h,b.d,colors[b.style],arena,true);if(b.style==='stair')cube(b.x,b.y+b.h/2+.006,b.z+.46,b.w,.015,.06,0x182127)}
+ const floor=new THREE.Mesh(new THREE.BoxGeometry(48,1,48),mat(0x94a69e));floor.position.y=-.5;floor.receiveShadow=true;arena.add(floor);worldMeshes.push(floor);
+ const colors={chalk:0xdce2d5,ink:0x182127,stair:0xb5c3bb};
+ const boundary=new Set(['north','south','east','west']);
+ const contactMaterial=new THREE.MeshBasicMaterial({color:0x273d3b,transparent:true,opacity:.3,depthWrite:false});
+ for(const b of MAP.solids){
+  const color=boundary.has(b.id)?0xaebfbc:b.id==='gallery'?0xb3c4bf:colors[b.style];
+  cube(b.x,b.y,b.z,b.w,b.h,b.d,color,arena,true);
+  const base=b.y-b.h/2,top=b.y+b.h/2;
+  if(b.style==='stair')cube(b.x,top+.006,b.z+.46,b.w,.015,.06,0x344e4b);
+  else{
+   // Thin dark plinths anchor walls and cover to the floor without busy textures.
+   cube(b.x,base+.09,b.z,b.w+.012,.18,b.d+.012,0x354b49);
+   if(!boundary.has(b.id)&&b.id!=='gallery'){
+    const contact=new THREE.Mesh(boxGeo,contactMaterial);contact.position.set(b.x,base+.012,b.z);contact.scale.set(b.w+.24,.016,b.d+.24);arena.add(contact);
+   }
+  }
+ }
+ // A quiet ground grid provides scale and makes motion/foreshortening legible.
+ const gridVertices=[];for(let i=-20;i<=20;i+=4){gridVertices.push(-23,.016,i,23,.016,i,i,.016,-23,i,.016,23)}
+ const gridGeo=new THREE.BufferGeometry();gridGeo.setAttribute('position',new THREE.Float32BufferAttribute(gridVertices,3));arena.add(new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:0x3b5753,transparent:true,opacity:.18,depthWrite:false})));
+
  // Large, quiet surfaces and distinct silhouettes communicate the room first.
  for(const x of [-23,23])for(const z of [-20,-11,3,15])cube(x,5.8,z,.5,11.6,.7,0x182127);
  for(const b of MAP.solids.filter(b=>b.id.includes('partition'))){cube(b.x,b.y+b.h/2+.04,b.z,b.w+.04,.08,b.d+.04,0x182127)}
