@@ -10,14 +10,14 @@ export const AUDIO_TUNING={
     foley:[[0,1],[2,1],[7,.45],[15,0]]
   },
   occlusion:{gain:.55,cutoff:1500},
-  limits:{world:14,steps:8,self:8,ui:5,explosions:4,total:36}
+  limits:{world:14,gunfire:12,steps:8,self:8,ui:7,explosions:4,total:40}
 };
 export function attenuation(distance,curve){
   if(distance<=curve[0][0])return curve[0][1];
   for(let i=1;i<curve.length;i++)if(distance<=curve[i][0]){const t=(distance-curve[i-1][0])/(curve[i][0]-curve[i-1][0]);return curve[i-1][1]+(curve[i][1]-curve[i-1][1])*t}
   return 0;
 }
-const lengths={rifle:.24,pistol:.38,smg:.14,rail:.42,rocket:.5,shotgun:.65,explosion:.85,'step-solid':.15,'step-metal':.21,'land-solid':.25,'land-metal':.3,'reload-out':.12,'reload-in':.14,bolt:.12,equip:.12,frag:.13,hit:.055,kill:.22,pickup:.25,pad:.38,shatter:.2,damage:.14,charge:.5,'slow-on':.26,'slow-off':.22};
+const lengths={rifle:.24,pistol:.38,smg:.14,rail:.42,rocket:.5,shotgun:.65,explosion:.85,'step-solid':.15,'step-metal':.21,'land-solid':.25,'land-metal':.3,'reload-out':.12,'reload-in':.14,bolt:.12,equip:.12,frag:.13,hit:.055,kill:.22,pickup:.25,pad:.38,shatter:.2,damage:.14,charge:.5,'slow-on':.26,'slow-off':.22,'confirm-hit':.075,'confirm-head':.105,'confirm-kill':.24,'confirm-headkill':.28,whiz:.14,'low-ammo':.045,impact:.08,stinger:.36};
 // Deterministic, original layered effects. No continuous buzz/sawtooth waveform.
 export function synthesize(name,sampleRate=32000,seed=17){
   const out=new Float32Array(Math.ceil((lengths[name]||.2)*sampleRate));
@@ -30,8 +30,15 @@ export function synthesize(name,sampleRate=32000,seed=17){
     let phase=0;const offset=Math.floor(start*sampleRate),count=Math.min(Math.ceil(duration*sampleRate),out.length-offset);
     for(let i=0;i<count;i++){const t=i/sampleRate,u=t/duration;phase+=2*Math.PI*(f1+(f0-f1)*Math.exp(-u*5))/sampleRate;const env=(1-Math.exp(-t/attack))*Math.exp(-u*5);out[offset+i]+=(Math.sin(phase)+.13*Math.sin(phase*2.02))*env*amplitude}
   };
+  const metallic=()=>{noise(0,.025,.8,5200);for(const [f,a]of [[820,.22],[1370,.15],[2190,.08]])body(.004,.21,a,f,f*.985,.0007)};
+  const wet=()=>{noise(0,.07,1.4,1350);body(0,.065,.4,260,45,.001);noise(.012,.035,.6,3300)};
   const clack=(t,a=.4)=>{noise(t,.025,a,3300);body(t,.035,a*.3,480,170)};
-  if(name==='rifle'){noise(0,.047,1.8,5300);body(0,.17,.85,180,65);noise(.018,.16,.55,1600);clack(.065,.22)}
+  if(name.startsWith('confirm-')){noise(0,.035,.9,4100);body(0,.035,.16,1400,620);if(name.includes('kill'))metallic();if(name.includes('head'))wet()}
+  else if(name==='whiz'){noise(0,.13,.55,3700,.014);body(0,.1,.12,620,210,.01)}
+  else if(name==='low-ammo'){clack(0,.25)}
+  else if(name==='impact'){noise(0,.055,.6,2500);body(0,.065,.25,250,90)}
+  else if(name==='stinger'){body(0,.16,.32,290,285);body(.085,.18,.27,435,430);body(.17,.18,.23,580,575)}
+  else if(name==='rifle'){noise(0,.047,1.8,5300);body(0,.17,.85,180,65);noise(.018,.16,.55,1600);clack(.065,.22)}
   else if(name==='pistol'){noise(0,.065,2.1,4700);body(0,.29,1.2,130,37);noise(.025,.26,.8,1000);clack(.1,.32)}
   else if(name==='smg'){noise(0,.026,1.2,4000);body(0,.085,.65,205,92);clack(.033,.15)}
   else if(name==='rail'){noise(0,.035,1.7,6500);body(0,.25,.95,160,48);body(.012,.2,.32,560,210);noise(.035,.28,.9,1900);clack(.23,.25)}
@@ -56,24 +63,28 @@ export function synthesize(name,sampleRate=32000,seed=17){
   let mean=0;for(const v of out)mean+=v;mean/=out.length;let peak=0;
   for(let i=0;i<out.length;i++){out[i]=Math.tanh((out[i]-mean)*1.1);peak=Math.max(peak,Math.abs(out[i]))}
   // Preserve category loudness rather than peak-normalizing footsteps to gunshots.
-  const target=name.startsWith('step')?.45:name.startsWith('land')?.62:['hit','kill','pickup','damage','shatter','charge'].includes(name)?.42:.88;
+  const target=name.startsWith('confirm')?.68:name.startsWith('step')?.45:name.startsWith('land')?.62:['hit','kill','pickup','damage','shatter','charge'].includes(name)?.42:.88;
   const gain=Math.min(1.6,target/Math.max(.001,peak));const fade=Math.floor(sampleRate*.006);
   for(let i=0;i<out.length;i++)out[i]*=gain*Math.min(1,i/Math.max(1,fade*.15),(out.length-1-i)/fade);
   return out;
 }
 export class GameAudio{
   constructor({createContext=null,visibility=null}={}){
-    this.createContext=createContext||(()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context():null});this.visibility=visibility;this.context=null;this.cache=new Map();this.voices=new Set();this.listener={x:0,y:0,z:0};this.muted=false;this.slow=false;this.stepIndex=0;
+    this.createContext=createContext||(()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context({latencyHint:'interactive'}):null});this.visibility=visibility;this.context=null;this.cache=new Map();this.voices=new Set();this.listener={x:0,y:0,z:0};this.muted=false;this.slow=false;this.stepIndex=0;this.feedbackIndex=0;this.levels={guns:1,steps:1,feedback:1};this.warmed=false;
   }
   unlock(){
     if(!this.context){let c;try{c=this.createContext()}catch{return}if(!c)return;this.context=c;this.master=c.createGain();this.master.gain.value=AUDIO_TUNING.master;
       const highpass=c.createBiquadFilter();highpass.type='highpass';highpass.frequency.value=32;
       const limiter=c.createDynamicsCompressor();limiter.threshold.value=-8;limiter.knee.value=4;limiter.ratio.value=12;limiter.attack.value=.002;limiter.release.value=.13;
-      this.buses={};for(const key of ['self','world','steps','ui','explosions']){this.buses[key]=c.createGain();this.buses[key].connect(highpass)}highpass.connect(limiter);limiter.connect(this.master);this.master.connect(c.destination);
+      this.buses={};for(const key of ['self','world','gunfire','steps','ui','explosions']){this.buses[key]=c.createGain();this.buses[key].connect(highpass)}highpass.connect(limiter);limiter.connect(this.master);this.master.connect(c.destination);this.applySettings(this.levels);
     }
     if(this.context.state==='suspended')this.context.resume()?.catch?.(()=>{});
   }
   buffer(name,variant=0){const key=name+variant;if(!this.cache.has(key)){const data=synthesize(name,this.context.sampleRate,17+variant*991),buffer=this.context.createBuffer(1,data.length,this.context.sampleRate);buffer.copyToChannel(data,0);this.cache.set(key,buffer)}return this.cache.get(key)}
+  warm(){if(!this.context||this.warmed)return;this.warmed=true;for(const name of ['rifle','pistol','smg','rail','rocket','shotgun','explosion','reload-out','reload-in','bolt','impact','whiz','low-ammo','charge','stinger','slow-on','slow-off'])this.buffer(name);for(let i=0;i<4;i++)for(const name of ['confirm-hit','confirm-head','confirm-kill','confirm-headkill','step-solid','step-metal'])this.buffer(name,i)}
+  applySettings(levels){this.levels={...this.levels,...levels};if(!this.context)return;for(const [bus,value]of Object.entries({self:this.levels.guns,gunfire:this.levels.guns,steps:this.levels.steps,ui:this.levels.feedback,explosions:this.levels.guns}))this.buses[bus].gain.setTargetAtTime(value,this.context.currentTime,.02)}
+  duck(bus,factor=.7,duration=.1){if(!this.context)return;const t=this.context.currentTime,g=this.buses[bus].gain,base=bus==='self'||bus==='gunfire'?this.levels.guns:1;g.cancelScheduledValues(t);g.setTargetAtTime(base*factor,t,.005);g.setTargetAtTime(base,t+duration,.055)}
+  confirmation(kind){this.duck('gunfire',kind.includes('kill')?.62:.84,kind.includes('kill')?.14:.06);return this.play('confirm-'+kind,{volume:kind.includes('kill')?.62:.47,bus:'ui',priority:kind.includes('kill')?9:6,variant:this.feedbackIndex++%4})}
   setMuted(muted){this.muted=muted;if(this.master)this.master.gain.setTargetAtTime(muted?0:AUDIO_TUNING.master,this.context.currentTime,.015);if(muted)this.stopWorld()}
   setSlow(slow){if(this.slow===slow)return;this.slow=slow;for(const v of this.voices)v.source.playbackRate.setTargetAtTime(v.rate*(slow?(v.bus==='self'?.92:v.bus==='ui'?1:.78):1),this.context.currentTime,.07)}
   updateListener(pos,forward){
@@ -104,10 +115,10 @@ export class GameAudio{
   release(v){if(v.released)return;v.released=true;this.voices.delete(v);for(const n of [v.source,v.gain,v.filter,v.panner])try{n?.disconnect()}catch{}}
   stopVoice(v){try{v.gain.gain.setTargetAtTime(0,this.context.currentTime,.005);v.source.stop(this.context.currentTime+.025)}catch{}this.voices.delete(v)}
   stopWorld(){for(const v of [...this.voices])this.stopVoice(v)}
-  weapon(type,{pos=null}={}){return this.play(type,{pos,volume:pos?AUDIO_TUNING.volumes.enemyWeapon:AUDIO_TUNING.volumes.selfWeapon,curve:'weapon',bus:pos?'world':'self',priority:pos?2:5})}
+  weapon(type,{pos=null}={}){return this.play(type,{pos,volume:pos?AUDIO_TUNING.volumes.enemyWeapon:AUDIO_TUNING.volumes.selfWeapon,curve:'weapon',bus:pos?'gunfire':'self',priority:pos?2:5})}
   footstep(pos,{self=false,metal=false,landing=false}={}){
     const index=this.stepIndex++;
-    if(!self&&Math.hypot(pos.x-this.listener.x,pos.z-this.listener.z)<8&&this.context){const t=this.context.currentTime,g=this.buses.self.gain;g.cancelScheduledValues(t);g.setTargetAtTime(.82,t,.008);g.setTargetAtTime(1,t+.1,.07)}
+    if(!self&&Math.hypot(pos.x-this.listener.x,pos.z-this.listener.z)<8&&this.context){this.duck('self',.82,.1)}
     return this.play((landing?'land-':'step-')+(metal?'metal':'solid'),{pos:self?null:pos,volume:self?AUDIO_TUNING.volumes.selfFootstep:AUDIO_TUNING.volumes.enemyFootstep,curve:'footstep',bus:'steps',priority:self?.8:4,variant:index%4,pan:self?(index%2?.12:-.12):0});
   }
 }

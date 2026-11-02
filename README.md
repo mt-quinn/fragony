@@ -74,3 +74,16 @@ Sources used for the audio pass:
 `npm run test:simulation` runs nine seeded 90-second matches at early, middle and capped late-run settings. It verifies real high-ground and pad use, pickups, scoring and prolonged navigation stalls and reports weapon switching and shot counts. `node scripts/map-preview.mjs` and `node scripts/audio-preview.mjs` regenerate the review artifacts.
 
 Crash-test dummy references: [Euro NCAP](https://www.euroncap.com/want-to-meet-our-family-of-dummies/) and [NHTSA](https://www.nhtsa.gov/nhtsas-crash-test-dummies). All models are original procedural geometry. Three.js v0.182.0 uses MIT; see `dist/vendor/THREE-LICENSE.txt`.
+
+
+### Combat feel pass
+
+Weapon handling is tuned in `dist/feel.js`: six independent recoil/recovery profiles, smooth aim transitions, reload and equip poses, shotgun pump/pistol slide, restrained sway and sprint poses. Purchased attachments appear on the weapon. Simulation steps at a maximum 1/120 second; firing retains fractional cooldown so 30/60/144 Hz produce the same cadence. Shots read current mouse aim before recoil is applied. Ground acceleration/braking, retained air momentum, 120 ms jump buffering, 85 ms coyote time, and smoothed stair eye height preserve immediate controls. No global hitstop or aim-displacing camera shake.
+
+Damage resolution in `dist/combat.js` prevents repeated death scoring. Hits give one short marker/cue per resolved shot; grouped pellets, rail penetrations and splash kills produce one combined confirmation. Headshot kills score 150 instead of 100; match placement uses points, with frags separately reported. Corpse impacts can shatter limbs but never award points or hit confirmations. Live dummies flinch; death poses and shattered pieces follow shot direction.
+
+World impacts leave short-lived marks and chips; firearms eject tumbling cases. Explosions add expanding wire shockwaves, a brief smoke burst, breakup and local weapon trauma. Visual effects have a hard 190-object budget and 72-mark budget. The crosshair reflects handling without obscuring its center; small point text, directional damage and positional near-miss cues carry information without large kill banners.
+
+The synthesized sound mix includes varied dry hit thwips, a wet headshot layer and a longer metallic kill ring. Confirmation briefly lowers enemy gunfire, preserving spatial footsteps and warnings. Common sounds are prewarmed. Pause offers persistent camera-motion, gun, footstep and feedback controls. Setting motion to zero removes optional sway/bob/trauma while preserving aim and weapon recoil.
+
+`tests/feel.mjs` checks cadence at 30/60/144 FPS, fresh aim, 150-point head kills, corpse suppression, effect limits, jumping, braking, air momentum and comfort behavior. Existing reload, controls, spatial audio, map, combat/progression and nine seeded full-match simulations remain passing.
