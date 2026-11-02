@@ -1,17 +1,13 @@
-import fs from 'node:fs';
-import vm from 'node:vm';
-import assert from 'node:assert/strict';
-import * as THREE from '../dist/vendor/three.module.js';
-const nodes=new Map(),storage=new Map();
-function element(id){if(!nodes.has(id))nodes.set(id,{style:{},hidden:false,textContent:'',innerHTML:'',querySelector(){return element(id+'child')},querySelectorAll(){this.buttons=[...this.innerHTML.matchAll(/data-buy="([^"]+)"/g)].map(m=>({dataset:{buy:m[1]}}));return this.buttons;}});return nodes.get(id)}
-const drawing=new Proxy({},{get:(o,p)=>o[p]||(()=>{})});
-const context=vm.createContext({THREE,console,assert,results:[],innerWidth:1280,innerHeight:800,performance,
- document:{body:{classList:{add(){},remove(){}}},getElementById:element,createElement:()=>({getContext:()=>drawing}),addEventListener(){},exitPointerLock(){}},
- window:{addEventListener(){}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}});
-let source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').replace(/^import .*?;\n/,'').replace(/\ninit\(\);\s*$/,'');
-vm.runInContext(source,context);
-vm.runInContext(`
+import { createGameHarness } from './harness.mjs';
+const {context,run}=createGameHarness();
+run(`
 muted=true;scene=new THREE.Scene();arena=new THREE.Group();scene.add(arena);camera=new THREE.PerspectiveCamera(85,1,.07,160);scene.add(camera);renderer={domElement:{requestPointerLock(){}}};previewDummy=new THREE.Group();buildArena();buildNav();buildWeapon();makeBots();
+startMatch();assert.equal(owned.length,2);assert.equal(new Set(owned).size,2);assert.ok(bots.every(b=>b.loadout.length===2&&new Set(b.loadout).size===2));
+const rolled=bots[0].loadout.join(',');spawnBot(bots[0]);assert.equal(bots[0].loadout.join(','),rolled,'respawning preserves bot weapon pair');
+const runPair=owned.join(',');spawnPlayer();assert.equal(owned.join(','),runPair,'respawning preserves player pair');
+results.push('Player rolls two weapons per run; bots roll two per match; respawns retain each pair.');
+owned=[0,1];equipped=0;ammo=3;magazines={0:3,1:7};switchWeapon(1);switchWeapon(0);assert.equal(ammo,3);ammo=0;magazines[0]=0;switchWeapon(1);switchWeapon(0);assert.equal(ammo,0);reload();assert.ok(reloading>0);reloading=0;
+results.push('Switching preserves partial and empty magazines; empty weapons still require reloads.');
 for(const a of spawnPoints)assert.equal(blocked(a[0],a[2],a[1]),false,'spawns must not intersect cover');
 for(const a of spawnPoints)for(const b of spawnPoints){if(a===b)continue;assert.ok(findPath({x:a[0],z:a[2]},{x:b[0],z:b[2]}).length,'spawn routes connect')}
 results.push('All 56 spawn-to-spawn routes connect.');
@@ -30,10 +26,11 @@ bots.forEach(b=>scene.remove(b.group));bots=[];
 function shotgunAt(distance){bots.forEach(b=>scene.remove(b.group));bots=[];const b=targetAt(-distance);equipped=5;let total=0;for(let i=0;i<100;i++){b.hp=100000;shotTimer=0;ammo=8;scene.updateMatrixWorld(true);shoot();total+=100000-b.hp}return total/100}
 const near=shotgunAt(3),mid=shotgunAt(22),far=shotgunAt(55);assert.ok(near>mid&&mid>far&&far>0);results.push('Shotgun mean damage (3m / 22m / 55m): '+near.toFixed(0)+' / '+mid.toFixed(0)+' / '+far.toFixed(0)+'.');
 bots.forEach(b=>scene.remove(b.group));bots=[];playerPos.set(0,1.7,0);health=100;respawnTime=0;vy=0;explode(new THREE.Vector3(0,.1,0),null);assert.ok(vy>3);assert.ok(health>0&&health<100);results.push('Rocket splash causes self-damage and upward rocket-jump impulse.');
+const shelter=cube(0,1.5,2,4,3,1,0xe1e5dc,arena);worldMeshes=[shelter];bots.forEach(b=>scene.remove(b.group));bots=[];const protectedBot=targetAt(3.5);playerPos.set(20,1.7,20);scene.updateMatrixWorld(true);explode(new THREE.Vector3(0,.2,0),null);assert.equal(protectedBot.hp,100000,'solid cover blocks splash damage');arena.remove(shelter);bots.forEach(b=>scene.remove(b.group));bots=[];results.push('Solid cover protects opponents from rocket splash.');
 worldMeshes=arenaMeshes;effects.forEach(e=>{scene.remove(e.mesh);if(e.ownMat)e.mesh.material.dispose()});effects=[];
 credits=500;owned=[0];equipped=0;round=1;perks={};showShop();const buy=$('panel').buttons.find(b=>b.dataset.buy==='gun5');buy.onclick();assert.ok(owned.includes(5));assert.equal(credits,200);assert.equal(JSON.parse(localStorage.getItem('dh-run')).phase,'shop');$('nextmatch').onclick();assert.equal(round,2);assert.ok(owned.includes(5));assert.equal(grenades,2);assert.equal(JSON.parse(localStorage.getItem('dh-run')).phase,'match');
 results.push('Shop purchase deducts credits, persists weapon, and carries loadout into the next round.');
 mode='play';locked=true;for(let i=0;i<2701&&mode==='play';i++){scene.updateMatrixWorld(true);update(1/30)}assert.equal(mode,'results');assert.ok(bots.reduce((s,b)=>s+b.score,0)>0);results.push('Full 90-second match completes; opponents fight, score, and respawn.');
 matchKills=999;endMatch();assert.equal(mode,'results');assert.ok(localStorage.getItem('dh-run'));matchKills=0;bots.forEach(b=>b.score=100);endMatch();assert.equal(localStorage.getItem('dh-run'),null);results.push('Top-three finish saves progression; bottom-three finish ends the run.');
-`,context,{timeout:30000});
+`);
 console.log(context.results.join('\n'));

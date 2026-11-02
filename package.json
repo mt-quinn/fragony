@@ -1,1 +1,11 @@
-{"name":"dead-heat","version":"0.1.0","private":true,"type":"module","scripts":{"start":"python3 -m http.server 4173 --bind 127.0.0.1 --directory dist","test":"node tests/integration.mjs"}}
+{
+  "name": "dead-heat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory dist",
+    "test": "node tests/map.mjs && node tests/ai.mjs && node tests/controls.mjs && node tests/audio.mjs && node tests/reload.mjs && node tests/integration.mjs",
+    "test:simulation": "node tests/ai-simulation.mjs"
+  }
+}
