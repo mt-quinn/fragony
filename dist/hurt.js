@@ -38,10 +38,10 @@ export class HurtFeedback{
 }
 
 // Only the travelled bullet segment counts. A wall hit before the player cannot suppress through cover.
-export function nearMissSegment(start,end,eye,radius=1.5){
+export function nearMissSegment(start,end,eye,radius=1.5,bodyOffset=.65){
  const dx=end.x-start.x,dy=end.y-start.y,dz=end.z-start.z,length2=dx*dx+dy*dy+dz*dz;
  if(length2<1e-8)return null;
- const center={x:eye.x,y:eye.y-.65,z:eye.z},t=((center.x-start.x)*dx+(center.y-start.y)*dy+(center.z-start.z)*dz)/length2;
+ const center={x:eye.x,y:eye.y-bodyOffset,z:eye.z},t=((center.x-start.x)*dx+(center.y-start.y)*dy+(center.z-start.z)*dz)/length2;
  if(t<=0||t>=1)return null;
  const point={x:start.x+t*dx,y:start.y+t*dy,z:start.z+t*dz},distance=Math.hypot(point.x-center.x,point.y-center.y,point.z-center.z);
  return distance<radius?{point,distance}:null;

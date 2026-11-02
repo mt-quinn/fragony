@@ -117,9 +117,9 @@ export class GameAudio{
   stopVoice(v){try{v.gain.gain.setTargetAtTime(0,this.context.currentTime,.005);v.source.stop(this.context.currentTime+.025)}catch{}this.voices.delete(v)}
   stopWorld(){for(const v of [...this.voices])this.stopVoice(v)}
   weapon(type,{pos=null}={}){return this.play(type,{pos,volume:pos?AUDIO_TUNING.volumes.enemyWeapon:AUDIO_TUNING.volumes.selfWeapon,curve:'weapon',bus:pos?'gunfire':'self',priority:pos?2:5})}
-  footstep(pos,{self=false,metal=false,landing=false}={}){
+  footstep(pos,{self=false,metal=false,landing=false,quiet=false}={}){
     const index=this.stepIndex++;
     if(!self&&Math.hypot(pos.x-this.listener.x,pos.z-this.listener.z)<8&&this.context){this.duck('self',.82,.1)}
-    return this.play((landing?'land-':'step-')+(metal?'metal':'solid'),{pos:self?null:pos,volume:self?AUDIO_TUNING.volumes.selfFootstep:AUDIO_TUNING.volumes.enemyFootstep,curve:'footstep',bus:'steps',priority:self?.8:4,variant:index%4,pan:self?(index%2?.12:-.12):0});
+    return this.play((landing?'land-':'step-')+(metal?'metal':'solid'),{pos:self?null:pos,volume:(self?AUDIO_TUNING.volumes.selfFootstep:AUDIO_TUNING.volumes.enemyFootstep)*(quiet?.4:1),curve:'footstep',bus:'steps',priority:self?.8:4,variant:index%4,pan:self?(index%2?.12:-.12):0});
   }
 }
