@@ -9,8 +9,8 @@ results.push('Player rolls two weapons per run; bots roll two per match; respawn
 owned=[0,1];equipped=0;ammo=3;magazines={0:3,1:7};switchWeapon(1);switchWeapon(0);assert.equal(ammo,3);ammo=0;magazines[0]=0;switchWeapon(1);switchWeapon(0);assert.equal(ammo,0);reload();assert.ok(reloading>0);reloading=0;
 results.push('Switching preserves partial and empty magazines; empty weapons still require reloads.');
 for(const a of spawnPoints)assert.equal(blocked(a[0],a[2],a[1]),false,'spawns must not intersect cover');
-for(const a of spawnPoints)for(const b of spawnPoints){if(a===b)continue;assert.ok(findPath({x:a[0],z:a[2]},{x:b[0],z:b[2]}).length,'spawn routes connect')}
-results.push('All 56 spawn-to-spawn routes connect.');
+for(const a of spawnPoints)for(const b of spawnPoints){if(a===b)continue;assert.ok(findRoute(navigation,{x:a[0],y:a[1],z:a[2]},{x:b[0],y:b[1],z:b[2]}).length,'spawn routes connect')}
+results.push('All '+(MAP.spawns.length*(MAP.spawns.length-1))+' spawn-to-spawn routes connect.');
 let dummy=bots[0];let initial=matchKills;
 damageBot(dummy,10,null,'leftArm');assert.equal(dummy.parts.leftArm.visible,true);assert.equal(dummy.dead,0);
 damageBot(dummy,200,null,'leftArm');assert.equal(dummy.parts.leftArm.visible,false);assert.equal(dummy.parts.torso.visible,true);assert.ok(dummy.dead>0);assert.equal(matchKills,initial+1);

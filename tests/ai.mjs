@@ -3,26 +3,33 @@ import { createGameHarness } from './harness.mjs';
 import { AI_TUNING,difficultyForRound } from '../dist/ai.js';
 const {run,setup}=createGameHarness(121);setup();
 run(`
-assert.equal(navigation.pads.length,2);
-for(const a of navigation.anchors)for(const b of navigation.anchors)if(a!==b)assert.ok(findRoute(navigation,a,b).length,'all strategic positions must connect, including both levels');
-const ascent=findRoute(navigation,{x:11,y:0,z:0},{x:11,y:3,z:-17});assert.ok(ascent.some(n=>n.action==='pad'),'upper lanes require a jump-pad route');
-const descent=findRoute(navigation,{x:7,y:3,z:-13},{x:8,y:0,z:-5});assert.ok(descent.some(n=>n.action==='drop'),'upper lanes have intentional drop routes');
-console.log('Height-aware routes connect all strategic positions; ascent uses pads and descent uses drops.');
+assert.equal(navigation.pads.length,4);
+for(const a of navigation.anchors)for(const b of navigation.anchors)if(a!==b)assert.ok(findRoute(navigation,a,b).length,'all strategic positions connect across all three tiers');
+const ascent=findRoute(navigation,{x:27,y:0,z:13},{x:33,y:4,z:1});assert.ok(ascent.some(n=>n.action==='pad'),'pad is a meaningful shortcut');
+const descent=findRoute(navigation,{x:0,y:4,z:0},{x:6,y:0,z:0});assert.ok(descent.some(n=>n.action==='drop'),'gantry has drop routes');
+console.log('All strategic positions connect across ground, gantries and upper control.');
 `);
-// Use the real collision/movement/physics adapters, but disable autonomous goal
-// changes while checking traversal to isolate the route follower from decisions.
-for(const [start,goal,label]of [
- [[-13,0,-3],[-13,3,-16],'west pad'],[[11,0,-3],[11,3,-16],'east pad'],
- [[-19,0,2],[-19,3,-19],'west stairs'],[[19,0,2],[19,3,-19],'east stairs'],
- [[-7,3,-13],[3,.5,6],'gallery drop to armor'],[[7,3,-13],[20,0,8],'gallery drop to yard']
+// Real collision and physics, with decisions disabled to isolate route following.
+for(const {start,goal,label}of [
+ ...run('MAP.pads.map(p=>({start:{x:p.x,y:p.y,z:p.z+1},goal:p.landing,label:p.id}))'),
+ ...run('MAP.stairs.map(s=>({start:s.start,goal:s.end,label:s.id}))'),
+ {start:{x:-33,y:4,z:4},goal:{x:-33,y:0,z:4},label:'health directly below balcony'},
+ {start:{x:0,y:4,z:0},goal:{x:6,y:0,z:0},label:'core drop'},
+ {start:{x:22,y:8,z:-26},goal:{x:22,y:4,z:-23},label:'upper control drop'}
 ]){
  run(`{
- const b=bots[0];b.pos.set(${start.join(',')});b.vy=0;const brain=opponentAI.reset(b,0);brain.goal={type:'rotate',x:${goal[0]},y:${goal[1]},z:${goal[2]}};let reached=false;
- for(let i=0;i<1800;i++){opponentAI.navigate(b,brain,1/60);opponentAI.world.physics(b,brain,1/60);if(b.pos.distanceTo(new THREE.Vector3(${goal.join(',')}))<1.25){reached=true;break}}
+ if(MAP.pads.some(p=>p.id===${JSON.stringify(label)}))assert.ok(findRoute(navigation,${JSON.stringify(start)},${JSON.stringify(goal)}).some(n=>n.action==='pad'),'pad shortcut must be used');
+ const b=bots[0];b.pos.set(${start.x},${start.y},${start.z});b.vy=0;const brain=opponentAI.reset(b,0);brain.goal={type:'rotate',x:${goal.x},y:${goal.y},z:${goal.z}};let reached=false;
+ for(let i=0;i<2400;i++){opponentAI.navigate(b,brain,1/60);opponentAI.world.physics(b,brain,1/60);if(b.pos.distanceTo(new THREE.Vector3(${goal.x},${goal.y},${goal.z}))<1.25){reached=true;break}}
  assert.ok(reached,${JSON.stringify(label)}+' route must complete; ended at '+JSON.stringify(b.pos));
  }`);
 }
-console.log('Actual movement completes both pads, both stairways, and gallery drops.');
+// Force the physical staircase itself; a route reaching its top via a pad is insufficient.
+for(let index=0;index<4;index++)run(`{
+ const stair=MAP.stairs[${index}],b=bots[0];b.pos.set(stair.start.x,stair.start.y,stair.start.z);b.vy=0;const brain=opponentAI.reset(b,0);brain.goal={type:'rotate',...stair.end};brain.path=stair.points.map(p=>({...p}));brain.pathIn=1e5;let reached=false;
+ for(let i=0;i<1800;i++){opponentAI.navigate(b,brain,1/60);opponentAI.world.physics(b,brain,1/60);if(b.pos.distanceTo(new THREE.Vector3(stair.end.x,stair.end.y,stair.end.z))<1){reached=true;break}}assert.ok(reached,'physical staircase '+stair.id+' ended at '+JSON.stringify(b.pos));
+}`);
+console.log('Actual movement completes four pads, four staircases, and both tested drops.');
 run(`{
  const b=bots[0],brain=opponentAI.reset(b,0);b.pos.set(0,0,18);brain.facing=0;opponentAI.clock=3;respawnTime=0;playerSpawnAt=0;playerPos.set(0,1.7,-10);scene.updateMatrixWorld(true);
  opponentAI.perceive(b,brain,[{id:'player',pos:{x:0,y:0,z:-10},eye:playerPos,hp:100,alive:true,spawnAge:3}]);assert.equal(brain.target,null,'cannot see target behind itself');

@@ -6,33 +6,21 @@ Single-player Three.js arena FPS roguelike. Chalk geometry, ink silhouettes, yel
 
 Run `npm start` and open http://127.0.0.1:4173. No install or build is required; Three.js is vendored.
 
-WASD move, Shift sprint, mouse aim, left click fire, right click aim down sights, Space jump, hold Q slow motion, R reload, G grenade, F earned airstrike, 1–6 or wheel switch owned weapons, Escape pause. Browsers without mouse capture use free mouse aiming within the viewport and arrow-key turning; Resume retries capture. A regular desktop browser supports full pointer-lock FPS controls. Headphones are recommended for directional audio.
+WASD move, Shift sprint, mouse aim, left click fire, right click aim down sights, Space jump, hold Q slow motion, R reload, G grenade, F selected killstreak, 1–6 or wheel switch owned weapons, Escape pause. Browsers without mouse capture use free mouse aiming within the viewport and arrow-key turning; Resume retries capture. A regular desktop browser supports full pointer-lock FPS controls. Headphones are recommended for directional audio.
 
 Each run starts with two distinct random weapons. Buy more weapons, attachments, perks and throwables between rounds. Each opponent rolls two weapons at match start and retains that pair through respawns. Reserve ammunition is unlimited; magazines must be reloaded. Switching preserves partial or empty magazines. Reload completion clamps the timer to zero, so repeated reloads cannot lock firing.
 
-90-second free-for-all against five opponents. Unlimited respawns. Finish in the top three to advance; otherwise the run ends. Ties favor fewer deaths. Three consecutive kills earn an airstrike. Progress saves in this browser.
+90-second free-for-all against five opponents. Unlimited respawns. Finish in the top three to advance; otherwise the run ends. Ties favor fewer deaths. Three consecutive kills earn the selected killstreak. Progress saves in this browser.
 
 The six weapons are an accurate rifle, hand cannon, fast SMG, piercing rail rifle, rocket launcher with splash and rocket jumping, and a 12-pellet shotgun with four tightly grouped core pellets. Crash-test dummy limbs shatter only on lethal hits or after death, then reset on respawn.
 
-## Crosscut
+## Test Works
 
-Original 46 × 46 m playable map for six contenders. Its layout has two crossing circulation loops and four identifiable spaces:
+The current arena is an original 76 × 68 m crash-testing facility with ground, 4 m and 8 m routes. Press, Core, Range, Control and Assembly serve different engagement distances and connect through overlapping ground/upper circuits. Four stairs, four pads, real underpasses, bent portals, diagonal screens, fourteen spawns and eight distributed resources make rotation useful without adding visual clutter.
 
-- **Gallery:** a raised north lane with two normal stair approaches, two jump-pad shortcuts, and an open drop edge. A central spine breaks the cross-gallery sniper line; crossing its apron exposes the player to the yard.
-- **Hall:** a ground-level west route with broad S-turns, two yard portals, and sheltered health. It provides a close-range counter to the gallery and a recovery route.
-- **Yard:** the main mid-range fight, organized around a tall central landmark and offset low cover. Overhealth sits on an exposed plinth, away from both health pickups.
-- **Cut:** the lower crossing route between the hall and east side, avoiding the overhealth fight. An offset island interrupts the end-to-end sightline.
+[Layout plan](docs/test-works-layout.svg) · [Geometry study, design intent and validation](docs/test-works-design.md).
 
-All collision, item locations, spawns, pad flights and strategic navigation points are data in `dist/map.js`. Every spawn reaches the center in approximately 2.4–5.1 seconds at normal speed along the navigation routes. Automated checks verify routes between all strategic positions, actual stair/pad/drop movement, alternate circulation after one portal is blocked, and separation of the gallery's sightline from all spawn routes. These are geometry checks, not a substitute for human playtesting.
-
-[Layout diagram](docs/crosscut-layout.svg).
-
-Research applied to this blockout:
-
-- [Josh Foreman: Level Design for PvP FPS](https://joshforeman.artstation.com/blog/PrbL/level-design-for-pvp-fps): recognizable areas, limited visual noise and risk attached to informative sightlines.
-- [Pete Ellis interview](https://worldofleveldesign.com/categories/interviews/pete-ellis-level-design.php): circulation loops and figure-eight routing, plus contested advantageous positions.
-- [The Level Design Book: Flow](https://book.leveldesignbook.com/process/layout/flow): movement and verticality must serve the game's pace, then be verified in the blockout.
-- [World of Level Design: Choke Points](https://www.worldofleveldesign.com/categories/csgo-tutorials/csgo-principles-choke-point-level-design.php): deliberate entrances, different engagement distances and measured travel times. Team-objective choke rules are not copied directly into this free-for-all map.
+All geometry and navigation landmarks derive from `dist/map.js`. Shared rotated collision, floor support and ceilings live in `dist/geometry.js`. Static blocks render in shared instance batches. Tests verify strategic connectivity, every stair/pad traversal, alternate routes when individual portals close, resource support, protected health sightlines and layered floor/ceiling behavior.
 
 ## Opponents
 

@@ -1,3 +1,4 @@
+import { inBlock, blockedAt, surfaceAt, launchTime } from './geometry.js';
 // All campaign difficulty and personality controls live here. Distances are metres;
 // timing uses world seconds, so slow motion affects thinking, aim and movement alike.
 export const AI_TUNING = {
@@ -32,42 +33,33 @@ export function difficultyForRound(round,tuning=AI_TUNING){
   const t=clamp((round-1)/tuning.progressionRounds,0,1),e=t*t*(3-2*t);
   return Object.fromEntries(Object.keys(tuning.early).map(k=>[k,tuning.early[k]+(tuning.late[k]-tuning.early[k])*e]));
 }
-export function solidAt(blocks,x,z,y,r=.38){
-  if(Math.abs(x)>22.8||Math.abs(z)>22.8)return true;
-  return blocks.some(b=>b.top>y+.32&&b.bottom<y+1.9&&Math.abs(x-b.x)<b.w/2+r&&Math.abs(z-b.z)<b.d/2+r);
+export function solidAt(blocks,x,z,y,r=.38){return blockedAt(blocks,x,z,y,r,1.9)}
+function clearSegment(blocks,a,b,action='walk',query=null){
+ // A descending edge must leave the upper floor, not point through it.
+ if(action==='drop'&&surfaceAt(query?query(b.x,b.z):blocks,b.x,b.z,a.y)>b.y+.31)return false;
+ const steps=Math.ceil(horizontal(a,b)*4);
+ for(let i=0;i<=steps;i++){
+  const t=i/Math.max(1,steps),x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,y=action==='drop'?a.y:action==='jump'?Math.max(a.y,b.y)+Math.sin(t*Math.PI)*.8:a.y+(b.y-a.y)*t,near=query?query(x,z):blocks;
+  if(solidAt(near,x,z,y))return false;
+  if(action==='walk'&&surfaceAt(near,x,z,y)<y-.34)return false;
+ }return true;
 }
-function clearSegment(blocks,a,b,action='walk'){
-  const steps=Math.ceil(horizontal(a,b)*4);
-  for(let i=0;i<=steps;i++){
-    const t=i/Math.max(1,steps),y=action==='drop'?a.y:action==='jump'?Math.max(a.y,b.y)+Math.sin(t*Math.PI)*.8:a.y+(b.y-a.y)*t;
-    if(solidAt(blocks,a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,y))return false;
-  }return true;
-}
-export function buildNavigation(blocks,pads=[],anchors=null){
-  const heights=[0,...new Set(blocks.filter(b=>b.top>0&&b.top<=3.1&&b.w>=1&&b.d>=1).map(b=>b.top))];
-  const nodes=[],columns=new Map();
-  for(let x=-22;x<=22;x++)for(let z=-22;z<=22;z++)for(const y of heights){
-    const supported=y===0||blocks.some(b=>b.top===y&&Math.abs(x-b.x)<=b.w/2-.38&&Math.abs(z-b.z)<=b.d/2-.38);
-    if(!supported||solidAt(blocks,x,z,y))continue;
-    const n={id:nodes.length,x,y,z,edges:[]};nodes.push(n);const key=`${x},${z}`;if(!columns.has(key))columns.set(key,[]);columns.get(key).push(n);
-  }
-  for(const n of nodes)for(const [dx,dz]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]]){
-    for(const m of columns.get(`${n.x+dx},${n.z+dz}`)||[]){
-      const rise=m.y-n.y;if(rise>1.35||rise< -3.1)continue;
-      const action=rise>.3?'jump':rise< -.3?'drop':'walk';
-      if(clearSegment(blocks,n,m,action))n.edges.push({node:m,action,cost:distance(n,m)+(action==='walk'?0:1.2)});
-    }
-  }
-  const navigation={nodes,pads:[],anchors:[]};
-  for(const p of pads){
-    const from=nearestNode(navigation,{x:p.x,y:0,z:p.z});
-    const to=nearestNode(navigation,p.landing||{x:Math.sign(p.x)*18,y:3,z:Math.sign(p.z)*7});
-    if(from&&to&&to.y===3){from.edges.push({node:to,action:'pad',cost:6,pad:{x:p.x,z:p.z}});navigation.pads.push({from,to,x:p.x,z:p.z})}
-  }
-  for(const [x,y,z]of anchors||[[-19,0,-19],[19,0,-19],[-19,0,19],[19,0,19],[0,0,-18],[0,0,18],[-9,0,0],[9,0,0],[0,.5,0],[-16,3,-6],[-16,3,6],[16,3,-6],[16,3,6]]){
-    const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n);
-  }
-  return navigation;
+export function buildNavigation(blocks,pads=[],anchors=null,options={}){
+ const boundX=options.bounds?.x??Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2))-.8,boundZ=options.bounds?.z??Math.max(...blocks.map(b=>Math.abs(b.z)+b.d/2))-.8,maxHeight=options.maxHeight??8;
+ const nodes=[],columns=new Map(),spatial=new Map(),query=(x,z)=>spatial.get(`${Math.round(x)},${Math.round(z)}`)||[];
+ // One small neighborhood per grid cell avoids scanning the whole map for each edge.
+ for(const b of blocks){const c=Math.abs(Math.cos(b.yaw||0)),s=Math.abs(Math.sin(b.yaw||0)),wx=(b.w*c+b.d*s)/2+1.2,dz=(b.w*s+b.d*c)/2+1.2;for(let x=Math.floor(b.x-wx);x<=Math.ceil(b.x+wx);x++)for(let z=Math.floor(b.z-dz);z<=Math.ceil(b.z+dz);z++){const key=`${x},${z}`;if(!spatial.has(key))spatial.set(key,[]);spatial.get(key).push(b)}}
+ for(let x=Math.ceil(-boundX+.5);x<=Math.floor(boundX-.5);x++)for(let z=Math.ceil(-boundZ+.5);z<=Math.floor(boundZ-.5);z++){
+  const near=query(x,z),heights=new Set([0]);for(const b of near)if(b.top>0&&b.top<=maxHeight&&b.w>=.75&&b.d>=.75&&inBlock(b,x,z,-.38))heights.add(b.top);
+  for(const y of heights){if(solidAt(near,x,z,y))continue;const n={id:nodes.length,x,y,z,edges:[]};nodes.push(n);const key=`${x},${z}`;if(!columns.has(key))columns.set(key,[]);columns.get(key).push(n)}
+ }
+ for(const n of nodes)for(const [dx,dz]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]])for(const m of columns.get(`${n.x+dx},${n.z+dz}`)||[]){
+  const rise=m.y-n.y;if(rise>1.35||rise< -8.1)continue;const action=rise>.3?'jump':rise< -.3?'drop':'walk';if(clearSegment(blocks,n,m,action,query))n.edges.push({node:m,action,cost:distance(n,m)+(action==='walk'?0:1.2)});
+ }
+ const navigation={nodes,pads:[],anchors:[],bounds:{x:boundX,z:boundZ}};
+ for(const p of pads){const from=nearestNode(navigation,{x:p.x,y:p.y||0,z:p.z}),to=nearestNode(navigation,p.landing);if(from&&to&&Math.abs(to.y-p.landing.y)<.35&&Math.abs(from.y-(p.y||0))<.35){const pad={x:p.x,y:p.y||0,z:p.z,power:p.power||16.5};from.edges.push({node:to,action:'pad',cost:horizontal(from,to)*.5+3,pad});navigation.pads.push({from,to,...pad})}}
+ for(const [x,y,z]of anchors||[]){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}
+ return navigation;
 }
 export function nearestNode(navigation,pos){
   let best=null,score=Infinity;for(const n of navigation.nodes){const s=(n.x-pos.x)**2+(n.z-pos.z)**2+((n.y-(pos.y||0))*3)**2;if(s<score){score=s;best=n}}return best;
@@ -211,9 +203,9 @@ export class ArenaAI{
       destination={x:bot.pos.x+dx*advance+dz*b.strafe*.65,y:bot.pos.y,z:bot.pos.z+dz*advance-dx*b.strafe*.65,action:'walk'};
     }
     if(!destination)return;
-    if(destination.action==='pad'&&horizontal(bot.pos,destination.pad)<1.45&&bot.pos.y<.35){
-      const flightTime=(13.5+Math.sqrt(13.5**2-46*(destination.y-bot.pos.y)))/23;
-      b.flight={vx:(destination.x-bot.pos.x)/flightTime,vz:(destination.z-bot.pos.z)/flightTime,age:0};bot.vy=13.5;this.stats.pads++;return;
+    if(destination.action==='pad'&&horizontal(bot.pos,destination.pad)<1.45&&Math.abs(bot.pos.y-destination.pad.y)<.35){
+      const power=destination.pad.power,flightTime=launchTime(power,destination.y-bot.pos.y);
+      b.flight={vx:(destination.x-bot.pos.x)/flightTime,vz:(destination.z-bot.pos.z)/flightTime,age:0};bot.vy=power;this.stats.pads++;return;
     }
     if(destination.action==='jump'&&destination.y>bot.pos.y+.3&&Math.abs(bot.vy)<.01)bot.vy=8.5;
     const d=horizontal(bot.pos,destination);if(d<.05)return;
