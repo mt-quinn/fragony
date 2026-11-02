@@ -8,6 +8,9 @@ const pickups=data.items.map(({position:[x,y,z],type},i)=>healthPickup('reservoi
 // Original small-health rows and shield pairs stay in place. The one major reward
 // sits at the central weapon crossing on the exposed lower crossing, not either home base.
 pickups.push(healthPickup('reservoir-major',0,14,0,50));
+// FFA entries supplement the original CTF base-only spawns. Gallery, crossing
+// and reservoir entries spread encounters across both routes and elevations.
+spawns.push([-31,31,-8],[31,31,8],[-31,31,8],[31,31,-8],[-3,34,-6],[3,34,6],[0,13,-26],[0,13,24],[0,2,-18],[0,2,18]);
 // Four shafts: the two paired base ladders and two offset central ladders. Stop heights
 // follow the source ladder tops and landings. Geometry remains in BSP proportions.
 const elevators=[

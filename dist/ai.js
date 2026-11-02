@@ -86,12 +86,15 @@ export function findRoute(navigation,from,to,{avoid=null,aggression=1}={}){
 export class ArenaAI{
   constructor({navigation,world,round=1,tuning=AI_TUNING,random=Math.random}){
     Object.assign(this,{navigation,world,tuning,random});this.difficulty=difficultyForRound(round,tuning);this.clock=0;this.brains=new Map();
+    // A row of health items represents one patrol destination, not ten votes
+    // for the same room. Keep spatially distinct routes at equal weight.
+    this.patrolAnchors=[];for(const n of navigation.anchors)if(!this.patrolAnchors.some(p=>distance(p,n)<18))this.patrolAnchors.push(n);
     this.stats={shots:0,spotted:0,pads:0,drops:0,pickups:0,dodges:0,switches:0,weapons:{},repaths:0,stuckRecoveries:0,goals:{}};
   }
   reset(bot,index=0){
     const profile=this.tuning.profiles[index%this.tuning.profiles.length],loadout=(bot.loadout||[profile.weapon]).filter(w=>this.tuning.weapons[w]),weaponType=loadout.includes(profile.weapon)?profile.weapon:loadout[0],weapon=this.tuning.weapons[weaponType];
     const brain={profile,index,loadout,weaponType,preferredRange:weapon.idealRange*.8+profile.preferredRange*.2,magazines:Object.fromEntries(loadout.map(w=>[w,this.tuning.weapons[w].magazine])),weaponHeld:0,weaponDecisionIn:0,swapIn:0,spawnAt:this.clock,facing:Math.atan2(-bot.pos.x,-bot.pos.z),memory:new Map(),target:null,visible:false,reaction:0,
-      senseIn:this.random()*.15,thinkIn:.15+this.random()*.35,path:[],pathIn:0,goal:null,goalAge:0,visits:new Map(),lastSeen:null,
+      senseIn:this.random()*.15,thinkIn:.15+this.random()*.35,path:[],pathIn:0,goal:null,goalAge:0,visits:new Map(),lastSeen:null,regionOrigin:copy(bot.pos),regionAge:0,roamUntil:0,
       aim:copy(bot.pos),aimReady:false,strafe:this.random()<.5?-1:1,strafeIn:.7+this.random()*.7,
       ammo:weapon.magazine,reload:0,charge:0,cool:.5,rest:0,burst:0,underFire:0,stuck:0,previous:copy(bot.pos),flight:null,weapon,dodge:null,dodgeCooldown:0};
     this.brains.set(bot,brain);bot.brain=brain;bot.vy=0;this.world.equip?.(bot,weaponType);return brain;
@@ -149,6 +152,16 @@ export class ArenaAI{
     const same=b.goal?.type===type&&horizontal(b.goal,pos)<1&&Math.abs(b.goal.y-pos.y)<.4;
     if(!same){b.goal={type,...copy(pos),...extra};b.goalAge=0;b.pathIn=0;this.stats.goals[type]=(this.stats.goals[type]||0)+1}
   }
+  chooseRotation(bot,b,minDistance=4){
+    let choice=null,score=-Infinity;
+    for(const n of this.patrolAnchors){const d=distance(bot.pos,n);if(d<minDistance)continue;
+      const recency=this.clock-(b.visits.get(n.id)?? -30);
+      const crowd=[...this.brains].reduce((sum,[other,brain])=>sum+(other!==bot&&!other.dead?Math.max(0,1-distance(n,brain.goal||other.pos)/16):0),0);
+      const value=Math.min(recency,30)*.7+clamp(n.y-bot.pos.y,-3,3)*b.profile.highGround-d*.06-crowd*10+this.random()*8;
+      if(value>score){choice=n;score=value}
+    }
+    if(choice){this.setGoal(b,'rotate',choice);return true}return false;
+  }
   chooseGoal(bot,b){
     const memory=b.memory.get(b.target),threat=memory?.pos,injured=bot.hp<this.tuning.navigation.retreatHealth*b.profile.caution;
     const pickups=this.world.pickups.filter(p=>p.kind!=='pad'&&p.kind!=='focus'&&p.timer<=0);
@@ -168,6 +181,10 @@ export class ArenaAI{
       }
       if(choice){this.setGoal(b,b.reload>0?'reload':'retreat',choice);return}
     }
+    // Keep firing while taking a new route after a prolonged fight in one
+    // room. Nearby targets and footstep sounds must not pin every bot forever.
+    if(b.goal?.type==='rotate'&&this.clock<b.roamUntil&&distance(bot.pos,b.goal)>1.2)return;
+    if(b.regionAge>14&&this.chooseRotation(bot,b,22)){b.regionAge=0;b.roamUntil=this.clock+10;return}
     if(memory&&b.visible){
       if(b.goal?.type==='flank'&&b.goalAge<2.6&&distance(bot.pos,b.goal)>1.4&&distance(bot.pos,memory.pos)>4)return;
       const d=distance(bot.pos,memory.pos),tooClose=d<b.preferredRange*.65;
@@ -176,7 +193,7 @@ export class ArenaAI{
         let choice=null,score=-Infinity;
         for(const n of this.navigation.anchors){const travel=distance(bot.pos,n),range=distance(n,memory.pos);if(travel<3||travel>25||range<5||range>32)continue;
           const cover=!this.world.canSee(memory.eye,{x:n.x,y:n.y+1.4,z:n.z});
-          const value=n.y*b.profile.highGround*4+(cover?b.profile.flank*12:0)-Math.abs(range-b.preferredRange)*.5-travel*.25+this.random()*5;
+          const value=clamp(n.y-bot.pos.y,-4,4)*b.profile.highGround*4+(cover?b.profile.flank*12:0)-Math.abs(range-b.preferredRange)*.5-travel*.25+this.random()*5;
           if(value>score){choice=n;score=value}
         }
         if(choice){this.setGoal(b,'flank',choice);return}
@@ -185,13 +202,10 @@ export class ArenaAI{
     }
     if(memory){this.setGoal(b,'search',memory.pos);return}
     if(b.heard&&this.clock-b.heard.at<this.difficulty.memory){this.setGoal(b,'search',b.heard.pos);return}
-    if(b.goal&&b.goalAge<3.8&&distance(bot.pos,b.goal)>1.2)return;
-    let choice=null,score=-Infinity;
-    for(const n of this.navigation.anchors){const d=distance(bot.pos,n);if(d<4)continue;
-      const recency=this.clock-(b.visits.get(n.id)?? -20),value=Math.min(recency,20)*.6+n.y*b.profile.highGround*2-d*.12+this.random()*8;
-      if(value>score){choice=n;score=value}
-    }
-    if(choice){b.visits.set(choice.id,this.clock);this.setGoal(b,'rotate',choice)}
+    // Finish long rotations instead of choosing another nearby base after 3.8s.
+    const commitment=b.goal?.type==='rotate'?Math.min(40,8+distance(bot.pos,b.goal)/this.difficulty.speed*2):3.8;
+    if(b.goal&&b.goalAge<commitment&&distance(bot.pos,b.goal)>1.2)return;
+    this.chooseRotation(bot,b);
   }
   navigate(bot,b,dt){
     if(b.liftRide){this.world.elevator?.(bot,b,dt);return}
@@ -265,7 +279,7 @@ export class ArenaAI{
   }
   update(dt){
     this.clock+=dt;const actors=this.actors();
-    for(const [bot,b]of this.brains){if(bot.dead)continue;b.goalAge+=dt;b.weaponHeld+=dt;b.weaponDecisionIn-=dt;b.swapIn=Math.max(0,b.swapIn-dt);b.dodgeCooldown=Math.max(0,b.dodgeCooldown-dt);b.underFire=Math.max(0,b.underFire-dt);b.thinkIn-=dt;b.senseIn-=dt;b.strafeIn-=dt;
+    for(const [bot,b]of this.brains){if(bot.dead)continue;b.goalAge+=dt;b.regionAge+=dt;if(horizontal(bot.pos,b.regionOrigin)>18||Math.abs(bot.pos.y-b.regionOrigin.y)>10){b.regionOrigin=copy(bot.pos);b.regionAge=0}b.weaponHeld+=dt;b.weaponDecisionIn-=dt;b.swapIn=Math.max(0,b.swapIn-dt);b.dodgeCooldown=Math.max(0,b.dodgeCooldown-dt);b.underFire=Math.max(0,b.underFire-dt);b.thinkIn-=dt;b.senseIn-=dt;b.strafeIn-=dt;
       if(b.senseIn<=0){this.perceive(bot,b,actors);this.noticeProjectiles(bot,b);b.senseIn=this.tuning.senses.interval*(.85+this.random()*.3)}
       if(b.thinkIn<=0){this.chooseGoal(bot,b);b.thinkIn=this.difficulty.think*(.8+this.random()*.4)}
       if(b.strafeIn<=0){b.strafe*=-1;b.strafeIn=.65+this.random()*1.1}
@@ -273,6 +287,7 @@ export class ArenaAI{
       if(look){const a=Math.atan2(look.x-bot.pos.x,look.z-bot.pos.z);b.facing+=clamp(angleDelta(a,b.facing),-3.8*dt,3.8*dt)}
       if(b.weaponDecisionIn<=0){this.chooseWeapon(bot,b);b.weaponDecisionIn=.65}
       this.navigate(bot,b,dt);this.world.physics(bot,b,dt);
+      for(const n of this.navigation.anchors)if(distance(bot.pos,n)<12)b.visits.set(n.id,this.clock);
       this.combat(bot,b,dt,actors);this.world.collect?.(bot,b);this.world.animate?.(bot,b,dt);
     }
   }

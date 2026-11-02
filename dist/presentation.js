@@ -57,7 +57,11 @@ export class FrameRenderer{
   this.gun=new THREE.WebGLRenderTarget(1,1,options);this.gun.samples=this.world.samples;
   this.ambientTarget=new THREE.WebGLRenderTarget(1,1,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,depthBuffer:false});
   this.gtao=hdr?new GTAOPass(worldScene,worldCamera,1,1,undefined,{radius:.38,thickness:.20,distanceFallOff:.6,scale:.7,samples:12},{radius:5,samples:12,depthPhi:3,normalPhi:4}):null;
-  if(this.gtao)this.gtao.output=GTAOPass.OUTPUT.Denoise;
+  if(this.gtao){
+   // The AO depth pass must see the same two-sided BSP walls as the color pass.
+   this.gtao.normalMaterial.side=THREE.DoubleSide;
+   this.gtao.output=GTAOPass.OUTPUT.Denoise;
+  }
   this.bloomA=new THREE.WebGLRenderTarget(1,1,{...options,depthBuffer:false});this.bloomB=this.bloomA.clone();
   const common={worldTex:{value:this.world.texture},gunTex:{value:this.gun.texture}};
   this.prefilter=new THREE.ShaderMaterial({uniforms:common,vertexShader:vertex,fragmentShader:prefilter,depthTest:false,depthWrite:false,toneMapped:false});
