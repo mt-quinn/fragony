@@ -12,6 +12,7 @@ let source=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8').re
 vm.runInContext(source,context);
 vm.runInContext(`
 muted=true;scene=new THREE.Scene();arena=new THREE.Group();scene.add(arena);camera=new THREE.PerspectiveCamera(85,1,.07,160);scene.add(camera);renderer={domElement:{requestPointerLock(){}}};previewDummy=new THREE.Group();buildArena();buildNav();buildWeapon();makeBots();
+for(const a of spawnPoints)assert.equal(blocked(a[0],a[2],a[1]),false,'spawns must not intersect cover');
 for(const a of spawnPoints)for(const b of spawnPoints){if(a===b)continue;assert.ok(findPath({x:a[0],z:a[2]},{x:b[0],z:b[2]}).length,'spawn routes connect')}
 results.push('All 56 spawn-to-spawn routes connect.');
 let dummy=bots[0];let initial=matchKills;
