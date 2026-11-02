@@ -1,3 +1,4 @@
+import {nearBlocks} from './geometry.js';
 import * as THREE from './vendor/three.module.js';
 
 // The same joint endpoints drive living poses, hit regions and the death solver.
@@ -149,7 +150,8 @@ export function beginRagdoll(b,impulse=new THREE.Vector3(),hitPart='torso'){
 }
 function sphereWorld(n,blocks){
  const p=n.p,r=n.radius;if(p.y<r){p.y=r;n.contact.y=1}
- for(const b of blocks){if(p.y+r<b.bottom||p.y-r>b.top||Math.abs(p.x-b.x)>Math.hypot(b.w,b.d)/2+r||Math.abs(p.z-b.z)>Math.hypot(b.w,b.d)/2+r)continue;
+ for(const b of nearBlocks(blocks,p.x,p.z,r)){if(p.y+r<b.bottom||p.y-r>b.top||Math.abs(p.x-b.x)>Math.hypot(b.w,b.d)/2+r||Math.abs(p.z-b.z)>Math.hypot(b.w,b.d)/2+r)continue;
+  if(b.planes){let best=null,q=-Infinity;for(const plane of b.planes){const d=plane[0]*p.x+plane[1]*p.y+plane[2]*p.z-plane[3]-r;if(d>q){q=d;best=plane}}if(q<0){p.x+=best[0]*(-q+.0001);p.y+=best[1]*(-q+.0001);p.z+=best[2]*(-q+.0001);n.contact.set(best[0],best[1],best[2])}continue}
   const a=b.yaw||0,c=Math.cos(a),s=Math.sin(a),dx=p.x-b.x,dz=p.z-b.z,x=c*dx-s*dz,z=s*dx+c*dz,hw=b.w/2,hd=b.d/2;
   let nx=x-clamp(x,-hw,hw),ny=p.y-clamp(p.y,b.bottom,b.top),nz=z-clamp(z,-hd,hd),length=Math.hypot(nx,ny,nz),depth=r-length;
   if(depth<=0)continue;

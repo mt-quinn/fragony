@@ -1,4 +1,5 @@
-import { inBlock, blockedAt, surfaceAt, launchTime } from './geometry.js';
+import {healthAfterPickup} from './pickups.js';
+import { inBlock, blockedAt, surfaceAt, launchTime,blockSpan } from './geometry.js';
 // All campaign difficulty and personality controls live here. Distances are metres;
 // timing uses world seconds, so slow motion affects thinking, aim and movement alike.
 export const AI_TUNING = {
@@ -33,14 +34,14 @@ export function difficultyForRound(round,tuning=AI_TUNING){
   const t=clamp((round-1)/tuning.progressionRounds,0,1),e=t*t*(3-2*t);
   return Object.fromEntries(Object.keys(tuning.early).map(k=>[k,tuning.early[k]+(tuning.late[k]-tuning.early[k])*e]));
 }
-export function solidAt(blocks,x,z,y,r=.38){return blockedAt(blocks,x,z,y,r,1.9)}
-function clearSegment(blocks,a,b,action='walk',query=null){
+export function solidAt(blocks,x,z,y,r=.38,step=.32){return blockedAt(blocks,x,z,y,r,1.9,step)}
+function clearSegment(blocks,a,b,action='walk',query=null,stepHeight=.3){
  // A descending edge must leave the upper floor, not point through it.
  if(action==='drop'&&surfaceAt(query?query(b.x,b.z):blocks,b.x,b.z,a.y)>b.y+.31)return false;
- const steps=Math.ceil(horizontal(a,b)*4);
+ const steps=Math.ceil(Math.max(horizontal(a,b),Math.abs(a.y-b.y))*4);
  for(let i=0;i<=steps;i++){
   const t=i/Math.max(1,steps),x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,y=action==='drop'?a.y:action==='jump'?Math.max(a.y,b.y)+Math.sin(t*Math.PI)*.8:a.y+(b.y-a.y)*t,near=query?query(x,z):blocks;
-  if(solidAt(near,x,z,y))return false;
+  if(solidAt(near,x,z,y,.38,stepHeight+.02))return false;
   if(action==='walk'&&surfaceAt(near,x,z,y)<y-.34)return false;
  }return true;
 }
@@ -50,15 +51,19 @@ export function buildNavigation(blocks,pads=[],anchors=null,options={}){
  // One small neighborhood per grid cell avoids scanning the whole map for each edge.
  for(const b of blocks){const c=Math.abs(Math.cos(b.yaw||0)),s=Math.abs(Math.sin(b.yaw||0)),wx=(b.w*c+b.d*s)/2+1.2,dz=(b.w*s+b.d*c)/2+1.2;for(let x=Math.floor(b.x-wx);x<=Math.ceil(b.x+wx);x++)for(let z=Math.floor(b.z-dz);z<=Math.ceil(b.z+dz);z++){const key=`${x},${z}`;if(!spatial.has(key))spatial.set(key,[]);spatial.get(key).push(b)}}
  for(let x=Math.ceil(-boundX+.5);x<=Math.floor(boundX-.5);x++)for(let z=Math.ceil(-boundZ+.5);z<=Math.floor(boundZ-.5);z++){
-  const near=query(x,z),heights=new Set([0]);for(const b of near)if(b.top>0&&b.top<=maxHeight&&b.w>=.75&&b.d>=.75&&inBlock(b,x,z,-.38))heights.add(b.top);
-  for(const y of heights){if(solidAt(near,x,z,y))continue;const n={id:nodes.length,x,y,z,edges:[]};nodes.push(n);const key=`${x},${z}`;if(!columns.has(key))columns.set(key,[]);columns.get(key).push(n)}
+  const near=query(x,z),heights=new Set(options.noGround?[]:[0]);for(const b of near)if(b.top>0&&b.top<=maxHeight&&b.w>=(options.noGround?.2:.75)&&b.d>=(options.noGround?.2:.75)&&inBlock(b,x,z,options.noGround?0:-.38)){const span=blockSpan(b,x,z,.38);if(span)heights.add(Math.round(span.top*1000)/1000);}
+  for(const w of options.water||[]){const span=blockSpan(w,x,z);if(span)for(let y=Math.max(2,Math.ceil(span.bottom));y<span.top;y+=4)heights.add(y);if(span)heights.add(span.top-.75)}
+  for(const y of heights){if(solidAt(near,x,z,y,.38,(options.stepHeight??.3)+.02))continue;const wet=(options.water||[]).some(w=>{const span=blockSpan(w,x,z);return span&&y>=span.bottom&&y<span.top});if(wet&&(x%2||z%2))continue;const n={id:nodes.length,x,y,z,wet,edges:[]};nodes.push(n);const key=`${x},${z}`;if(!columns.has(key))columns.set(key,[]);columns.get(key).push(n)}
  }
  for(const n of nodes)for(const [dx,dz]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]])for(const m of columns.get(`${n.x+dx},${n.z+dz}`)||[]){
-  const rise=m.y-n.y;if(rise>1.35||rise< -8.1)continue;const action=rise>.3?'jump':rise< -.3?'drop':'walk';if(clearSegment(blocks,n,m,action,query))n.edges.push({node:m,action,cost:distance(n,m)+(action==='walk'?0:1.2)});
+  const rise=m.y-n.y;if(n.wet||m.wet){if(Math.abs(rise)>4.1)continue;if(clearSegment(blocks,n,m,'swim',query,options.stepHeight??.3))n.edges.push({node:m,action:'swim',cost:distance(n,m)*1.3});continue}if(rise>1.35||rise< -8.1)continue;const action=rise>(options.stepHeight??.3)?'jump':rise< -.3?'drop':'walk';if(clearSegment(blocks,n,m,action,query,options.stepHeight??.3))n.edges.push({node:m,action,cost:distance(n,m)+(action==='walk'?0:1.2)});
  }
- const navigation={nodes,pads:[],anchors:[],bounds:{x:boundX,z:boundZ}};
+ for(const column of columns.values())for(const n of column)if(n.wet)for(const m of column)if(n!==m&&Math.abs(n.y-m.y)<=4.1&&clearSegment(blocks,n,m,'swim',query,options.stepHeight??.3))n.edges.push({node:m,action:'swim',cost:distance(n,m)*1.3});
+ const navigation={nodes,blocks,stepHeight:options.stepHeight??.3,pads:[],anchors:[],bounds:{x:boundX,z:boundZ}};
  for(const p of pads){const from=nearestNode(navigation,{x:p.x,y:p.y||0,z:p.z}),to=nearestNode(navigation,p.landing);if(from&&to&&Math.abs(to.y-p.landing.y)<.35&&Math.abs(from.y-(p.y||0))<.35){const pad={x:p.x,y:p.y||0,z:p.z,power:p.power||16.5};from.edges.push({node:to,action:'pad',cost:horizontal(from,to)*.5+3,pad});navigation.pads.push({from,to,...pad})}}
+ for(const lift of options.elevators||[]){const from=nearestNode(navigation,{...lift.entry,y:lift.low}),to=nearestNode(navigation,{...lift.entry,y:lift.high});if(from&&to&&Math.abs(from.y-lift.low)<.35&&Math.abs(to.y-lift.high)<.35){from.edges.push({node:to,action:'elevator',cost:8,lift,fromY:lift.low});to.edges.push({node:from,action:'elevator',cost:8,lift,fromY:lift.high})}}
  for(const [x,y,z]of anchors||[]){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}
+ if(options.noGround&&anchors?.length){const start=nearestNode(navigation,{x:anchors[0][0],y:anchors[0][1],z:anchors[0][2]}),seen=new Set([start]),queue=[start];for(let i=0;i<queue.length;i++)for(const e of queue[i].edges)if(!seen.has(e.node)){seen.add(e.node);queue.push(e.node)}navigation.nodes=nodes.filter(n=>seen.has(n));navigation.nodes.forEach((n,i)=>n.id=i);navigation.anchors=navigation.anchors.filter(n=>seen.has(n))}
  return navigation;
 }
 export function nearestNode(navigation,pos){
@@ -74,8 +79,9 @@ export function findRoute(navigation,from,to,{avoid=null,aggression=1}={}){
     for(const edge of n.edges){const m=edge.node,exposure=avoid?Math.max(0,10-horizontal(m,avoid))*.15/Math.max(.2,aggression):0,next=cost.get(n)+edge.cost+exposure;
       if(next<(cost.get(m)??Infinity)){cost.set(m,next);parents.set(m,{n,edge});push(m,next+distance(m,goal))}}
   }
-  if(start===goal)return [{...copy(goal),action:'walk'}];if(!parents.has(goal))return [];
-  const path=[];let n=goal;while(n!==start){const {n:previous,edge}=parents.get(n);path.unshift({...copy(n),action:edge.action,pad:edge.pad});n=previous}return path;
+  const final=navigation.blocks&&Math.abs(goal.y-(to.y||0))<.35&&clearSegment(navigation.blocks,goal,to,'walk',null,navigation.stepHeight)?[{...copy(to),action:'walk',fine:true}]:[];
+  if(start===goal)return final.length?final:[{...copy(goal),action:'walk',fine:true}];if(!parents.has(goal))return [];
+  const path=[];let n=goal;while(n!==start){const {n:previous,edge}=parents.get(n);path.unshift({...copy(n),action:edge.action,pad:edge.pad,lift:edge.lift,fromY:edge.fromY});n=previous}return path.concat(final);
 }
 export class ArenaAI{
   constructor({navigation,world,round=1,tuning=AI_TUNING,random=Math.random}){
@@ -148,11 +154,11 @@ export class ArenaAI{
     const pickups=this.world.pickups.filter(p=>p.kind!=='pad'&&p.kind!=='focus'&&p.timer<=0);
     let pickup=null,pickupScore=-Infinity;
     for(const p of pickups){const y=p.y||0,position={x:p.x,y,z:p.z};
-      const value=p.kind==='health'?(100-bot.hp)*1.1:bot.hp<140?27:0;
+      const value=(healthAfterPickup(bot.hp,100,p)-bot.hp)*(injured?2:1.25)+(p.amount===50&&bot.hp<200?12:0);
       if(value<=0)continue;const score=value-distance(bot.pos,position)*1.5;
       if(score>pickupScore){pickupScore=score;pickup={...position,pickup:p}}
     }
-    if(pickup&&(injured||(!b.visible&&pickupScore>8))){this.setGoal(b,injured?'heal':'pickup',pickup,{pickup:pickup.pickup});return}
+    if(pickup&&(injured||(!b.visible&&pickupScore>8&&!(b.heard&&this.clock-b.heard.at<this.difficulty.memory)))){this.setGoal(b,injured?'heal':'pickup',pickup,{pickup:pickup.pickup});return}
     if(threat&&(injured||b.reload>0||b.underFire>0&&bot.hp<55)){
       let choice=null,score=-Infinity;
       for(const n of this.navigation.anchors){const travel=distance(bot.pos,n);if(travel>19||travel<2)continue;
@@ -188,6 +194,7 @@ export class ArenaAI{
     if(choice){b.visits.set(choice.id,this.clock);this.setGoal(b,'rotate',choice)}
   }
   navigate(bot,b,dt){
+    if(b.liftRide){this.world.elevator?.(bot,b,dt);return}
     if(!b.goal)return;
     // Plant for the final rail wind-up; the visible crouched brace is also a dodge window.
     if(b.weaponType==='rail'&&b.charge>.2&&b.visible&&b.goal.type==='engage'&&!b.underFire&&!b.dodge&&!b.flight)return;
@@ -195,16 +202,18 @@ export class ArenaAI{
     if(b.dodge){b.dodge.delay-=dt;if(b.dodge.delay<=0){const d=Math.max(.01,Math.hypot(b.dodge.x,b.dodge.z)),step=this.difficulty.speed*1.2*dt;this.world.move(bot,b.dodge.x/d*step,b.dodge.z/d*step);b.dodge.left-=dt;if(b.dodge.left<=0)b.dodge=null;return}}
     b.pathIn-=dt;
     if(b.pathIn<=0){b.path=findRoute(this.navigation,bot.pos,b.goal,{avoid:['retreat','heal','reload'].includes(b.goal.type)?b.memory.get(b.target)?.pos:null,aggression:b.profile.aggression});b.pathIn=this.tuning.navigation.repath+this.random()*.25;this.stats.repaths++}
-    while(b.path.length&&horizontal(bot.pos,b.path[0])<.55&&Math.abs(bot.pos.y-b.path[0].y)<.65)b.path.shift();
+    while(b.path.length&&horizontal(bot.pos,b.path[0])<(b.path[0].fine?.15:.55)&&Math.abs(bot.pos.y-b.path[0].y)<.65)b.path.shift();
     let destination=b.path[0];const m=b.memory.get(b.target);
     // Strafe in committed legs, never instantaneous direction jitter. Stay on a
     // supported surface and use the route when the enemy is on another level.
-    if(b.goal.type==='engage'&&b.visible&&m&&Math.abs(bot.pos.y-m.pos.y)<1.1&&this.world.canSee({x:bot.pos.x,y:bot.pos.y+1.4,z:bot.pos.z},m.eye)){
+    if(destination?.action!=='swim'&&b.goal.type==='engage'&&b.visible&&m&&Math.abs(bot.pos.y-m.pos.y)<1.1&&this.world.canSee({x:bot.pos.x,y:bot.pos.y+1.4,z:bot.pos.z},m.eye)){
       const d=horizontal(bot.pos,m.pos),dx=(m.pos.x-bot.pos.x)/Math.max(.1,d),dz=(m.pos.z-bot.pos.z)/Math.max(.1,d);
       const advance=clamp((d-b.preferredRange)*.25,-1,1)*b.profile.aggression;
       destination={x:bot.pos.x+dx*advance+dz*b.strafe*.65,y:bot.pos.y,z:bot.pos.z+dz*advance-dx*b.strafe*.65,action:'walk'};
     }
     if(!destination)return;
+    if(destination.action==='elevator'){b.liftRide={id:destination.lift.id,fromY:destination.fromY,to:copy(destination),phase:'board'};this.world.elevator?.(bot,b,dt);return}
+    if(destination.action==='swim')this.world.swim?.(bot,destination,dt);
     if(destination.action==='pad'&&horizontal(bot.pos,destination.pad)<1.45&&Math.abs(bot.pos.y-destination.pad.y)<.35){
       const power=destination.pad.power,flightTime=launchTime(power,destination.y-bot.pos.y);
       b.flight={vx:(destination.x-bot.pos.x)/flightTime,vz:(destination.z-bot.pos.z)/flightTime,age:0};bot.vy=power;this.stats.pads++;return;
@@ -267,4 +276,11 @@ export class ArenaAI{
       this.combat(bot,b,dt,actors);this.world.collect?.(bot,b);this.world.animate?.(bot,b,dt);
     }
   }
+}
+// Compact precomputed graph avoids rebuilding a BSP map's navigation on the menu.
+export function restoreNavigation(encoded,elevators,anchors,bounds,blocks=null,stepHeight=.3){
+ const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)),data=new DataView(bytes.buffer),count=data.getUint32(0,true),edgeBase=8+count*12,actions=['walk','jump','drop','swim','elevator'];
+ const nodes=Array.from({length:count},(_,id)=>{const i=8+id*12;return{id,x:data.getInt8(i),z:data.getInt8(i+1),y:data.getUint16(i+2,true)/1000,wet:!!data.getUint8(i+4),edges:[]}});
+ for(const n of nodes){const i=8+n.id*12,first=data.getUint32(i+8,true),length=data.getUint16(i+6,true);for(let j=first;j<first+length;j++){const k=edgeBase+j*8,lift=elevators[data.getUint8(k+5)-1];n.edges.push({node:nodes[data.getUint16(k,true)],cost:data.getUint16(k+2,true)/100,action:actions[data.getUint8(k+4)],lift,fromY:lift?data.getUint16(k+6,true)/1000:undefined})}}
+ const navigation={nodes,blocks,stepHeight,anchors:[],pads:[],bounds};for(const [x,y,z]of anchors){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}return navigation;
 }

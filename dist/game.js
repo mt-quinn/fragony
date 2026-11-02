@@ -1,11 +1,14 @@
+import {healthAfterPickup} from './pickups.js';
+import {buildBrushMap,dressElevators} from './map-view.js';
+import {ElevatorSystem} from './elevators.js';
 import * as THREE from 'three';
 import {surface, MATERIALS, studioEnvironment, FrameRenderer, dressArena, createMuzzleFlash, smokeMesh} from './presentation.js';
 import {createRifle, rifleAttachment, animateRifle} from './rifle.js';
 import {createDummyRig, resetDummyRig, animateDummy, fireDummy, beginRagdoll, stepRagdoll, poseDummy} from './characters.js';
-import { ArenaAI, buildNavigation, nearestNode as nearestAINode, findRoute } from './ai.js';
-import { MAP, ALL_WEAPONS, randomWeaponPair } from './map.js';
+import { ArenaAI, buildNavigation,restoreNavigation, nearestNode as nearestAINode, findRoute } from './ai.js';
+import { MAP, MAPS, selectMap, ALL_WEAPONS, randomWeaponPair } from './map.js';
 import { COLLISION, canOccupy, moveCharacter } from './collision.js';
-import { inBlock, blockedAt, surfaceAt, ceilingAt, launchTime } from './geometry.js';
+import { inBlock, blockedAt, surfaceAt, ceilingAt, launchTime,blockSpan } from './geometry.js';
 import { GameAudio, AUDIO_TUNING } from './audio.js';
 import { ACTIONS, ControlBindings, keyLabel, mouseCode, bindingsHTML, controlsOptionsHTML } from './controls.js';
 import { DamageHistory, bodyPartAt, recapHTML } from './recap.js';
@@ -44,7 +47,7 @@ let shotsFired=0;
 let health=100,focus=100,ammo=30,reloading=0,shotTimer=0,grenades=2,slow=false,locked=false,mouseDown=false,yaw=0,pitch=0,vy=0,grounded=true,recoil=0,moveClock=0,elapsed=0,hitTime=0,respawnTime=0,toastTime=0,streakReady=false;
 const playerPos=new THREE.Vector3(0,1.7,15),vel=new THREE.Vector3(),keys=new Set(),up=new THREE.Vector3(0,1,0),ray=new THREE.Raycaster(),aim=new THREE.Vector3(),tmp=new THREE.Vector3(),tmp2=new THREE.Vector3();
 const gameAudio=new GameAudio();let muted=false,lastHUD=0,dragLook=false,stepDistance=0,reloadStage=0,reloadLength=0,hurtSoundCooldown=0,lastPointer=null;
-const spawnPoints=MAP.spawns;
+let spawnPoints=MAP.spawns,elevatorSystem;const arenaCache=new Map();
 const botNames=['CINDER','ROOK','VESPER','STATIC','BRICK'];
 const inkEdges=new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1));const inkLine=new THREE.LineBasicMaterial({color:0x303b40,transparent:true,opacity:.12});
 const shardGeo=new THREE.TetrahedronGeometry(1);
@@ -64,6 +67,7 @@ function mat(c){return surface(c)}
 function cube(x,y,z,w,h,d,c,parent=arena,solid=false){const m=new THREE.Mesh(solid?worldBoxGeo:boxGeo,solid?worldMat(c):mat(c));m.position.set(x,y,z);m.scale.set(w,h,d);m.castShadow=parent!==weaponGroup;m.receiveShadow=true;parent.add(m);if(solid){const edge=new THREE.LineSegments(inkEdges,inkLine);m.add(edge);blocks.push({x,z,w,d,top:y+h/2,bottom:y-h/2});worldMeshes.push(m)}return m}
 function label(text,x,y,z,width,height,rotation=0,bg='#182127',fg='#eef0e6'){const cv=document.createElement('canvas');cv.width=1024;cv.height=256;const c=cv.getContext('2d');c.fillStyle=bg;c.fillRect(0,0,1024,256);c.fillStyle=fg;c.font='900 170px Impact, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,512,140,970);const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:tx}));mesh.position.set(x,y,z);mesh.rotation.y=rotation;arena.add(mesh);return mesh}
 function init(){
+ selectMap(localStorage.getItem('dh-map')||'testworks');spawnPoints=MAP.spawns;$('map-select').value=MAP.id;
  applyHUDScale();
  gameAudio.visibility=(a,b)=>visible(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z));
  scene=new THREE.Scene();scene.background=new THREE.Color(0x182127);scene.fog=new THREE.Fog(0x182127,38,120);
@@ -72,9 +76,10 @@ function init(){
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5,Math.sqrt(2100000/(innerWidth*innerHeight))));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;studioMap=studioEnvironment(renderer);scene.environment=studioMap.texture;scene.environmentIntensity=.34;frameRenderer=new FrameRenderer(renderer,scene,camera);$('viewport').appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,1.0));const sun=new THREE.DirectionalLight(0xfff2d6,2.8);sun.position.set(-24,52,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-57,right:57,top:57,bottom:-57,near:1,far:125});sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);scene.traverse(o=>{if(o.isLight)o.layers.enable(1)});const weaponFill=new THREE.DirectionalLight(0xdde9ef,1.5);weaponFill.position.set(-2,3,1);weaponFill.layers.set(1);camera.add(weaponFill);camera.add(weaponFill.target);weaponFill.target.position.set(0,0,-1);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewRig=createDummy();previewDummy=previewRig.group;camera.add(previewDummy);previewDummy.scale.setScalar(1.55);previewDummy.position.set(1.55,-1.85,-4.6);previewDummy.rotation.y=-.4;
- let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){previewDummy.visible=true;previewDummy.rotation.y=-.4+Math.sin(elapsed*.3)*.12;previewRig.anim.time+=dt;poseDummy(previewRig,{dt,relaxed:true});camera.fov=65;camera.updateProjectionMatrix();camera.position.set(43+Math.sin(elapsed*.055)*3,32,42);camera.lookAt(0,0,-3)}updateEffects(dt*(slow?.25:1));frameRenderer.render(scene,camera,dt,slow)});
+ let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){previewDummy.visible=true;previewDummy.rotation.y=-.4+Math.sin(elapsed*.3)*.12;previewRig.anim.time+=dt;poseDummy(previewRig,{dt,relaxed:true});camera.fov=65;camera.updateProjectionMatrix();const p=MAP.camera?.position||[43,32,42],t=MAP.camera?.target||[0,0,-3];camera.position.set(p[0]+Math.sin(elapsed*.055)*3,p[1],p[2]);camera.lookAt(...t)}updateEffects(dt*(slow?.25:1));frameRenderer.render(scene,camera,dt,slow)});
 }
 function buildArena(){
+ if(MAP.brushes)buildBrushMap(arena,MAP,blocks,worldMeshes);else{
  const floor=new THREE.Mesh(new THREE.BoxGeometry(MAP.floor.w,1,MAP.floor.d),mat(0x94a69e));floor.position.y=-.5;floor.receiveShadow=true;arena.add(floor);worldMeshes.push(floor);
  const colors={chalk:0xdce2d5,ink:0x182127,stair:0xb5c3bb,deck:0xa3b8b2};
  for(const a of MAP.areas){const tint=new THREE.Mesh(boxGeo,mat(a.color));tint.position.set(a.x,.008,a.z);tint.scale.set(a.w,.012,a.d);arena.add(tint)}
@@ -98,9 +103,41 @@ function buildArena(){
  for(const x of [19,26,33])cube(x,.03,3,.1,.025,27,0x526b5b);
  for(const [x,z,w,d]of[[-26,14,10,.16],[0,15,10,.16],[26,16,10,.16],[-9,-28,.16,6],[11,29,6,.16]])cube(x,.035,z,w,.03,d,0xd9ef45);
  for(const p of MAP.pads){const y=p.y||0;cube(p.x,y+.045,p.z,2.7,.09,2.7,0x182127);cube(p.x,y+.11,p.z,2.2,.08,2.2,0xd9ef45);const triangle=new THREE.Mesh(new THREE.ConeGeometry(.65,.07,3),mat(0x182127));triangle.position.set(p.x,y+.2,p.z);triangle.rotation.y=Math.atan2(p.landing.x-p.x,p.landing.z-p.z);arena.add(triangle);pickups.push({...p,kind:'pad',mesh:triangle,timer:0})}
- for(const p of MAP.pickups){const group=new THREE.Group(),m=new THREE.Mesh(p.kind==='health'?boxGeo:sphereGeo,mat(p.kind==='health'?0xf1f3e8:0xd9ef45));m.scale.setScalar(.5);group.add(m);if(p.kind==='health'){cube(0,0,.26,.15,.4,.025,0x182127,group);cube(0,0,.26,.4,.15,.025,0x182127,group)}group.position.set(p.x,p.y+1.15,p.z);arena.add(group);pickups.push({...p,mesh:group,timer:0});const ring=new THREE.Mesh(new THREE.TorusGeometry(.8,.035,3,24),mat(0xd9ef45));ring.rotation.x=-Math.PI/2;ring.position.set(p.x,p.y+.02,p.z);arena.add(ring)}
- dressArena(arena,MAP.solids,{blocks,worldMeshes});batchArena();
+ dressArena(arena,MAP.solids,{blocks,worldMeshes});
+ }
+ elevatorSystem=new ElevatorSystem(MAP.elevators||[],blocks);dressElevators(arena,elevatorSystem,worldMeshes);
+ for(const p of MAP.pickups){
+  const group=new THREE.Group(),small=p.amount===5,major=p.amount===50,healthItem=p.kind==='health',color=major?0xd9ef45:small?0xa9d9c8:0xf1f3e8;
+  const size=small?.22:major?.65:.45,m=new THREE.Mesh(healthItem?boxGeo:sphereGeo,mat(healthItem?color:0xd9ef45));m.scale.setScalar(size);group.add(m);
+  if(healthItem){for(const side of [-1,1]){cube(0,0,side*(size/2+.008),size*.26,size*.72,.015,0x182127,group);cube(0,0,side*(size/2+.012),size*.72,size*.26,.015,0x182127,group)}}
+  group.position.set(p.x,p.y+(small?.8:1.15),p.z);arena.add(group);pickups.push({...p,mesh:group,timer:0,baseY:group.position.y});
+  if(!small){const ring=new THREE.Mesh(new THREE.TorusGeometry(major?.85:.55,.025,3,24),mat(major?0xd9ef45:0xa9d9c8));ring.rotation.x=-Math.PI/2;ring.position.set(p.x,p.y+.025,p.z);arena.add(ring)}
+ }
+ batchArena();
 }
+function changeArena(id){
+ if(id===MAP.id&&arena.children.length)return;
+ clearDeathView();for(const r of rockets)scene.remove(r.mesh);rockets=[];for(const e of effects)retireEffect(e);effects=[];
+ if(arena.children.length){arenaCache.set(MAP.id,{arena,blocks,worldMeshes,pickups,elevatorSystem,navigation});scene.remove(arena)}
+ for(const b of bots)scene.remove(b.group);bots=[];selectMap(id);spawnPoints=MAP.spawns;
+ const cached=arenaCache.get(MAP.id);if(cached){({arena,blocks,worldMeshes,pickups,elevatorSystem,navigation}=cached);navNodes=navigation.nodes;scene.add(arena)}
+ else{arena=new THREE.Group();scene.add(arena);blocks=[];worldMeshes=[];pickups=[];buildArena();buildNav()}
+ elevatorSystem.reset();$('map-select').value=MAP.id;localStorage.setItem('dh-map',MAP.id);scene.updateMatrixWorld(true);
+}
+function waterAt(x,y,z){for(const w of MAP.water||[]){const span=blockSpan(w,x,z);if(span&&y>span.bottom&&y<span.top)return span}return null}
+function stepElevators(dt){if(!elevatorSystem?.lifts.length)return;const actors=bots.filter(b=>!b.dead).map(b=>({x:()=>b.pos.x,z:()=>b.pos.z,feet:()=>b.pos.y,velocityY:()=>b.vy,height:()=>1.9,carry:dy=>{b.pos.y+=dy;b.vy=0}}));if(respawnTime<=0)actors.push({x:()=>playerPos.x,z:()=>playerPos.z,feet:()=>playerPos.y-eyeHeight,velocityY:()=>vy,height:()=>crouched?COLLISION.crouching:COLLISION.standing,carry:dy=>{playerPos.y+=dy;viewHeight+=dy;vy=0}});elevatorSystem.step(dt,actors)}
+function rideElevator(b,brain,dt){
+ const ride=brain.liftRide,l=elevatorSystem.lifts.find(l=>l.id===ride?.id);if(!l){brain.liftRide=null;return}
+ if(ride.phase==='board'){
+  elevatorSystem.request(l,ride.fromY);
+  if(Math.abs(l.y-ride.fromY)>.1||Math.abs(l.target-l.y)>.1)return;
+  const dx=l.x-b.pos.x,dz=l.z-b.pos.z,d=Math.hypot(dx,dz);if(d>.12)opponentAI.world.move(b,dx/Math.max(d,.01)*Math.min(d,4.5*dt),dz/Math.max(d,.01)*Math.min(d,4.5*dt));
+  if(Math.abs(b.pos.y-l.y)<.2&&inBlock(l.block,b.pos.x,b.pos.z,-.45)){ride.phase='ride';elevatorSystem.request(l,ride.to.y)}
+ }else if(ride.phase==='ride'){
+  elevatorSystem.request(l,ride.to.y);if(Math.abs(l.y-ride.to.y)<.1)ride.phase='exit';
+ }else{const dx=ride.to.x-b.pos.x,dz=ride.to.z-b.pos.z,d=Math.hypot(dx,dz);if(d>.1)opponentAI.world.move(b,dx/Math.max(d,.01)*Math.min(d,4.5*dt),dz/Math.max(d,.01)*Math.min(d,4.5*dt));if(!inBlock(l.block,b.pos.x,b.pos.z,.1)){brain.liftRide=null;brain.pathIn=0}}
+}
+
 function batchArena(){
  const groups=new Map(),edgePositions=[];
  // Hidden originals retain precise raycasts; shared instances render static blocks.
@@ -225,14 +262,14 @@ function botHitMeshes(){const meshes=[];for(const b of bots)for(const p of Objec
 function shatterPart(b,name,point){if(!b.dead)return;const part=b.parts[name]||b.parts.torso;if(!part.visible)return;part.getWorldPosition(tmp);const center=point?point.clone().lerp(tmp,.5):tmp.clone();part.visible=false;for(let i=0;i<15;i++){const m=new THREE.Mesh(shardGeo,mat(i%4===0?0x182127:0x858c88));m.position.copy(center).add(new THREE.Vector3((Math.random()-.5)*.25,(Math.random()-.5)*.4,(Math.random()-.5)*.25));m.scale.set(.06+Math.random()*.08,.06+Math.random()*.13,.04+Math.random()*.07);scene.add(m);addEffect({mesh:m,life:.65+Math.random()*.5,max:1.2,vel:new THREE.Vector3((Math.random()-.5)*9,2+Math.random()*6,(Math.random()-.5)*9).addScaledVector(b.impactVector||new THREE.Vector3(),5),spin:new THREE.Vector3(Math.random()*12,Math.random()*10,Math.random()*9)})}playSfx('shatter',{pos:b.pos,volume:.35,curve:'foley',bus:'world',priority:1})}
 
 function blocked(x,z,feet,r=.4,height=1.7){if(Math.abs(x)>MAP.bounds.x-.5||Math.abs(z)>MAP.bounds.z-.5)return true;return blockedAt(blocks,x,z,feet,r,height)}
-function buildNav(){navigation=buildNavigation(blocks,pickups.filter(p=>p.kind==='pad'),MAP.anchors,{bounds:MAP.bounds,maxHeight:MAP.maxHeight});navNodes=navigation.nodes}
+function buildNav(){navigation=MAP.navigation?restoreNavigation(MAP.navigation,MAP.elevators,MAP.anchors,MAP.bounds,blocks,MAP.stepHeight):buildNavigation(blocks,pickups.filter(p=>p.kind==='pad'),MAP.anchors,{bounds:MAP.bounds,maxHeight:MAP.maxHeight,noGround:!!MAP.brushes,stepHeight:MAP.stepHeight,elevators:MAP.elevators,water:MAP.water});navNodes=navigation.nodes}
 function nearestNode(pos){return nearestAINode(navigation,pos)}
 function findPath(from,to){return findRoute(navigation,from,to)}
 
 function move(pos,dx,dz,feet,r=.4,height=1.7){if(!blocked(pos.x+dx,pos.z,feet,r,height))pos.x+=dx;if(!blocked(pos.x,pos.z+dz,feet,r,height))pos.z+=dz}
 function floorAt(x,z,feet){return surfaceAt(blocks,x,z,feet)}
 function visible(a,b){tmp2.copy(b).sub(a);const distance=tmp2.length();ray.set(a,tmp2.normalize());ray.far=distance;return ray.intersectObjects(worldMeshes,false).length===0}
-function startMatch(next=false){$('panel').className='panel';if(!muted){gameAudio.unlock();gameAudio.applySettings(settings);gameAudio.warm()}gameAudio.stopWorld();previewDummy.visible=false;for(const r of rockets)scene.remove(r.mesh);rockets=[];for(const e of effects)retireEffect(e);effects=[];feedback.reset();weaponMotion.reset();aimSpring.reset();for(const p of pickups){p.timer=0;p.mesh.visible=true}feeds.length=0;$('killfeed').innerHTML='';if(!next){round=1;credits=0;owned=randomWeaponPair(()=>Math.random()).map(w=>ALL_WEAPONS.indexOf(w));equipped=owned[0];startingWeapon=equipped;builds=normalizeBuilds();equipment=normalizeEquipment();shopOffers=null;perks={};best=Number(localStorage.getItem('dh-best')||0)}else if(owned.includes(startingWeapon))equipped=startingWeapon;buildWeapon();time=90;matchPoints=headshotKills=matchAssists=0;assistNotice={points:0,count:0,left:0};matchKills=deathCount=streak=0;streakReady=false;grenades=perks.frags?4:2;focus=100;makeBots();spawnPlayer();mode='play';$('menu').hidden=true;$('panel').hidden=true;$('hud').hidden=false;document.body.classList.add('playing');weaponGroup.visible=true;lock();notify(`ROUND ${round}`);saveRun()}
+function startMatch(next=false){elevatorSystem?.reset();$('panel').className='panel';if(!muted){gameAudio.unlock();gameAudio.applySettings(settings);gameAudio.warm()}gameAudio.stopWorld();previewDummy.visible=false;for(const r of rockets)scene.remove(r.mesh);rockets=[];for(const e of effects)retireEffect(e);effects=[];feedback.reset();weaponMotion.reset();aimSpring.reset();for(const p of pickups){p.timer=0;p.mesh.visible=true}feeds.length=0;$('killfeed').innerHTML='';if(!next){round=1;credits=0;owned=randomWeaponPair(()=>Math.random()).map(w=>ALL_WEAPONS.indexOf(w));equipped=owned[0];startingWeapon=equipped;builds=normalizeBuilds();equipment=normalizeEquipment();shopOffers=null;perks={};best=Number(localStorage.getItem('dh-best')||0)}else if(owned.includes(startingWeapon))equipped=startingWeapon;buildWeapon();time=90;matchPoints=headshotKills=matchAssists=0;assistNotice={points:0,count:0,left:0};matchKills=deathCount=streak=0;streakReady=false;grenades=perks.frags?4:2;focus=100;makeBots();spawnPlayer();mode='play';$('menu').hidden=true;$('panel').hidden=true;$('hud').hidden=false;document.body.classList.add('playing');weaponGroup.visible=true;lock();notify(`ROUND ${round}`);saveRun()}
 function lock(){
  lastPointer=null;
  try{if(!renderer.domElement.requestPointerLock){enableDragLook();return}const request=renderer.domElement.requestPointerLock();request?.catch?.(()=>enableDragLook())}catch{enableDragLook()}
@@ -241,7 +278,7 @@ function enableDragLook(){
  if(mode!=='play')return;dragLook=true;locked=true;lastPointer=null;$('panel').hidden=true;renderer.domElement.style&&(renderer.domElement.style.cursor='none');$('hud').querySelector('.hudhint').textContent=controlHint();
 }
 
-function spawnPlayer(){headBlocked=false;$('head-blocked').hidden=true;crouched=crouchLatch=false;if(settings.crouchToggle)keys.delete('KeyC');eyeHeight=1.7;clearDeathView();playerHistory.clear();hurtFeedback.reset();$('damage').style.opacity=0;$('healthDanger').style.opacity=0;for(let i=0;i<HURT.maxDirections;i++)$('damageArc'+i).style.opacity=0;weaponMotion.reset();aimSpring.reset();jumpBuffered=coyoteTime=0;lastJumpHeld=false;viewHeight=playerPos.y;stepDistance=0;playerPadFlight=null;magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));playerSpawnAt=opponentAI?.clock||0;let s=spawnPoints[4];for(const test of [...spawnPoints].sort(()=>Math.random()-.5)){if(bots.every(b=>b.pos.distanceTo(new THREE.Vector3(test[0],0,test[2]))>8)){s=test;break}}playerPos.set(s[0],s[1]+1.7,s[2]);health=perks.armor?140:100;tintPlayerArms();playerCredit.maxHealth=health;clearDamageCredit(playerCredit);vy=0;vel.set(0,0,0);yaw=Math.atan2(playerPos.x,playerPos.z);pitch=0;ammo=playerWeapon().mag;reloading=0;shotTimer=.2;respawnTime=0;viewHeight=playerPos.y;syncAimCamera()}
+function spawnPlayer(){headBlocked=false;$('head-blocked').hidden=true;crouched=crouchLatch=false;if(settings.crouchToggle)keys.delete('KeyC');eyeHeight=1.7;clearDeathView();playerHistory.clear();hurtFeedback.reset();$('damage').style.opacity=0;$('healthDanger').style.opacity=0;for(let i=0;i<HURT.maxDirections;i++)$('damageArc'+i).style.opacity=0;weaponMotion.reset();aimSpring.reset();jumpBuffered=coyoteTime=0;lastJumpHeld=false;viewHeight=playerPos.y;stepDistance=0;playerPadFlight=null;magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));playerSpawnAt=opponentAI?.clock||0;let s=spawnPoints[4];for(const test of [...spawnPoints].sort(()=>Math.random()-.5)){if(bots.every(b=>b.pos.distanceTo(new THREE.Vector3(test[0],test[1],test[2]))>8)){s=test;break}}playerPos.set(s[0],s[1]+1.7,s[2]);health=perks.armor?140:100;tintPlayerArms();playerCredit.maxHealth=health;clearDamageCredit(playerCredit);vy=0;vel.set(0,0,0);yaw=MAP.spawnYaws?.[spawnPoints.indexOf(s)]??Math.atan2(playerPos.x,playerPos.z);pitch=0;ammo=playerWeapon().mag;reloading=0;shotTimer=.2;respawnTime=0;viewHeight=playerPos.y;syncAimCamera()}
 function shoot(){
  const w=playerWeapon(),handling=playerHandling();
  if(shotTimer>1e-7||reloading>0||respawnTime>0)return false;if(ammo<=0){reload();return false}
@@ -390,17 +427,22 @@ function createOpponentAI(){
    ...bots.map(b=>({id:b.name,pos:b.pos,eye:{x:b.pos.x,y:b.pos.y+1.65-(b.anim?.crouch||0)*.5,z:b.pos.z},hp:b.hp,alive:!b.dead,spawnAge:(opponentAI?.clock||0)-(b.brain?.spawnAt||0)}))
   ],
   canSee:(a,b)=>visible(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z)),
-  move:(b,dx,dz)=>move(b.pos,dx,dz,b.pos.y),
+  elevator:rideElevator,
+  swim:(b,destination)=>{b.brain.swimY=destination.y;b.brain.swimUntil=opponentAI.clock+.2},
+  move:(b,dx,dz)=>{if(!MAP.brushes){move(b.pos,dx,dz,b.pos.y);return}const p=moveCharacter(blocks,{x:b.pos.x,z:b.pos.z,feet:b.pos.y,radius:.4,height:1.9},{x:dx,y:0,z:dz},{grounded:Math.abs(b.vy)<.1,bounds:MAP.bounds,stepHeight:MAP.stepHeight??COLLISION.step});b.pos.set(p.x,p.feet,p.z)},
   physics:(b,brain,dt)=>{
-   const feet=b.pos.y,fallSpeed=b.vy;b.vy-=23*dt;b.pos.y+=b.vy*dt;const ceiling=ceilingAt(blocks,b.pos.x,b.pos.z,feet,b.pos.y,1.9);if(ceiling!==null){b.pos.y=ceiling;b.vy=0}const floor=floorAt(b.pos.x,b.pos.z,Math.max(feet,b.pos.y));
-   if(b.pos.y<=floor&&b.vy<=0){if(fallSpeed< -4&&!muted)gameAudio.footstep(new THREE.Vector3(b.pos.x,floor+.15,b.pos.z),{metal:floor>2,landing:true});if(brain.lastFloor>=2.9&&floor<1)opponentAI.stats.drops++;brain.lastFloor=floor;b.pos.y=floor;b.vy=0;if(brain.flight){brain.flight=null;brain.pathIn=0}}
+   const feet=b.pos.y,fallSpeed=b.vy,water=waterAt(b.pos.x,b.pos.y+.8,b.pos.z);
+   if(water)b.vy=brain.swimUntil>opponentAI.clock?clamp((brain.swimY-b.pos.y)*5,-5,7.5):Math.min(2.5,(water.top-b.pos.y-.55)*3);else b.vy-=23*dt;
+   const contact=moveCharacter(blocks,{x:b.pos.x,z:b.pos.z,feet:b.pos.y,radius:.4,height:1.9},{x:0,y:b.vy*dt,z:0},{bounds:MAP.bounds,stepHeight:MAP.stepHeight??COLLISION.step});b.pos.y=contact.feet;
+   if(contact.ceiling&&b.vy>0)b.vy=0;
+   if(contact.grounded&&b.vy<=0){if(fallSpeed< -4&&!muted&&!water)gameAudio.footstep(new THREE.Vector3(b.pos.x,contact.feet+.15,b.pos.z),{metal:contact.feet>2,landing:true});if(brain.lastFloor>=2.9&&contact.feet<1)opponentAI.stats.drops++;brain.lastFloor=contact.feet;b.vy=0;if(brain.flight){brain.flight=null;brain.pathIn=0}}
    if(brain.flight){brain.flight.age+=dt;if(brain.flight.age>3){brain.flight=null;brain.pathIn=0}}
    if(!brain.flight)for(const link of navigation.pads)if(Math.abs(b.pos.y-link.y)<.3&&Math.abs(b.vy)<.1&&Math.hypot(b.pos.x-link.x,b.pos.z-link.z)<1.25){const t=launchTime(link.power,link.to.y-b.pos.y);brain.flight={vx:(link.to.x-b.pos.x)/t,vz:(link.to.z-b.pos.z)/t,age:0};b.vy=link.power;opponentAI.stats.pads++;break}
   },
   fire:fireBotWeapon,
   equip:(b,weapon)=>{const gun=buildDummyGun(b.parts.rightArm,weapon);gun.traverse(m=>{m.userData.bot=b;m.userData.part='rightArm'})},
   telegraph:(b,point,dt)=>{if(b.brain.charge<=dt*1.5)playSfx('charge',{pos:b.pos.clone().add(new THREE.Vector3(0,1.3,0)),volume:.4,curve:'weapon',bus:'world',priority:3});b.laserIn=(b.laserIn||0)-dt;if(b.laserIn<=0){const origin=b.pos.clone().add(new THREE.Vector3(0,1.3,0)),end=new THREE.Vector3(point.x,point.y,point.z);const dir=end.clone().sub(origin).normalize();ray.set(origin,dir);ray.far=origin.distanceTo(end);const hit=ray.intersectObjects(worldMeshes,false)[0];trail(origin,hit?.point||end,0xd9ef45,.12,.012);b.laserIn=.1}},
-  collect:(b,brain)=>{for(const p of pickups){if(p.kind==='pad'||p.kind==='focus'||p.timer>0||b.pos.clone().add(new THREE.Vector3(0,1.15,0)).distanceTo(p.mesh.position)>1.25)continue;if(p.kind==='health'&&b.hp>=100||p.kind==='armor'&&b.hp>=140)continue;healBot(b,Math.max(b.hp,Math.min(p.kind==='health'?100:140,b.hp+(p.kind==='health'?50:40))));p.timer=opponentAI.tuning.navigation.pickupRespawn;p.mesh.visible=false;brain.thinkIn=0;opponentAI.stats.pickups++}},
+  collect:(b,brain)=>{for(const p of pickups){if(p.kind!=='health'||p.timer>0||Math.hypot(b.pos.x-p.x,b.pos.z-p.z)>(p.amount===5?.65:1.1)||Math.abs(b.pos.y-p.y)>1.1)continue;const hp=healthAfterPickup(b.hp,100,p);if(hp===b.hp)continue;healBot(b,hp);p.timer=p.respawn;p.mesh.visible=false;brain.thinkIn=0;opponentAI.stats.pickups++}},
   animate:(b,brain,dt)=>{
    animateDummy(b,brain,dt,floorAt);
    if(b.anim.footfall&&b.vy===0){const pos=b.pos.clone().add(new THREE.Vector3(0,.15,0));if(!muted)gameAudio.footstep(pos,{metal:b.pos.y>2,quiet:b.anim.crouch>.5});opponentAI.hear(pos,b,b.anim.crouch>.5?5:10)}
@@ -441,21 +483,27 @@ function update(dt){for(let left=Math.min(dt,.15);left>1e-7&&mode==='play';){con
 function updateStep(dt){
  hurtSoundCooldown=Math.max(0,hurtSoundCooldown-dt);
  slow=keys.has('KeyQ')&&focus>0&&respawnTime<=0;const worldDt=dt*(slow?.22:1);focus=clamp(focus+(slow?-29:perks.focus?15:10)*dt,0,100);if(focus<=0)keys.delete('KeyQ');$('slowTint').style.opacity=slow?1:0;
+ stepElevators(worldDt);
  if(respawnTime<=0){yaw+=((keys.has('ArrowLeft')?1:0)-(keys.has('ArrowRight')?1:0))*dt*1.7;pitch=clamp(pitch+((keys.has('ArrowUp')?1:0)-(keys.has('ArrowDown')?1:0))*dt*1.4,-1.5,1.5)}
  time=Math.max(0,time-dt);if(time===0){endMatch();return}shotTimer-=dt*(slow?.8:1);if(!mouseDown)shotTimer=Math.max(0,shotTimer);nearMissCooldown=Math.max(0,nearMissCooldown-dt);if(reloading>0){reloading-=dt;if(reloadStage===0&&reloading<reloadLength*.45){reloadStage=1;playSfx('reload-in',{volume:.45})}if(reloading<=0){reloading=0;ammo=playerWeapon().mag;magazines[equipped]=ammo;playSfx('bolt',{volume:.45})}}
  if(respawnTime>0){respawnTime-=dt;if(respawnTime<=0)spawnPlayer()}else{
  updateStance();
- const forward=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0),side=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),speed=(crouched?3.7:keys.has('ShiftLeft')?11:7.5)*(perks.speed?1.2:1)*playerWeapon().move*(slow?.85:1);let ix=side*Math.cos(yaw)-forward*Math.sin(yaw),iz=-side*Math.sin(yaw)-forward*Math.cos(yaw);const len=Math.hypot(ix,iz)||1;ix=ix/len*speed;iz=iz/len*speed;if(playerPadFlight){playerPadFlight.age+=dt;vel.x=playerPadFlight.vx+ix*.15;vel.z=playerPadFlight.vz+iz*.15;if(playerPadFlight.age>3)playerPadFlight=null}else{const next=accelerate(vel.x,vel.z,ix,iz,dt,grounded,perks.speed?1.2:1);vel.x=next.x;vel.z=next.z;}const previousX=playerPos.x,previousZ=playerPos.z;
- coyoteTime=grounded?FEEL.coyote:Math.max(0,coyoteTime-dt);jumpBuffered=Math.max(0,jumpBuffered-dt);if(keys.has('Space')&&!lastJumpHeld)jumpBuffered=FEEL.jumpBuffer;lastJumpHeld=keys.has('Space');if(jumpBuffered>0&&coyoteTime>0){vy=FEEL.jumpSpeed;grounded=false;coyoteTime=jumpBuffered=0}const fallSpeed=vy;vy-=23*dt;const contact=moveCharacter(blocks,{x:playerPos.x,z:playerPos.z,feet:playerPos.y-eyeHeight,radius:COLLISION.radius,height:crouched?COLLISION.crouching:COLLISION.standing},{x:vel.x*dt,y:vy*dt,z:vel.z*dt},{grounded,bounds:MAP.bounds});
+ const swimming=waterAt(playerPos.x,playerPos.y-eyeHeight+.8,playerPos.z);
+ const forward=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0),side=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),speed=(swimming?6:crouched?3.7:keys.has('ShiftLeft')?11:7.5)*(perks.speed?1.2:1)*playerWeapon().move*(slow?.85:1);let ix=side*Math.cos(yaw)-forward*Math.sin(yaw),iz=-side*Math.sin(yaw)-forward*Math.cos(yaw);const len=Math.hypot(ix,iz)||1;ix=ix/len*speed;iz=iz/len*speed;if(playerPadFlight){playerPadFlight.age+=dt;vel.x=playerPadFlight.vx+ix*.15;vel.z=playerPadFlight.vz+iz*.15;if(playerPadFlight.age>3)playerPadFlight=null}else{const next=accelerate(vel.x,vel.z,ix,iz,dt,grounded,perks.speed?1.2:1);vel.x=next.x;vel.z=next.z;}const previousX=playerPos.x,previousZ=playerPos.z;
+ coyoteTime=grounded?FEEL.coyote:Math.max(0,coyoteTime-dt);jumpBuffered=Math.max(0,jumpBuffered-dt);if(keys.has('Space')&&!lastJumpHeld)jumpBuffered=FEEL.jumpBuffer;lastJumpHeld=keys.has('Space');if(jumpBuffered>0&&coyoteTime>0){vy=FEEL.jumpSpeed;grounded=false;coyoteTime=jumpBuffered=0}const fallSpeed=vy;if(swimming)vy=keys.has('Space')?7.5:keys.has('KeyC')?-4:Math.min(2.5,(swimming.top-(playerPos.y-eyeHeight)-.55)*3);else vy-=23*dt;const contact=moveCharacter(blocks,{x:playerPos.x,z:playerPos.z,feet:playerPos.y-eyeHeight,radius:COLLISION.radius,height:crouched?COLLISION.crouching:COLLISION.standing},{x:vel.x*dt,y:vy*dt,z:vel.z*dt},{grounded,bounds:MAP.bounds,stepHeight:MAP.stepHeight??COLLISION.step});
  playerPos.set(contact.x,contact.feet+eyeHeight,contact.z);for(const normal of contact.normals){const into=vel.x*normal.x+vel.z*normal.z;if(into<0){vel.x-=normal.x*into;vel.z-=normal.z*into}}
  if(contact.ceiling&&vy>0)vy=0;grounded=contact.grounded;if(grounded){if(fallSpeed< -4)weaponMotion.landed(fallSpeed);if(fallSpeed< -4&&!muted)gameAudio.footstep(new THREE.Vector3(playerPos.x,contact.feet+.1,playerPos.z),{self:true,metal:contact.feet>2,landing:true});vy=0;playerPadFlight=null}const travelled=Math.hypot(playerPos.x-previousX,playerPos.z-previousZ);
 
- if(grounded){stepDistance+=travelled;if(stepDistance>(keys.has('ShiftLeft')?2.45:2.05)){stepDistance=0;if(!muted)gameAudio.footstep(playerPos,{self:true,metal:playerPos.y>3.7,quiet:crouched});opponentAI?.hear(playerPos,'player',crouched?4:keys.has('ShiftLeft')?14:9)}}else stepDistance=0;
- if(mouseDown&&shotTimer<=0)shoot();moveClock+=travelled;for(const p of pickups){if(p.kind==='pad'){if(Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<1.4&&grounded&&Math.abs(playerPos.y-eyeHeight-p.y)<.3){const t=launchTime(p.power,p.landing.y-(playerPos.y-eyeHeight));playerPadFlight={vx:(p.landing.x-playerPos.x)/t,vz:(p.landing.z-playerPos.z)/t,age:0};vy=p.power;grounded=false;playSfx('pad',{volume:.5})}}else if(p.timer<=0&&playerPos.distanceTo(p.mesh.position)<1.6){if(p.kind==='health'&&health>=(perks.armor?140:100)||p.kind==='focus'&&focus>=100||p.kind==='armor'&&health>=180)continue;p.timer=15;p.mesh.visible=false;if(p.kind==='health')healPlayer(Math.max(health,Math.min(perks.armor?140:100,health+50)));if(p.kind==='armor')healPlayer(Math.min(180,health+40));if(p.kind==='focus')focus=100;playSfx('pickup',{volume:.4});notify(p.kind==='health'?'+50 HEALTH':p.kind==='armor'?'+40 OVERHEALTH':'SLOW MOTION RECHARGED')}}
+ if(grounded&&!swimming){stepDistance+=travelled;if(stepDistance>(keys.has('ShiftLeft')?2.45:2.05)){stepDistance=0;if(!muted)gameAudio.footstep(playerPos,{self:true,metal:playerPos.y>3.7,quiet:crouched});opponentAI?.hear(playerPos,'player',crouched?4:keys.has('ShiftLeft')?14:9)}}else stepDistance=0;
+ if(mouseDown&&shotTimer<=0)shoot();moveClock+=travelled;for(const p of pickups){if(p.kind==='pad'){if(Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<1.4&&grounded&&Math.abs(playerPos.y-eyeHeight-p.y)<.3){const t=launchTime(p.power,p.landing.y-(playerPos.y-eyeHeight));playerPadFlight={vx:(p.landing.x-playerPos.x)/t,vz:(p.landing.z-playerPos.z)/t,age:0};vy=p.power;grounded=false;playSfx('pad',{volume:.5})}}else if(p.timer<=0&&Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<(p.amount===5?.65:1.1)&&Math.abs(playerPos.y-eyeHeight-p.y)<1.1){
+  if(p.kind==='focus'){if(focus>=100)continue;focus=100;notify('SLOW MOTION RECHARGED')}
+  else{const hp=healthAfterPickup(health,perks.armor?140:100,p);if(hp===health)continue;const gain=hp-health;healPlayer(hp);notify(`+${gain} HEALTH`)}
+  p.timer=p.respawn||15;p.mesh.visible=false;playSfx('pickup',{volume:p.amount===5?.22:.4});
+ }}
  }
  updateBots(worldDt);
  for(let i=rockets.length-1;i>=0;i--){const r=rockets[i];r.life-=worldDt;const old=r.mesh.position.clone();if(r.grenade)r.vel.y-=15*worldDt;r.mesh.position.addScaledVector(r.vel,worldDt);r.trail-=worldDt;if(r.trail<0){trail(old,r.mesh.position,0xd9ef45,.18,.04);r.trail=.04}const pos=r.mesh.position;const contact=blocked(pos.x,pos.z,pos.y-.1,.1)||pos.y<.15||(r.owner&&respawnTime<=0&&playerPos.clone().add(new THREE.Vector3(0,-.45,0)).distanceTo(pos)<.7)||bots.some(b=>b!==r.owner&&!b.dead&&b.pos.clone().add(new THREE.Vector3(0,1,0)).distanceTo(pos)<.65);if(r.life<=0||contact){if(r.grenade&&!r.impact&&r.life>0){r.mesh.position.copy(old);r.vel.multiplyScalar(.55);r.vel.y=Math.abs(r.vel.y)+2}else{explode(contact&&(!r.grenade||r.impact)?old:pos,r.owner,r.grenade,r.damageScale,r.mods);scene.remove(r.mesh);rockets.splice(i,1)}}}
- for(const p of pickups){if(p.kind==='pad')continue;if(p.timer>0){p.timer-=worldDt;if(p.timer<=0)p.mesh.visible=true}p.mesh.rotation.y+=worldDt;p.mesh.position.y+=(Math.sin(elapsed*2)*.002)}
+ for(const p of pickups){if(p.kind==='pad')continue;if(p.timer>0){p.timer-=worldDt;if(p.timer<=0)p.mesh.visible=true}p.mesh.rotation.y+=worldDt;p.mesh.position.y=p.baseY+Math.sin(elapsed*2)*.06}
 
 }
 function activateStreak(){const kind=equipment.streak;notify(EQUIPMENT.streak.find(x=>x.id===kind).name.toUpperCase());if(kind==='surge'){healPlayer(Math.max(health,perks.armor?140:100));focus=100;playSfx('pickup',{volume:.6})}else if(kind==='barrage'){playSfx('rocket',{volume:.5,bus:'self'});syncAimCamera();camera.getWorldDirection(aim);for(const angle of [-.15,0,.15])launchRocket(camera.position,aim.clone().applyAxisAngle(up,angle),null)}else for(const b of bots.filter(b=>!b.dead))explode(b.pos.clone().add(new THREE.Vector3(0,.5,0)),null)}
@@ -469,7 +517,7 @@ const upgrades=[
  {id:'quickdraw',category:'PERK',name:'Quickdraw',desc:'20% faster aiming. 35% faster weapon switching.',price:180},
  {id:'recovery',category:'PERK',name:'Recovery',desc:'Kills restore 20 health, up to your spawn health.',price:210}
 ];
-function saveRun(){localStorage.setItem('dh-run',JSON.stringify({round,credits,owned,equipped,perks,builds,equipment,startingWeapon,shopOffers,phase:mode==='shop'||mode==='results'?'shop':'match'}))}
+function saveRun(){localStorage.setItem('dh-run',JSON.stringify({mapId:MAP.id,round,credits,owned,equipped,perks,builds,equipment,startingWeapon,shopOffers,phase:mode==='shop'||mode==='results'?'shop':'match'}))}
 function endMatch(){$('panel').className='panel';clearDeathView();const r=rank();mode='results';gameAudio.stopWorld();mouseDown=false;slow=false;document.exitPointerLock?.();$('hud').hidden=true;weaponGroup.visible=false;$('slowTint').style.opacity=0;$('damage').style.opacity=0;const survived=r<=3;const reward=[250,190,150][r-1]||0;if(survived)credits+=reward;best=Math.max(best,round);localStorage.setItem('dh-best',best);if(survived)saveRun();else localStorage.removeItem('dh-run');$('panel').hidden=false;$('panel').className='panel results-panel';$('panel').innerHTML=`<div class="results-shell"><div class="results-title"><span>ROUND ${String(round).padStart(2,'0')}</span><h2>${survived?'ROUND COMPLETE':'RUN OVER'}</h2></div><div class="results-summary"><strong>${r}<small>${['ST','ND','RD'][r-1]||'TH'}</small></strong><span>${survived?`+${reward}<small>CREDITS</small>`:`${best}<small>BEST ROUND</small>`}</span></div><div class="result-table" role="table" aria-label="Match results"><div class="result-row result-head" role="row"><span>PLACE</span><span>PLAYER</span><span>POINTS</span><span>KILLS</span><span>ASSISTS</span><span>DEATHS</span></div>${rankList().map((b,i)=>`<div class="result-row ${b.player?'you':''} ${i===2?'cutoff':''}" role="row"><span>${i+1}</span><b>${b.name}</b><strong>${b.score}</strong><span>${b.kills}</span><span>${b.assists}</span><span>${b.deaths}</span></div>`).join('')}</div><div class="panel-actions"><button class="primary" id="resultnext">${survived?'LOADOUT':'NEW RUN'}</button><button class="textbutton" id="backmenu">MAIN MENU</button></div></div>`;$('resultnext').onclick=()=>survived?showShop():startMatch();$('backmenu').onclick=mainMenu}
 function ensureShopOffers(){if(!validShopOffers(shopOffers,round))shopOffers=createShopOffers({round,owned,builds,perks,equipment,weapons,upgrades});return shopOffers}
 function showShop(inspect=false){
@@ -533,7 +581,8 @@ function settingRow(key,label,min=0,max=1,step=.05){const percent=(settings[key]
 function settingsHTML(){return `<section class="settings-category"><h3>AUDIO</h3>${[['guns','Guns'],['steps','Footsteps'],['feedback','Hit & damage feedback']].map(([key,label])=>settingRow(key,label)).join('')}</section><section class="settings-category"><h3>VISUALS</h3>${settingRow('motion','Camera motion')}${settingRow('hudScale','HUD scale',.5,2,.05)}</section>`}
 function applyHUDScale(){const scale=settings.hudScale;$('hud').style.zoom=String(scale);$('hud').style.width=(100/scale)+'vw';$('hud').style.height=(100/scale)+'vh';$('hud').style.setProperty('--hud-scale',scale);$('hud').className=innerWidth/scale<850?'hud-compact':'hud-wide'}
 function bindSettings(){for(const key of ['motion','guns','steps','feedback','hudScale'])$('setting-'+key).oninput=e=>{const min=key==='hudScale'?.5:0,max=key==='hudScale'?2:1;settings[key]=clamp(Number(e.target.value),min,max);$('value-'+key).textContent=settingValue(key);e.target.setAttribute('aria-valuetext',settingValue(key));e.target.style.setProperty('--fill',(settings[key]-min)/(max-min)*100+'%');localStorage.setItem('dh-settings',JSON.stringify(settings));if(key==='hudScale')applyHUDScale();else gameAudio.applySettings(settings)}}
-$('arsenal').onclick=()=>showShop(true);$('start').onclick=()=>startMatch();$('continue').hidden=!localStorage.getItem('dh-run');$('continue').onclick=()=>{try{const s=JSON.parse(localStorage.getItem('dh-run'));round=s.round;credits=s.credits;owned=s.owned;equipped=s.equipped;perks=s.perks||{};builds=migrateBuilds(s.builds,perks,owned);delete perks.grip;delete perks.damage;delete perks.rapid;equipment=normalizeEquipment(s.equipment);shopOffers=validShopOffers(s.shopOffers,s.round)?s.shopOffers:null;startingWeapon=owned.includes(s.startingWeapon)?s.startingWeapon:equipped;buildWeapon();$('menu').hidden=true;document.body.classList.add('playing');s.phase==='shop'?showShop():startMatch(true)}catch{startMatch()}};
+$('map-select').onchange=e=>changeArena(e.target.value);
+$('arsenal').onclick=()=>showShop(true);$('start').onclick=()=>startMatch();$('continue').hidden=!localStorage.getItem('dh-run');$('continue').onclick=()=>{try{const s=JSON.parse(localStorage.getItem('dh-run'));changeArena(s.mapId||'testworks');round=s.round;credits=s.credits;owned=s.owned;equipped=s.equipped;perks=s.perks||{};builds=migrateBuilds(s.builds,perks,owned);delete perks.grip;delete perks.damage;delete perks.rapid;equipment=normalizeEquipment(s.equipment);shopOffers=validShopOffers(s.shopOffers,s.round)?s.shopOffers:null;startingWeapon=owned.includes(s.startingWeapon)?s.startingWeapon:equipped;buildWeapon();$('menu').hidden=true;document.body.classList.add('playing');s.phase==='shop'?showShop():startMatch(true)}catch{startMatch()}};
 $('help').onclick=e=>{e.preventDefault();showControls('menu')};
 $('sound').onclick=()=>{muted=!muted;gameAudio.setMuted(muted);if(!muted)gameAudio.unlock();$('sound').innerHTML=`AUDIO <span>${muted?'OFF':'ON'}</span>`};
 document.addEventListener('pointerlockchange',()=>{

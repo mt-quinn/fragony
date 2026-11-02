@@ -1,3 +1,5 @@
+import {RESERVOIR} from './maps/reservoir.js';
+import {healthPickup} from './pickups.js';
 // TEST WORKS — three interlocking circuits, stacked circulation, distinct combat rooms.
 // Original geometry, informed by direct slices of Q3DM7/Q3DM17 example brush maps.
 const solids=[];
@@ -45,7 +47,8 @@ stair('control-stairs',3,-30,1,0,4);stair('core-control-stairs',4,-7,0,-1);
 // ASSEMBLY: outer return circuit, two angled screening walls and a sheltered health bay.
 wall('assembly-west-baffle',-19,27,2,10,4.5,'ink',-.35);wall('assembly-east-baffle',15,26,2,9,4.5,'chalk',.4);
 wall('assembly-center-block',-1,25,7,3,3.1,'ink');wall('assembly-west-low',-29,29,3,2,1.1);wall('assembly-east-low',27,29,4,2,1.1);
-export const MAP={
+const TEST_WORKS={
+ id:'testworks',elevators:[],
  name:'TEST WORKS',bounds:{x:38,z:34},floor:{w:78,d:70},maxHeight:8,stairs,solids,
  areas:[
   {name:'PRESS',x:-25,z:-3,w:24,d:34,y:0,color:0xb2c4bb},
@@ -61,17 +64,24 @@ export const MAP={
   {id:'control-lift',x:8,y:4,z:-25,power:16.5,landing:{x:23,y:8,z:-29}}
  ],
  pickups:[
-  {id:'core-armor',kind:'armor',x:-4,y:.5,z:7},
-  {id:'control-armor',kind:'armor',x:28,y:8,z:-29},
-  {id:'press-health',kind:'health',x:-33,y:0,z:4},
-  {id:'assembly-health',kind:'health',x:-28,y:0,z:25},
-  {id:'range-health',kind:'health',x:34,y:4,z:8},
-  {id:'control-health',kind:'health',x:-30,y:0,z:-29},
+  healthPickup('core-major',-4,.5,7,50),
+  healthPickup('control-health-upper',28,8,-29,25),
+  healthPickup('press-health',-33,0,4,25),
+  healthPickup('assembly-health',-28,0,25,25),
+  healthPickup('range-health',34,4,8,25),
+  healthPickup('control-health',-30,0,-29,25),
+  ...[-1.5,-.5,.5,1.5].map((n,i)=>healthPickup('press-trail-'+i,-34,4,-10+n,5)),
+  ...[-1.5,-.5,.5,1.5].map((n,i)=>healthPickup('range-trail-'+i,23+n,4,-6,5)),
+  ...[-1.5,-.5,.5,1.5].map((n,i)=>healthPickup('assembly-trail-'+i,6+n,0,29,5)),
   {id:'assembly-focus',kind:'focus',x:28,y:0,z:27},
   {id:'core-focus',kind:'focus',x:0,y:4,z:-12}
  ],
  spawns:[[-30,0,12],[-18,0,-2],[-31,4,-18],[-30,0,-28],[-5,0,-29],[12,4,-26],[30,8,-29],[34,4,-11],[33,0,10],[21,0,-13],[29,0,26],[6,0,30],[-10,0,23],[-30,0,26]],
  anchors:[[-30,0,12],[-19,0,6],[-30,4,-17],[-30,0,-28],[-5,0,-28],[11,4,-25],[28,8,-29],[22,8,-26],[33,8,-26],[33,4,-10],[33,4,8],[33,0,10],[21,0,-13],[28,0,27],[6,0,30],[-10,0,23],[-28,0,28],[-4,.5,7],[0,4,-12],[0,4,3],[20,4,-6],[7,0,-14],[7,0,12],[-7,0,-8]]
 };
+export const MAPS=[TEST_WORKS,RESERVOIR];
+// Keep a stable object so gameplay, tests and preview tools share the selected map.
+export const MAP={...TEST_WORKS};
+export function selectMap(id){const chosen=MAPS.find(m=>m.id===id)||TEST_WORKS;for(const key of Object.keys(MAP))delete MAP[key];Object.assign(MAP,chosen);return MAP}
 export const ALL_WEAPONS=['rifle','pistol','smg','rail','rocket','shotgun'];
 export function randomWeaponPair(random=Math.random){const first=Math.floor(random()*ALL_WEAPONS.length);let second=Math.floor(random()*(ALL_WEAPONS.length-1));if(second>=first)second++;return[ALL_WEAPONS[first],ALL_WEAPONS[second]]}
