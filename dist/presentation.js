@@ -1,3 +1,4 @@
+import {createWaterState,updateWaterState} from './water.js';
 import * as THREE from './vendor/three.module.js';
 import {GTAOPass} from './vendor/addons/postprocessing/GTAOPass.js';
 
@@ -28,9 +29,9 @@ const vertex=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0
 const read=`uniform sampler2D worldTex;uniform sampler2D gunTex;varying vec2 vUv;vec3 colorAt(vec2 uv){vec4 g=texture2D(gunTex,uv);return mix(texture2D(worldTex,uv).rgb,g.rgb,g.a);}`;
 const prefilter=read+`void main(){vec3 c=colorAt(vUv);float b=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*max(0.,b-1.8)/max(b,.001),1.);}`;
 const blur=`uniform sampler2D image;uniform vec2 direction;varying vec2 vUv;void main(){vec3 c=texture2D(image,vUv).rgb*.227027;c+=texture2D(image,vUv+direction*1.384615).rgb*.316216;c+=texture2D(image,vUv-direction*1.384615).rgb*.316216;c+=texture2D(image,vUv+direction*3.230769).rgb*.070270;c+=texture2D(image,vUv-direction*3.230769).rgb*.070270;gl_FragColor=vec4(c,1.);}`;
-const final=read+`uniform float aoAmount;uniform sampler2D ambientTex;uniform sampler2D bloomTex;uniform vec2 texel;uniform float slow;
+const final=read+`uniform float underwater;uniform float aoAmount;uniform sampler2D ambientTex;uniform sampler2D bloomTex;uniform vec2 texel;uniform float slow;
 void main(){
- vec3 w=texture2D(worldTex,vUv).rgb;float contact=mix(1.,texture2D(ambientTex,vUv).r,aoAmount);w*=contact;
+ vec3 w=texture2D(worldTex,vUv).rgb;float contact=mix(1.,texture2D(ambientTex,vUv).r,aoAmount);w*=contact;w=w*(1.+underwater*.10)+vec3(.008,.018,.02)*underwater;
  vec4 g=texture2D(gunTex,vUv);vec3 c=mix(w,g.rgb,g.a);
  // Modest edge smoothing; geometry stays crisp, including thin sights.
  vec3 a=colorAt(vUv+vec2(texel.x,0)),b=colorAt(vUv-vec2(texel.x,0)),d=colorAt(vUv+vec2(0,texel.y)),e=colorAt(vUv-vec2(0,texel.y));
@@ -52,7 +53,7 @@ export function renderWeaponView(renderer,scene,camera){
 }
 export class FrameRenderer{
  constructor(renderer,worldScene,worldCamera){
-  this.renderer=renderer;this.slow=0;this.scene=new THREE.Scene();this.camera=new THREE.Camera();this.quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),null);this.quad.frustumCulled=false;this.scene.add(this.quad);
+  this.renderer=renderer;this.waterState=createWaterState();this.slow=0;this.scene=new THREE.Scene();this.camera=new THREE.Camera();this.quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),null);this.quad.frustumCulled=false;this.scene.add(this.quad);
   const hdr=renderer.extensions.has('EXT_color_buffer_float'),options={type:hdr?THREE.HalfFloatType:THREE.UnsignedByteType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter};
   this.world=new THREE.WebGLRenderTarget(1,1,options);this.world.samples=Math.min(2,renderer.capabilities.maxSamples);
   this.gun=new THREE.WebGLRenderTarget(1,1,options);this.gun.samples=this.world.samples;
@@ -67,17 +68,21 @@ export class FrameRenderer{
   const common={worldTex:{value:this.world.texture},gunTex:{value:this.gun.texture}};
   this.prefilter=new THREE.ShaderMaterial({uniforms:common,vertexShader:vertex,fragmentShader:prefilter,depthTest:false,depthWrite:false,toneMapped:false});
   this.blur=new THREE.ShaderMaterial({uniforms:{image:{value:null},direction:{value:new THREE.Vector2()}},vertexShader:vertex,fragmentShader:blur,depthTest:false,depthWrite:false,toneMapped:false});
-  this.output=new THREE.ShaderMaterial({uniforms:{...common,aoAmount:{value:this.gtao ? .65 : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false});
+  this.output=new THREE.ShaderMaterial({uniforms:{...common,underwater:{value:0},aoAmount:{value:this.gtao ? .65 : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false});
   this.resize();
  }
  resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*.45)),ah=Math.max(1,Math.floor(size.y*.45));this.world.setSize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y)}
  pass(material,target){this.quad.material=material;this.renderer.setRenderTarget(target);this.renderer.render(this.scene,this.camera)}
- render(scene,camera,dt,slow=false){
-  const r=this.renderer,background=scene.background,mask=camera.layers.mask;this.slow=THREE.MathUtils.damp(this.slow,slow?1:0,9,dt);this.output.uniforms.slow.value=this.slow;
-  camera.layers.set(0);r.setRenderTarget(this.world);r.setClearColor(0x182127,1);r.render(scene,camera);
+ render(scene,camera,dt,slow=false,waterVolumes=[]){
+  const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog;
+  const underwater=updateWaterState(this.waterState,scene,camera,dt,waterVolumes);this.output.uniforms.underwater.value=underwater;
+  if(underwater>.001){this.waterState.fog.color.copy(airFog?.color||this.waterState.airColor).lerp(this.waterState.color,underwater);this.waterState.fog.near=THREE.MathUtils.lerp(airFog?.near||38,10,underwater);this.waterState.fog.far=THREE.MathUtils.lerp(airFog?.far||120,90,underwater);scene.fog=this.waterState.fog;}this.slow=THREE.MathUtils.damp(this.slow,slow?1:0,9,dt);this.output.uniforms.slow.value=this.slow;
+  camera.layers.set(0);camera.layers.enable(2);r.setRenderTarget(this.world);r.setClearColor(0x182127,1);r.render(scene,camera);
   const autoShadow=r.shadowMap.autoUpdate;r.shadowMap.autoUpdate=false;scene.background=null;
+  // Water is a transparent interface, not a solid AO occluder.
+  camera.layers.set(0);
   if(this.gtao)this.gtao.render(r,this.ambientTarget,this.world);else{r.setRenderTarget(this.ambientTarget);r.setClearColor(0xffffff,1);r.clear()}
-  camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
+  scene.fog=airFog;camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
   this.pass(this.prefilter,this.bloomA);this.blur.uniforms.image.value=this.bloomA.texture;this.blur.uniforms.direction.value.set(1/this.bloomA.width,0);this.pass(this.blur,this.bloomB);this.blur.uniforms.image.value=this.bloomB.texture;this.blur.uniforms.direction.value.set(0,1/this.bloomB.height);this.pass(this.blur,this.bloomA);this.pass(this.output,null);r.setClearColor(0x182127,1);
  }
  dispose(){for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}

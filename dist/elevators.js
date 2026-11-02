@@ -4,6 +4,9 @@ import {inBlock} from './geometry.js';
 // other floor after a short dwell. World-time movement carries existing velocity.
 export class ElevatorSystem{
  constructor(definitions,blocks){
+  // Seal the shaft below the moving slab. A missed lift is a short step back
+  // onto its landing, never a fall into the space beneath the map.
+  for(const d of definitions)blocks.push({id:d.id+'-pit-floor',x:d.x,z:d.z,w:d.w+.8,d:d.d+.8,bottom:d.low-.8,top:d.low-.30});
   this.staticBlocks=blocks.filter(b=>!b.dynamic);
   this.lifts=definitions.map(d=>{const block={x:d.x,z:d.z,w:d.w,d:d.d,bottom:d.low-.28,top:d.low,dynamic:true,id:d.id};blocks.push(block);return{...d,y:d.low,target:d.low,wait:.65,idle:0,calls:new Set(),block}});
  }
