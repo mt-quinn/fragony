@@ -115,9 +115,9 @@ export class MobileController{
   this.buttons.grenade.querySelector('b').textContent=g.grenades;this.buttons.grenade.classList.toggle('empty',!g.grenades);this.buttons.streak.querySelector('b').textContent=g.streakReady?'READY':g.streak+'/3';this.buttons.streak.classList.toggle('ready',g.streakReady);this.buttons.focus.querySelector('b').textContent=Math.round(g.focus)+'%';this.buttons.focus.style.setProperty('--charge',g.focus/100);
   if(g.focus<=0)this.state.focus=false;
  }
- trigger(dt,target,distance,blocked){
+ trigger(dt,target,distance,blocked,onTarget=true){
   const g=this.api.read(),manual=this.state.held.has('fire');
-  const fire=this.settings.fireMode==='simple'&&this.auto.step(dt,{target,weapon:g.type,ads:this.state.ads&&!manual,distance,limitHipRange:this.settings.limitHipRange,blocked:blocked||!this.active});
+  const fire=this.settings.fireMode==='simple'&&this.auto.step(dt,{target,weapon:g.type,ads:this.state.ads&&!manual,distance,limitHipRange:this.settings.limitHipRange,blocked:blocked||!this.active,onTarget});
   if(this.settings.fireMode!=='simple')this.auto.reset();return this.active&&(manual||fire)&&!this.preparing;
  }
  look(dx,dy){const g=this.api.read();return touchLook(dx,dy,innerWidth,this.settings,{ads:this.state.ads&&!this.state.held.has('fire'),zoom:g.zoom,assisted:this.settings.aimAssist&&this.assisted});}

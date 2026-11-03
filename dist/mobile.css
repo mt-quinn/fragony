@@ -58,3 +58,5 @@
 .touch-device .menu-actions button.primary{grid-column:auto}.touch-device .menu-actions:has(#continue[hidden]) button.primary{grid-column:1/-1}
 .touch-device #death-recap{top:auto;transform:none;pointer-events:auto;touch-action:pan-y}
 @media(max-width:620px){.editor-heading{max-width:180px}.editor-heading h2{font-size:16px}.editor-footer{gap:5px}.editor-footer button{padding:8px;font-size:8px}.editor-footer .touch-primary{font-size:11px}}
+
+#touch-acquire[data-phase=draining]{opacity:.55}

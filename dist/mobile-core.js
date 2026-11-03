@@ -53,16 +53,19 @@ export class TouchState{
 }
 // Evidence-informed approximation, deliberately separate from weapon fire intervals.
 export const AUTO_FIRE={rifle:{acquire:.12,hipRange:23},pistol:{acquire:.16,hipRange:18},smg:{acquire:.09,hipRange:19},rail:{acquire:.24,hipRange:12},rocket:{manual:true,acquire:.2,hipRange:20},shotgun:{acquire:.15,hipRange:13}};
+export const AUTO_FIRE_DRAIN=.18;
 export class AutoFire{
  constructor(){this.reset();}
  reset(){this.target=null;this.age=0;this.progress=0;this.phase='searching';this.reason='no-target';}
- step(dt,{target=null,weapon='rifle',ads=false,distance=Infinity,limitHipRange=true,blocked=false,manual=false}={}){
+ step(dt,{target=null,weapon='rifle',ads=false,distance=Infinity,limitHipRange=true,blocked=false,manual=false,onTarget=true}={}){
   const profile=AUTO_FIRE[weapon]||AUTO_FIRE.rifle;
   if(blocked||profile.manual){this.reset();this.phase='unavailable';this.reason=blocked?'blocked':'manual-weapon';return false;}
-  if(!target||!ads&&limitHipRange&&distance>profile.hipRange){this.reset();this.reason=target?'range':'no-target';return false;}
+  if(!target||!ads&&limitHipRange&&distance>profile.hipRange){
+   this.age=Math.max(0,this.age-clamp(dt,0,.05)*profile.acquire/AUTO_FIRE_DRAIN);this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>0?'draining':'searching';this.reason=target?'range':'no-target';if(!this.age)this.target=null;return false;
+  }
   if(target!==this.target){this.target=target;this.age=0;}
-  this.age+=clamp(dt,0,.05);this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>=1?'firing':'acquiring';this.reason='';
-  return manual||this.progress>=1;
+  this.age=Math.min(profile.acquire,this.age+clamp(dt,0,.05));this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>=1&&onTarget?'firing':'acquiring';this.reason='';
+  return manual||onTarget&&this.progress>=1;
  }
 }
 export function touchLook(dx,dy,width,settings,{ads=false,zoom=1,assisted=false}={}){

@@ -1,3 +1,4 @@
+import {nearbyAutoTarget} from './mobile-targeting.js';
 import {MobileController,wantsTouch} from './mobile.js';
 import {MOBILE_QUALITY} from './mobile-core.js';
 import {drawMapFromBag,validMapRotation,rotationAfterPlayedMap} from './map-rotation.js';
@@ -36,7 +37,7 @@ const weapons=[
  {name:'DEMOLISHER',label:'Rocket launcher',damage:110,interval:.85,mag:5,reload:1.8,spread:0,pellets:1,color:0xe6fa80,kick:.16,price:400,desc:'Splash damage and rocket jumps. 5 rockets.'},
  {name:'SLEDGEHAMMER',label:'Pump shotgun',damage:12,interval:.83,mag:8,reload:1.7,spread:.085,pellets:12,color:0xe6fa80,kick:.16,price:300,desc:'12 pellets. Strong up close; tight core retains range.'}
 ];
-let mobile=null,mobileTargetClock=0,mobileTarget=null,mobileDistance=Infinity,mobileAssisted=false,grenadePrepared=false,renderSun=null;
+let mobile=null,mobileTargetClock=0,mobileTarget=null,mobileDistance=Infinity,mobileOnTarget=false,mobileAssisted=false,grenadePrepared=false,renderSun=null;
 let navNodes=[],navigation,opponentAI,playerSpawnAt=0,previewDummy,previewRig,frameRenderer,studioMap;
 let scene,camera,renderer,weaponGroup,flash,arena,worldMeshes=[],blocks=[],bots=[],effects=[],rockets=[],pickups=[];
 let mode='menu',round=1,credits=0,owned=[0],equipped=0,perks={},time=90,matchKills=0,deathCount=0,streak=0,best=Number(localStorage.getItem('dh-best')||0);
@@ -143,16 +144,17 @@ function syncTouchInputs(dt){
  if(state.focus)keys.add('KeyQ');if(state.held.has('jump'))keys.add('Space');if(mobile.crouch)keys.add('KeyC');if(state.sprinting&&!state.ads&&!state.held.has('fire')&&!mobile.crouch&&!grenadePrepared)keys.add('ShiftLeft');
  mobileTargetClock-=dt;
  if(mobileTargetClock<=0){
-  mobileTargetClock=1/60;mobileTarget=null;mobileDistance=Infinity;mobileAssisted=false;
+  mobileTargetClock=1/60;mobileTarget=null;mobileDistance=Infinity;mobileOnTarget=false;mobileAssisted=false;
   syncAimCamera();scene.updateMatrixWorld(true);camera.getWorldDirection(aim);ray.set(camera.position,aim);ray.far=90;
-  const hit=ray.intersectObjects([...worldMeshes,...botHitMeshes()],false)[0],b=hit?.object.userData.bot;
-  if(b&&!b.dead&&b.hp>0){mobileTarget=b.name+':'+b.lifeId;mobileDistance=hit.distance;mobileAssisted=true;}
+  const actorMeshes=botHitMeshes(),hit=ray.intersectObjects([...worldMeshes,...actorMeshes],false)[0],b=hit?.object.userData.bot;
+  if(b&&!b.dead&&b.hp>0){mobileTarget=b.name+':'+b.lifeId;mobileDistance=hit.distance;mobileOnTarget=true;mobileAssisted=true;}
+  if(!mobileTarget){const nearby=nearbyAutoTarget(ray,actorMeshes,worldMeshes);if(nearby){mobileTarget=nearby.bot.name+':'+nearby.bot.lifeId;mobileDistance=nearby.distance;}}
   // Slowdown only; never rotate aim or reveal a target through cover.
   if(!mobileAssisted&&mobile.settings.aimAssist){for(const b of bots){if(b.dead||b.hp<=0)continue;tmp.copy(b.pos);tmp.y+=1.1;tmp.sub(camera.position);const d=tmp.length();if(d>.5&&d<55&&tmp.multiplyScalar(1/d).dot(aim)>.997&&visible(camera.position,{x:b.pos.x,y:b.pos.y+1.1,z:b.pos.z})){mobileAssisted=true;break;}}}
   mobile.assisted=mobileAssisted;
  }
  const blocked=respawnTime>0||reloading>0||shotTimer>.15&&weaponMotion.equip>0||grenadePrepared;
- mouseDown=mobile.trigger(dt,mobileTarget,mobileDistance,blocked);if(mouseDown){keys.add('MouseLeft');keys.delete('ShiftLeft');}
+ mouseDown=mobile.trigger(dt,mobileTarget,mobileDistance,blocked,mobileOnTarget);if(mouseDown){keys.add('MouseLeft');keys.delete('ShiftLeft');}
 }
 
 function buildArena(){

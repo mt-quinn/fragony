@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import {AutoFire,TouchState,mobileSettings,presetLayout,normalizeLayout,controlRect,stickVector,touchLook,MOBILE_QUALITY} from '../dist/mobile-core.js';
+import {nearbyAutoTarget} from '../dist/mobile-targeting.js';
+import * as THREE from '../dist/vendor/three.module.js';
 import {createGameHarness} from './harness.mjs';
 const auto=new AutoFire(),frame={target:'bot:1',weapon:'rifle',distance:8};
 for(let i=0;i<7;i++)assert.equal(auto.step(1/60,frame),false);
@@ -8,6 +10,11 @@ assert.equal(auto.step(1/60,{...frame,target:'bot:2'}),false,'new targets reacqu
 assert.equal(auto.step(.05,{...frame,blocked:true}),false);assert.equal(auto.progress,0);
 for(let i=0;i<5;i++)auto.step(.05,frame);
 assert.equal(auto.step(.02,{...frame,target:null}),false,'target loss immediately releases fire');
+assert.ok(auto.progress>0&&auto.progress<1,'lost aim drains instead of resetting');const retained=auto.progress;assert.equal(auto.phase,'draining');
+auto.step(1/120,frame);assert.ok(auto.progress>retained,'same target resumes retained progress');
+for(let i=0;i<4;i++)auto.step(.05,{...frame,target:null});assert.equal(auto.progress,0);assert.equal(auto.target,null,'full charge drains within 180 ms');
+for(let i=0;i<20;i++)auto.step(.05,{...frame,onTarget:false});assert.equal(auto.progress,1);auto.step(.02,{...frame,target:null});assert.ok(auto.progress<1,'holding a target never banks excess acquisition');
+assert.equal(auto.step(.02,{...frame,onTarget:false}),false,'padding charges without expanding real shot eligibility');assert.equal(auto.step(.05,frame),true,'actual crosshair can fire immediately from a precharged margin');
 assert.equal(auto.step(.05,{...frame,distance:40}),false,'default hip limiter');
 for(let i=0;i<4;i++)auto.step(.05,{...frame,distance:40,ads:true});assert.equal(auto.phase,'firing','ADS bypasses hip range');
 assert.equal(auto.step(.05,{...frame,weapon:'rocket'}),false,'explosives require intentional manual fire');
@@ -22,7 +29,7 @@ for(const preset of ['thumbs','claw','left'])for(const id of Object.keys(layout)
  const r=controlRect(id,presetLayout(preset),{x:52,y:8,w:564,h:304},.7);assert.ok(r.width>=44);assert.ok(r.x-r.width/2>=52&&r.x+r.width/2<=616);assert.ok(r.y-r.height/2>=8&&r.y+r.height/2<=312);
 }
 const normal=touchLook(100,10,844,settings),aimed=touchLook(100,10,844,settings,{ads:true});assert.ok(Math.abs(aimed.yaw)<Math.abs(normal.yaw));assert.ok(MOBILE_QUALITY.battery.pixels<MOBILE_QUALITY.high.pixels);
-const h=createGameHarness(32);h.setup();h.context.TouchState=TouchState;h.context.AutoFire=AutoFire;
+const h=createGameHarness(32);h.setup();h.context.TouchState=TouchState;h.context.AutoFire=AutoFire;h.context.nearbyAutoTarget=nearbyAutoTarget;
 h.run(`
 mode='play';locked=true;respawnTime=0;reloading=0;shotTimer=0;equipped=0;yaw=0;pitch=0;playerPos.set(0,1.7,0);recoil=0;recoilX=0;bots=[];worldMeshes=[];
 const touchState=new TouchState(),triggerState=new AutoFire();
@@ -58,3 +65,23 @@ h.run(`
 localStorage.setItem('dh-run','existing-run');mobile.practice=true;saveRun();assert.equal(localStorage.getItem('dh-run'),'existing-run','practice cannot replace saved progression');health=100;damagePlayer(90,null);assert.equal(health,100,'practice ignores incoming damage');time=2;mobile.active=false;updateStep(1/120);assert.equal(time,90,'practice never runs out of time');assert.equal(localStorage.getItem('dh-run'),'existing-run');
 `);
 console.log('Practice: saved progression, invulnerability and unlimited round time pass.');
+// The padded region follows the hitbox's transform, but does not change shot geometry.
+const body=new THREE.Mesh(new THREE.BoxGeometry(.6,1.8,.4),new THREE.MeshBasicMaterial());
+const actor={name:'edge',lifeId:1,hp:100,dead:0};body.userData.bot=actor;body.position.set(.33,1.7,-8);body.updateMatrixWorld(true);
+const aimRay=new THREE.Raycaster(new THREE.Vector3(0,1.7,0),new THREE.Vector3(0,0,-1),0,90);
+assert.equal(aimRay.intersectObject(body).length,0,'original hitbox is outside crosshair');assert.equal(nearbyAutoTarget(aimRay,[body],[])?.bot,actor,'three cm near miss starts acquisition');
+body.position.x=.38;body.updateMatrixWorld(true);assert.equal(nearbyAutoTarget(aimRay,[body],[]),null,'eight cm near miss stays outside the small margin');
+body.scale.set(2,.75,1);body.position.x=.63;body.updateMatrixWorld(true);assert.ok(nearbyAutoTarget(aimRay,[body],[]),'padding stays in world units under scaling');
+body.position.x=.68;body.updateMatrixWorld(true);assert.equal(nearbyAutoTarget(aimRay,[body],[]),null,'scaling cannot double the world margin');
+body.scale.set(1,1,1);body.rotation.y=Math.PI/2;body.position.x=.23;body.updateMatrixWorld(true);assert.ok(nearbyAutoTarget(aimRay,[body],[]),'rotated hitbox acquires a tiny near miss');
+const cover=new THREE.Mesh(new THREE.BoxGeometry(2,4,.5),new THREE.MeshBasicMaterial());cover.position.set(0,1.7,-4);cover.updateMatrixWorld(true);assert.equal(nearbyAutoTarget(aimRay,[body],[cover]),null,'padding never acquires through cover');
+actor.dead=1;assert.equal(nearbyAutoTarget(aimRay,[body],[]),null,'dead hitboxes do not start acquisition');actor.dead=0;actor.hp=0;assert.equal(nearbyAutoTarget(aimRay,[body],[]),null);
+h.run(`
+mobile.active=true;mobile.practice=false;mobile.settings.aimAssist=false;touchState.clear();triggerState.reset();reloading=shotTimer=0;mobile.crouch=false;mobileTargetClock=0;playerPos.set(0,1.7,0);yaw=pitch=recoil=recoilX=0;
+mobile.trigger=function(dt,target,distance,blocked,onTarget){return this.auto.step(dt,{target,distance,blocked,onTarget,weapon:'rifle'})};
+dummy.dead=0;dummy.pos=proxy.position;dummy.parts={body:proxy};bots=[dummy];worldMeshes=[];proxy.position.set(1.03,1.7,-8);scene.updateMatrixWorld(true);
+for(let i=0;i<12;i++)syncTouchInputs(1/60);assert.equal(triggerState.progress,1,'native padded sensor starts and completes the timer');assert.equal(mouseDown,false,'near miss prepares the trigger without altering real hit requirements');
+proxy.position.x=0;scene.updateMatrixWorld(true);mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,true,'crosshair entry fires immediately from retained charge');
+worldMeshes=[wall];scene.add(wall);scene.updateMatrixWorld(true);mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,false);assert.equal(triggerState.phase,'draining');assert.ok(triggerState.progress>0,'occlusion immediately prevents shots while charge drains');
+`);
+console.log('Acquisition margin: near misses, distance cutoff, rotated/scaled hitboxes, cover/corpses and native precharge/real-hit/drain integration pass.');
