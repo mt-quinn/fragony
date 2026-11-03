@@ -9,11 +9,28 @@ for(const spec of specs){
 }
 fs.rmSync(output,{recursive:true,force:true});
 fs.cpSync(source,output,{recursive:true,filter:file=>!excluded.has(path.relative(fileURLToPath(source),file).split(path.sep).join('/'))});
-// The original Nuketown module exceeds the static per-file ceiling. Emit its
-// exact JSON payload separately, preserving the original decoder verbatim.
-const nuketownSource=fs.readFileSync(new URL('maps/nuketown-data.js',source),'utf8'),start=nuketownSource.indexOf('const data='),end=nuketownSource.indexOf(';\nfor(const g of',start);
-if(start<0||end<0)throw Error('Unrecognized Nuketown source module.');
-fs.writeFileSync(new URL('maps/nuketown-source.json.gz',output),gzipSync(nuketownSource.slice(start+11,end),{level:6,mtime:0}));
-fs.writeFileSync(new URL('maps/nuketown-data.js',output),nuketownSource.slice(0,start)+"import {readCompressedJSON} from './source-data.js';\nconst data=await readCompressedJSON(new URL('./nuketown-source.json.gz',import.meta.url))"+nuketownSource.slice(end));
+// Compress the exact inline geometry JSON; retain each original decoder.
+for(const id of ['rust','shipment','nuketown']){
+ const text=fs.readFileSync(new URL('maps/'+id+'-data.js',source),'utf8'),start=text.indexOf('const data='),begin=start+11;
+ if(start<0||text[begin]!=='{')throw Error('Unrecognized inline source: '+id);
+ let depth=0,quoted=false,escaped=false,end=begin;
+ for(;end<text.length;end++){
+  const c=text[end];if(quoted){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')quoted=false;continue;}
+  if(c==='"')quoted=true;else if(c==='{')depth++;else if(c==='}'&&!--depth){end++;break;}
+ }
+ const json=text.slice(begin,end);JSON.parse(json);
+ fs.writeFileSync(new URL('maps/'+id+'-source.json.gz',output),gzipSync(json,{level:9,mtime:0}));
+ fs.writeFileSync(new URL('maps/'+id+'-data.js',output),text.slice(0,start)+"import {readCompressedJSON} from './source-data.js';\nconst data=await readCompressedJSON(new URL('./"+id+"-source.json.gz',import.meta.url))"+text.slice(end));
+}
+// Navigation stays byte-for-byte identical after decoding. Store packed graph
+// strings compressed instead of shipping their much larger base64 JS literals.
+for(const file of fs.readdirSync(new URL('maps/',source)).filter(f=>f.endsWith('-nav.js'))){
+ const text=fs.readFileSync(new URL('maps/'+file,source),'utf8'),match=/export default ("[^"\n]*");/.exec(text);
+ if(!match)throw Error('Unrecognized navigation module: '+file);
+ const archive=file.replace(/\.js$/,'.json.gz');
+ fs.writeFileSync(new URL('maps/'+archive,output),gzipSync(match[1],{level:9,mtime:0}));
+ fs.writeFileSync(new URL('maps/'+file,output),text.replace(match[0],"import {readCompressedJSON} from './source-data.js';\nexport default await readCompressedJSON(new URL('./"+archive+"',import.meta.url));"));
+}
 let bytes=0,files=0;function inspect(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())inspect(p);else{const s=fs.statSync(p).size;if(s>25*1024*1024)throw Error('Production file exceeds 25 MiB: '+p);bytes+=s;files++;}}}inspect(fileURLToPath(output));
+if(bytes>250*1024*1024)throw Error('Production package exceeds expanded archive budget.');
 console.log(JSON.stringify({files,bytes,excludedAuthoringFiles:excluded.size}));
