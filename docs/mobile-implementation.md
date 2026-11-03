@@ -54,3 +54,5 @@ Browser verification covers phone-sized menu, first-run guide, live practice, AD
 ## Redesigned arsenal
 
 Practice pause now opens the free Weapon Workbench. Fit all72 parts, inspect/rotate/cycle the physical model, then return directly with the selected weapon equipped. The campaign remains saved separately. The firing HUD shows automatic/semi/burst/charge mode and loaded trigger pulls; charging and slamfire recoil state are visible. Manual hip-fire defaults to hold-to-repeat for semi-auto weapons, with a setting to change it. Simple Mode pulses/repeats at each conversion’s legal cadence; losing the real target cancels an unspent burst while preserving the recovery. Charged rockets require holding and releasing the manual control; dragging to the top cancels without spending a round. Existing acquisition margin/drain and ambient audio handling remain in place.
+
+Practice pause now includes **Change Practice Map** for all seven arenas. It keeps the current practice weapon and attachment build, leaves the campaign save untouched, and does not draw from the normal match-rotation bag.

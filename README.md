@@ -156,4 +156,12 @@ Six weapon impact profiles give resolved shots distinct local body and limb resp
 
 ### Three original arenas
 
-All five maps—**Test Works**, **Reservoir**, **Tidal Lock**, **Parallax**, and **Foundry**—rotate automatically from a persistent shuffled bag, with no repeat until all five appear and no immediate repeat across bag boundaries. New runs keep the bag; continuing a saved match keeps its current map. Tidal Lock is a symmetric waterworks with layered crossings; Parallax uses paired tower/launch/drop cycles; Foundry interlocks asymmetric rooms and three floor levels. They use the current AI, shared native movement, water, lifts, pads and the exact5/25/one50 health economy. [Layouts, iteration and validation](MAPS.md#tidal-lock). Run `npm run test:maps` for geometry, sightlines, symmetry,402 controller routes and real player water/launch checks.
+All seven maps—**Test Works**, **Reservoir**, **Tidal Lock**, **Parallax**, **Foundry**, **Rust**, and **Shipment**—rotate automatically from a persistent shuffled bag, with no repeat until all five appear and no immediate repeat across bag boundaries. New runs keep the bag; continuing a saved match keeps its current map. Tidal Lock is a symmetric waterworks with layered crossings; Parallax uses paired tower/launch/drop cycles; Foundry interlocks asymmetric rooms and three floor levels. They use the current AI, shared native movement, water, lifts, pads and the exact5/25/one50 health economy. [Layouts, iteration and validation](MAPS.md#tidal-lock). Run `npm run test:maps` for geometry, sightlines, symmetry,402 controller routes and real player water/launch checks.
+
+### Test Works presentation
+
+Test Works is a public-works maintenance plant with five distinct material districts: ochre fabrication presses, a pale process tower, teal pump service, electrical switchgear and dispatch loading bays. Partial industrial roofs frame a quiet lo-fi sky. Original ground-level cover, routes and jump transfers are retained. Open `?practice=testworks` and select **Practice Test Works** to inspect it without changing your campaign or match rotation. See `docs/testworks-presentation.md` for construction and verification details.
+
+### Industrial presentation and imported arenas
+
+All seven maps now share the approved quiet industrial material language, with distinct internal equipment/material districts and a static lo-fi sky. The supplied Rust and Shipment2 layouts are imported directly, with distant nonplayable scenery removed and four deliberate jump routes each. Practice offers a map chooser and keeps your selected weapon/conversion when switching maps. [Design, source fidelity and validation](docs/industrial-presentation.md).

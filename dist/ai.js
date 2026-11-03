@@ -62,7 +62,7 @@ export function buildNavigation(blocks,pads=[],anchors=null,options={}){
  }
  for(const column of columns.values())for(const n of column)if(n.wet)for(const m of column)if(n!==m&&Math.abs(n.y-m.y)<=4.1&&clearSegment(blocks,n,m,'swim',query,options.stepHeight??.3))n.edges.push({node:m,action:'swim',cost:distance(n,m)*1.3});
  const navigation={nodes,blocks,stepHeight:options.stepHeight??.3,pads:[],anchors:[],bounds:{x:boundX,z:boundZ}};
- for(const p of pads){const from=nearestNode(navigation,{x:p.x,y:p.y||0,z:p.z}),to=nearestNode(navigation,p.landing);if(from&&to&&Math.abs(to.y-p.landing.y)<.35&&Math.abs(from.y-(p.y||0))<.35){const pad={x:p.x,y:p.y||0,z:p.z,power:p.power||16.5};from.edges.push({node:to,action:'pad',cost:horizontal(from,to)*.5+3,pad});navigation.pads.push({from,to,...pad})}}
+ for(const p of pads){const from=nearestNode(navigation,{x:p.x,y:p.y||0,z:p.z}),to=nearestNode(navigation,p.landing);if(from&&to&&Math.abs(to.y-p.landing.y)<.35&&Math.abs(from.y-(p.y||0))<.35){const pad={x:p.x,y:p.y||0,z:p.z,power:p.power||16.5,triggerRadius:p.triggerRadius,landing:{...p.landing}};from.edges.push({node:to,action:'pad',cost:horizontal(from,to)*.5+3,pad});navigation.pads.push({from,to,...pad})}}
  for(const lift of options.elevators||[]){const from=nearestNode(navigation,{...lift.entry,y:lift.low}),to=nearestNode(navigation,{...lift.entry,y:lift.high});if(from&&to&&Math.abs(from.y-lift.low)<.35&&Math.abs(to.y-lift.high)<.35){from.edges.push({node:to,action:'elevator',cost:8,lift,fromY:lift.low});to.edges.push({node:from,action:'elevator',cost:8,lift,fromY:lift.high})}}
  for(const [x,y,z]of anchors||[]){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}
  if(options.noGround&&anchors?.length){const start=nearestNode(navigation,{x:anchors[0][0],y:anchors[0][1],z:anchors[0][2]}),seen=new Set([start]),queue=[start];for(let i=0;i<queue.length;i++)for(const e of queue[i].edges)if(!seen.has(e.node)){seen.add(e.node);queue.push(e.node)}navigation.nodes=nodes.filter(n=>seen.has(n));navigation.nodes.forEach((n,i)=>n.id=i);navigation.anchors=navigation.anchors.filter(n=>seen.has(n))}
@@ -304,9 +304,10 @@ export class ArenaAI{
     if(!destination)return;
     if(destination.action==='elevator'){b.liftRide={id:destination.lift.id,fromY:destination.fromY,to:copy(destination),phase:'board'};this.world.elevator?.(bot,b,dt);return}
     if(destination.action==='swim')this.world.swim?.(bot,destination,dt);
-    if(destination.action==='pad'&&horizontal(bot.pos,destination.pad)<1.45&&Math.abs(bot.pos.y-destination.pad.y)<.35){
-      const power=destination.pad.power,flightTime=launchTime(power,destination.y-bot.pos.y);
-      b.flight={vx:(destination.x-bot.pos.x)/flightTime,vz:(destination.z-bot.pos.z)/flightTime,age:0};bot.vy=power;this.stats.pads++;return;
+    if(destination.action==='pad'){
+      const pad=destination.pad,target=pad.landing||destination;
+      if(horizontal(bot.pos,pad)<(pad.triggerRadius||1.45)&&Math.abs(bot.pos.y-pad.y)<.35){const power=pad.power,flightTime=launchTime(power,target.y-bot.pos.y);b.flight={vx:(target.x-bot.pos.x)/flightTime,vz:(target.z-bot.pos.z)/flightTime,age:0};bot.vy=power;this.stats.pads++;return;}
+      destination={x:pad.x,y:pad.y,z:pad.z,action:'walk',fine:true};
     }
     if(destination.action==='jump'&&destination.y>bot.pos.y+.3&&Math.abs(bot.vy)<.01)bot.vy=8.5;
     const d=horizontal(bot.pos,destination);if(d<.05)return;
@@ -378,9 +379,9 @@ export class ArenaAI{
   }
 }
 // Compact precomputed graph avoids rebuilding a BSP map's navigation on the menu.
-export function restoreNavigation(encoded,elevators,anchors,bounds,blocks=null,stepHeight=.3){
- const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)),data=new DataView(bytes.buffer),count=data.getUint32(0,true),edgeBase=8+count*12,actions=['walk','jump','drop','swim','elevator'];
- const nodes=Array.from({length:count},(_,id)=>{const i=8+id*12;return{id,x:data.getInt8(i),z:data.getInt8(i+1),y:data.getUint16(i+2,true)/1000,wet:!!data.getUint8(i+4),edges:[]}});
- for(const n of nodes){const i=8+n.id*12,first=data.getUint32(i+8,true),length=data.getUint16(i+6,true);for(let j=first;j<first+length;j++){const k=edgeBase+j*8,lift=elevators[data.getUint8(k+5)-1];n.edges.push({node:nodes[data.getUint16(k,true)],cost:data.getUint16(k+2,true)/100,action:actions[data.getUint8(k+4)],lift,fromY:lift?data.getUint16(k+6,true)/1000:undefined})}}
- const navigation={nodes,blocks,stepHeight,anchors:[],pads:[],bounds};for(const [x,y,z]of anchors){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}return navigation;
+export function restoreNavigation(encoded,elevators,anchors,bounds,blocks=null,stepHeight=.3,pads=[]){
+ const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)),data=new DataView(bytes.buffer),count=data.getUint32(0,true),edgeBase=8+count*12,actions=['walk','jump','drop','swim','elevator','pad'];
+ const nodes=Array.from({length:count},(_,id)=>{const i=8+id*12;return{id,x:data.getInt8(i),z:data.getInt8(i+1),y:data.getUint16(i+2,true)/1000,wet:!!data.getUint8(i+4),edges:[]}}),restoredPads=[];
+ for(const n of nodes){const i=8+n.id*12,first=data.getUint32(i+8,true),length=data.getUint16(i+6,true);for(let j=first;j<first+length;j++){const k=edgeBase+j*8,action=actions[data.getUint8(k+4)],slot=data.getUint8(k+5)-1,lift=action==='elevator'?elevators[slot]:undefined,sourcePad=action==='pad'?pads[slot]:null,pad=sourcePad?{x:sourcePad.x,y:sourcePad.y||0,z:sourcePad.z,power:sourcePad.power,triggerRadius:sourcePad.triggerRadius,landing:{...sourcePad.landing}}:undefined,to=nodes[data.getUint16(k,true)];n.edges.push({node:to,cost:data.getUint16(k+2,true)/100,action,lift,pad,fromY:lift?data.getUint16(k+6,true)/1000:undefined});if(pad)restoredPads.push({from:n,to,...pad});}}
+ const navigation={nodes,blocks,stepHeight,anchors:[],pads:restoredPads,bounds};for(const [x,y,z]of anchors){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}return navigation;
 }

@@ -1,8 +1,12 @@
+import {industrialGroups,dressIndustrialArena,industrialDistricts} from './industrial.js';
 import {createWaterSurface} from './water.js';
 import * as THREE from './vendor/three.module.js';
 // Retained BSP surfaces use our material palette, rather than imported game art.
 export function buildBrushMap(arena,map,blocks,worldMeshes){
  blocks.push(...map.brushes.map(b=>({...b})));
+ const industrial=industrialDistricts(map.id).length>0;
+ if(industrial){for(const {family,geometry,material}of industrialGroups(map)){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=!['glass','light','fence'].includes(family);mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh);worldMeshes.push(mesh);}}
+ else{
  for(const [kind,g] of Object.entries(map.groups)){
   if(kind==='water')continue;
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(g.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(g.n,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(g.c,3));geometry.computeBoundingSphere();
@@ -11,7 +15,13 @@ export function buildBrushMap(arena,map,blocks,worldMeshes){
   if(kind==='glass'||kind==='water'){material.transparent=true;material.opacity=kind==='water'?.46:.26;material.color.setHex(kind==='water'?0x70b8a8:0xb5dbd8);material.depthWrite=false}
   const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=kind!=='glass'&&kind!=='water'&&kind!=='light';mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh);if(kind!=='water')worldMeshes.push(mesh);
  }
+ }
  for(const volume of map.water||[])arena.add(createWaterSurface(volume));
+ if(industrial){
+  const lights=map.id==='reservoir'?[[0,39,-32],[0,39,32]]:(map.lights||[]).slice(0,2).map(l=>[l.x,l.y,l.z]);
+  for(const [x,y,z]of lights){const light=new THREE.PointLight(0xe3ead7,map.id==='reservoir'?105:65,map.id==='reservoir'?42:34,2);light.position.set(x,y,z);arena.add(light);}
+  arena.updateMatrixWorld(true);dressIndustrialArena(arena,map,worldMeshes);
+ }else{
  if(map.lights){
   for(const p of map.lights){const light=new THREE.PointLight(p.color,p.intensity,p.distance,2);light.position.set(p.x,p.y,p.z);arena.add(light)}
  }else{
@@ -20,7 +30,8 @@ export function buildBrushMap(arena,map,blocks,worldMeshes){
  for(const z of [-18,18]){const light=new THREE.PointLight(0x80c6bd,100,26,2);light.position.set(0,9,z);arena.add(light)}
  for(const z of [-43,0,43]){const bar=new THREE.Mesh(new THREE.BoxGeometry(3.5,.04,.35),new THREE.MeshStandardMaterial({color:0xd9ef45,emissive:0xd9ef45,emissiveIntensity:2.4}));bar.position.set(0,z===0?39.85:43.85,z);arena.add(bar)}
  }
- for(const p of typeof document==='undefined'?[]:map.signs||[]){
+ }
+ for(const p of typeof document==='undefined'||industrial?[]:map.signs||[]){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const ctx=canvas.getContext('2d');ctx.fillStyle='#24393b';ctx.fillRect(0,0,1024,192);ctx.fillStyle='#'+p.color.toString(16).padStart(6,'0');ctx.fillRect(0,0,16,192);ctx.font='800 112px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.text,520,103,945);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(p.width,p.width*192/1024),new THREE.MeshBasicMaterial({map:texture}));mesh.position.set(p.x,p.y,p.z);mesh.rotation.y=p.rotation;arena.add(mesh);
  }
@@ -49,6 +60,6 @@ export function dressElevators(arena,system,worldMeshes){
 function spatialRaycast(mesh){
  const position=mesh.geometry.attributes.position,buckets=new Map();
  for(let i=0;i<position.count;i+=3){const x=(position.getX(i)+position.getX(i+1)+position.getX(i+2))/3,z=(position.getZ(i)+position.getZ(i+1)+position.getZ(i+2))/3,key=Math.floor(x/10)+','+Math.floor(z/10);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(i,i+1,i+2)}
- const leaves=[];for(const indices of buckets.values()){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',position);geometry.setIndex(indices);geometry.boundingBox=new THREE.Box3();const point=new THREE.Vector3();for(const i of indices)geometry.boundingBox.expandByPoint(point.fromBufferAttribute(position,i));geometry.boundingSphere=geometry.boundingBox.getBoundingSphere(new THREE.Sphere());const leaf=new THREE.Mesh(geometry,mesh.material);leaf.matrixWorld=mesh.matrixWorld;leaves.push(leaf)}
- mesh.raycast=(caster,hits)=>{const start=hits.length;for(const leaf of leaves)leaf.raycast(caster,hits);for(let i=start;i<hits.length;i++)hits[i].object=mesh};
+ const leaves=[];for(const indices of buckets.values()){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',position);for(const name of ['normal','uv','uv1'])if(mesh.geometry.attributes[name])geometry.setAttribute(name,mesh.geometry.attributes[name]);geometry.setIndex(indices);geometry.boundingBox=new THREE.Box3();const point=new THREE.Vector3();for(const i of indices)geometry.boundingBox.expandByPoint(point.fromBufferAttribute(position,i));geometry.boundingSphere=geometry.boundingBox.getBoundingSphere(new THREE.Sphere());const leaf=new THREE.Mesh(geometry,mesh.material);leaf.matrixWorld=mesh.matrixWorld;leaves.push(leaf)}
+ mesh.raycast=(caster,hits)=>{const start=hits.length;for(const leaf of leaves)leaf.raycast(caster,hits);for(let i=hits.length-1;i>=start;i--){if(mesh.material.userData.alphaAt&&hits[i].uv&&!mesh.material.userData.alphaAt(hits[i].uv))hits.splice(i,1);else hits[i].object=mesh;}};
 }

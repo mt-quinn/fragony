@@ -1,3 +1,4 @@
+import {buildTestworks,setArenaAtmosphere} from './testworks.js';
 import {modelAttachments,applyAttachmentModels,animateAttachmentModels} from './attachment-models.js';
 import {FireControl,FeedSystem,distanceDamage,reloadDuration} from './weapon-cycle.js';
 import {traceCartridges} from './ballistics.js';
@@ -84,8 +85,9 @@ function cube(x,y,z,w,h,d,c,parent=arena,solid=false){const m=new THREE.Mesh(sol
 function label(text,x,y,z,width,height,rotation=0,bg='#182127',fg='#eef0e6'){const cv=document.createElement('canvas');cv.width=1024;cv.height=256;const c=cv.getContext('2d');c.fillStyle=bg;c.fillRect(0,0,1024,256);c.fillStyle=fg;c.font='900 170px Impact, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,512,140,970);const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:tx}));mesh.position.set(x,y,z);mesh.rotation.y=rotation;arena.add(mesh);return mesh}
 function init(){
  gameAudio.bindLifecycle();
- selectMap(readMapRotation()?.last||'testworks');spawnPoints=MAP.spawns;
- if(wantsTouch())setupMobile();else{const practice=document.createElement('button');practice.className='menu-secondary';practice.textContent='Practice';practice.onclick=beginPractice;document.querySelector('.menu-actions').append(practice);}
+ selectMap(practiceMapFromURL()||readMapRotation()?.last||'testworks');spawnPoints=MAP.spawns;
+ if(wantsTouch())setupMobile();else{const practice=document.createElement('button');practice.className='menu-secondary';practice.textContent=practiceMapFromURL()?'PRACTICE '+MAP.name:'Practice';practice.onclick=beginPractice;document.querySelector('.menu-actions').append(practice);}
+ if(practiceMapFromURL()&&mobile)$('touch-practice').textContent='PRACTICE '+MAP.name;
  applyHUDScale();
  gameAudio.visibility=(a,b)=>visible(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z));
  scene=new THREE.Scene();scene.background=new THREE.Color(0x182127);scene.fog=new THREE.Fog(0x182127,38,120);
@@ -118,6 +120,7 @@ function setupMobile(){
   clear:()=>{resetFireControl();physicalKeys.clear();keys.clear();mouseDown=false;grenadePrepared=false;mobileTarget=null;mobileTargetClock=0;},
   menu:()=>{if(!isPractice())saveRun();mainMenu();},
   practice:beginPractice,
+  maps:practiceMaps,
   workbench:()=>showShop(false),
   unlock:()=>gameAudio.unlock(),
   look:(dx,dy)=>{if(respawnTime>0)return;const d=mobile.look(dx,dy);yaw+=d.yaw;pitch=clamp(pitch+d.pitch,-1.5,1.5);turnX+=dx*.001;turnY+=dy*.001;mobileTargetClock=0;},
@@ -165,33 +168,10 @@ function syncTouchInputs(dt){
 }
 
 function buildArena(){
- if(MAP.brushes)buildBrushMap(arena,MAP,blocks,worldMeshes);else{
- const floor=new THREE.Mesh(new THREE.BoxGeometry(MAP.floor.w,1,MAP.floor.d),mat(0x94a69e));floor.position.y=-.5;floor.receiveShadow=true;arena.add(floor);worldMeshes.push(floor);
- const colors={chalk:0xdce2d5,ink:0x182127,stair:0xb5c3bb,deck:0xa3b8b2};
- for(const a of MAP.areas){const tint=new THREE.Mesh(boxGeo,mat(a.color));tint.position.set(a.x,.008,a.z);tint.scale.set(a.w,.012,a.d);arena.add(tint)}
- for(const b of MAP.solids){
-  const m=cube(b.x,b.y,b.z,b.w,b.h,b.d,colors[b.style],arena,true);m.rotation.y=b.yaw||0;blocks.at(-1).yaw=b.yaw||0;
-  const base=b.y-b.h/2,top=b.y+b.h/2;
-  if(b.style==='stair'){const trim=cube(b.x,top+.008,b.z,b.w,.016,.045,0x344e4b);trim.rotation.y=b.yaw||0}
-  else if(b.style==='deck'){
-   for(const side of [-1,1])cube(b.x,top+.018,b.z+side*(b.d/2-.06),b.w,.035,.12,0xd9ef45);
-   cube(b.x,base-.04,b.z,b.w+.02,.08,b.d+.02,0x182127);
-  }else{const plinth=cube(b.x,base+.1,b.z,b.w+.015,.2,b.d+.015,0x354b49);plinth.rotation.y=b.yaw||0}
- }
- const gridVertices=[];for(let x=-36;x<=36;x+=4)gridVertices.push(x,.024,-33,x,.024,33);for(let z=-32;z<=32;z+=4)gridVertices.push(-37,.024,z,37,.024,z);
- const gridGeo=new THREE.BufferGeometry();gridGeo.setAttribute('position',new THREE.Float32BufferAttribute(gridVertices,3));arena.add(new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:0x3b5753,transparent:true,opacity:.15,depthWrite:false})));
- // Press silhouettes, calibration faces, lane markings and room numbers give place.
- for(const [x,z,h]of[[-26,-5,7],[-22,6,5.5]]){cube(x,h+.4,z,6,.8,5.6,0xb7c9bb);for(const side of [-1,1])cube(x+side*1.85,h/2,z+2.52,.23,h,.07,0xd9ef45);cube(x,h*.65,z+2.56,2.5,.15,.08,0xd9ef45)}
- for(const side of [-1,1]){const target=new THREE.Mesh(targetGeo,calibration());target.position.set(-5,5.7,side*2.02);target.scale.setScalar(1.1);if(side<0)target.rotation.y=Math.PI;arena.add(target)}
- const crown=new THREE.Mesh(new THREE.TorusGeometry(2.1,.1,4,32),mat(0xd9ef45));crown.position.set(-5,10.5,0);arena.add(crown);const second=crown.clone();second.rotation.y=Math.PI/2;arena.add(second);
- label('PRESS',-37.92,7,-5,13,1.8,Math.PI/2);label('CORE',-5,8,-20.1,8,1.6,0,'#d9ef45','#182127');label('RANGE',37.92,8,-4,12,2,-Math.PI/2);label('CONTROL',25,11,-33.92,17,2);label('ASSEMBLY',0,7,33.92,20,2,Math.PI);
- for(const [number,x]of[['01',19],['02',26],['03',33]]){label(number,x,3,-20.1,2.3,2.3,0,'#182127','#d9ef45');const target=new THREE.Mesh(targetGeo,calibration());target.position.set(x,1.7,-20.04);target.scale.setScalar(.55);arena.add(target)}
- for(const x of [19,26,33])cube(x,.03,3,.1,.025,27,0x526b5b);
- for(const [x,z,w,d]of[[-26,14,10,.16],[0,15,10,.16],[26,16,10,.16],[-9,-28,.16,6],[11,29,6,.16]])cube(x,.035,z,w,.03,d,0xd9ef45);
+ setArenaAtmosphere(scene,MAP);
+ if(MAP.brushes)buildBrushMap(arena,MAP,blocks,worldMeshes);else buildTestworks(arena,MAP,blocks,worldMeshes);
 
- dressArena(arena,MAP.solids,{blocks,worldMeshes});
- }
- for(const p of MAP.pads){const y=p.y||0;cube(p.x,y+.045,p.z,2.7,.09,2.7,0x182127);cube(p.x,y+.11,p.z,2.2,.08,2.2,0xd9ef45);const triangle=new THREE.Mesh(new THREE.ConeGeometry(.65,.07,3),mat(0x182127));triangle.position.set(p.x,y+.2,p.z);triangle.rotation.y=Math.atan2(p.landing.x-p.x,p.landing.z-p.z);arena.add(triangle);pickups.push({...p,kind:'pad',mesh:triangle,timer:0})}
+ for(const p of MAP.pads){const y=p.y||0,size=p.size||2.7;cube(p.x,y+.045,p.z,size,.09,size,0x182127);cube(p.x,y+.11,p.z,size*.815,.08,size*.815,0xd9ef45);const triangle=new THREE.Mesh(new THREE.ConeGeometry(.65,.07,3),mat(0x182127));triangle.position.set(p.x,y+.2,p.z);triangle.rotation.y=Math.atan2(p.landing.x-p.x,p.landing.z-p.z);arena.add(triangle);pickups.push({...p,kind:'pad',mesh:triangle,timer:0})}
  elevatorSystem=new ElevatorSystem(MAP.elevators||[],blocks);dressElevators(arena,elevatorSystem,worldMeshes);
  for(const p of MAP.pickups){
   const group=new THREE.Group(),small=p.amount===5,major=p.amount===50,healthItem=p.kind==='health',color=major?0xd9ef45:small?0xa9d9c8:0xf1f3e8;
@@ -209,7 +189,7 @@ function changeArena(id){
  for(const b of bots){disposeToolModel(b.group);scene.remove(b.group)}bots=[];spawnHistory.clear();selectMap(id);spawnPoints=MAP.spawns;
  const cached=arenaCache.get(MAP.id);if(cached){({arena,blocks,worldMeshes,pickups,elevatorSystem,navigation}=cached);navNodes=navigation.nodes;scene.add(arena)}
  else{arena=new THREE.Group();scene.add(arena);blocks=[];worldMeshes=[];pickups=[];buildArena();buildNav()}
- elevatorSystem.reset();scene.updateMatrixWorld(true);
+ setArenaAtmosphere(scene,MAP);elevatorSystem.reset();scene.updateMatrixWorld(true);
 }
 function waterAt(x,y,z){for(const w of MAP.water||[]){const span=blockSpan(w,x,z);if(span&&y>span.bottom&&y<span.top)return span}return null}
 function stepElevators(dt){if(!elevatorSystem?.lifts.length)return;const actors=bots.filter(b=>!b.dead).map(b=>({x:()=>b.pos.x,z:()=>b.pos.z,feet:()=>b.pos.y,velocityY:()=>b.vy,height:()=>1.9,carry:dy=>{b.pos.y+=dy;b.vy=0}}));if(respawnTime<=0)actors.push({x:()=>playerPos.x,z:()=>playerPos.z,feet:()=>playerPos.y-eyeHeight,velocityY:()=>vy,height:()=>crouched?COLLISION.crouching:COLLISION.standing,carry:dy=>{playerPos.y+=dy;viewHeight+=dy;vy=0}});elevatorSystem.step(dt,actors)}
@@ -319,7 +299,7 @@ function botHitMeshes(){const meshes=[];for(const b of bots)for(const p of Objec
 function shatterPart(b,name,point){if(!b.dead)return;const part=b.parts[name]||b.parts.torso;if(!part.visible)return;part.getWorldPosition(tmp);const center=point?point.clone().lerp(tmp,.5):tmp.clone();part.visible=false;for(let i=0;i<15;i++){const m=new THREE.Mesh(shardGeo,mat(i%4===0?0x182127:0x858c88));m.position.copy(center).add(new THREE.Vector3((Math.random()-.5)*.25,(Math.random()-.5)*.4,(Math.random()-.5)*.25));m.scale.set(.06+Math.random()*.08,.06+Math.random()*.13,.04+Math.random()*.07);scene.add(m);addEffect({mesh:m,life:.65+Math.random()*.5,max:1.2,vel:new THREE.Vector3((Math.random()-.5)*9,2+Math.random()*6,(Math.random()-.5)*9).addScaledVector(b.impactVector||new THREE.Vector3(),5),spin:new THREE.Vector3(Math.random()*12,Math.random()*10,Math.random()*9)})}playSfx('shatter',{pos:b.pos,volume:.35,curve:'foley',bus:'world',priority:1})}
 
 function blocked(x,z,feet,r=.4,height=1.7){if(Math.abs(x)>MAP.bounds.x-.5||Math.abs(z)>MAP.bounds.z-.5)return true;return blockedAt(blocks,x,z,feet,r,height)}
-function buildNav(){navigation=MAP.navigation?restoreNavigation(MAP.navigation,MAP.elevators,MAP.anchors,MAP.bounds,blocks,MAP.stepHeight):buildNavigation(blocks,pickups.filter(p=>p.kind==='pad'),MAP.anchors,{bounds:MAP.bounds,maxHeight:MAP.maxHeight,noGround:!!MAP.brushes,stepHeight:MAP.stepHeight,elevators:MAP.elevators,water:MAP.water});navNodes=navigation.nodes}
+function buildNav(){navigation=MAP.navigation?restoreNavigation(MAP.navigation,MAP.elevators,MAP.anchors,MAP.bounds,blocks,MAP.stepHeight,MAP.pads):buildNavigation(blocks,pickups.filter(p=>p.kind==='pad'),MAP.anchors,{bounds:MAP.bounds,maxHeight:MAP.maxHeight,noGround:!!MAP.brushes&&!MAP.navigationGround,stepHeight:MAP.stepHeight,elevators:MAP.elevators,water:MAP.water});navNodes=navigation.nodes}
 function nearestNode(pos){return nearestAINode(navigation,pos)}
 function findPath(from,to){return findRoute(navigation,from,to)}
 
@@ -561,7 +541,7 @@ function createOpponentAI(){
    if(contact.ceiling&&b.vy>0)b.vy=0;
    if(contact.grounded&&b.vy<=0){if(fallSpeed< -4&&!muted&&!water)gameAudio.footstep(new THREE.Vector3(b.pos.x,contact.feet+.15,b.pos.z),{metal:contact.feet>2,landing:true});if(brain.lastFloor>=2.9&&contact.feet<1)opponentAI.stats.drops++;brain.lastFloor=contact.feet;b.vy=0;if(brain.flight){brain.flight=null;brain.pathIn=0}}
    if(brain.flight){brain.flight.age+=dt;if(brain.flight.age>3){brain.flight=null;brain.pathIn=0}}
-   if(!brain.flight)for(const link of navigation.pads)if(Math.abs(b.pos.y-link.y)<.3&&Math.abs(b.vy)<.1&&Math.hypot(b.pos.x-link.x,b.pos.z-link.z)<1.25){const t=launchTime(link.power,link.to.y-b.pos.y);brain.flight={vx:(link.to.x-b.pos.x)/t,vz:(link.to.z-b.pos.z)/t,age:0};b.vy=link.power;opponentAI.stats.pads++;break}
+   if(!brain.flight)for(const link of navigation.pads)if(Math.abs(b.pos.y-link.y)<.3&&Math.abs(b.vy)<.1&&Math.hypot(b.pos.x-link.x,b.pos.z-link.z)<(link.triggerRadius||1.25)){const target=link.landing||link.to,t=launchTime(link.power,target.y-b.pos.y);brain.flight={vx:(target.x-b.pos.x)/t,vz:(target.z-b.pos.z)/t,age:0};b.vy=link.power;opponentAI.stats.pads++;break}
   },
   fire:fireBotWeapon,
   equip:(b,weapon)=>{const gun=buildDummyGun(b.parts.rightArm,weapon);gun.traverse(m=>{m.userData.bot=b;m.userData.part='rightArm'})},
@@ -627,7 +607,7 @@ function updateStep(dt){
  if(fireControl.charging&&!chargeVoice)chargeVoice=playSfx('charge',{volume:.26,bus:'self'});if(!fireControl.charging&&chargeVoice){gameAudio.stopVoice(chargeVoice);chargeVoice=null;}
  if(firing.cancelled)shotTimer=Math.max(shotTimer,.15);if(firing.fire)shoot(firing);
  if(fw.slamfire&&!mouseDown){const recovery=Math.exp(-dt*40);aimSpring.x*=recovery;aimSpring.v*=recovery;weaponMotion.kick.x*=recovery;weaponMotion.kick.v*=recovery;}
- moveClock+=travelled;for(const p of pickups){if(p.kind==='pad'){if(Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<1.4&&grounded&&Math.abs(playerPos.y-eyeHeight-p.y)<.3){const t=launchTime(p.power,p.landing.y-(playerPos.y-eyeHeight));playerPadFlight={vx:(p.landing.x-playerPos.x)/t,vz:(p.landing.z-playerPos.z)/t,age:0};vy=p.power;grounded=false;playSfx('pad',{volume:.5})}}else if(p.timer<=0&&Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<(p.amount===5?.65:1.1)&&Math.abs(playerPos.y-eyeHeight-p.y)<1.1){
+ moveClock+=travelled;for(const p of pickups){if(p.kind==='pad'){if(Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<(p.triggerRadius||1.4)&&grounded&&Math.abs(playerPos.y-eyeHeight-p.y)<.3){const t=launchTime(p.power,p.landing.y-(playerPos.y-eyeHeight));playerPadFlight={vx:(p.landing.x-playerPos.x)/t,vz:(p.landing.z-playerPos.z)/t,age:0};vy=p.power;grounded=false;playSfx('pad',{volume:.5})}}else if(p.timer<=0&&Math.hypot(playerPos.x-p.x,playerPos.z-p.z)<(p.amount===5?.65:1.1)&&Math.abs(playerPos.y-eyeHeight-p.y)<1.1){
   if(p.kind==='focus'){if(focus>=100)continue;focus=100;notify('SLOW MOTION RECHARGED')}
   else{const hp=healthAfterPickup(health,perks.armor?140:100,p);if(hp===health)continue;const gain=hp-health;healPlayer(hp);notify(`+${gain} HEALTH`)}
   p.timer=p.respawn||15;p.mesh.visible=false;playSfx('pickup',{volume:p.amount===5?.22:.4});
@@ -653,8 +633,15 @@ const upgrades=[
 ];
 function saveRun(){if(isPractice())return;localStorage.setItem('dh-run',JSON.stringify({mapId:MAP.id,round,credits,owned,equipped,perks,builds,equipment,startingWeapon,shopOffers,phase:mode==='shop'||mode==='results'?'shop':'match',attachmentVersion:2,pinnedOffer,starterConversionUsed,feedPhases:feedSystem.phases()}))}
 function endMatch(){resetFireControl();mobile?.clear();mobile?.closeOverlay();$('panel').className='panel';clearDeathView();const r=rank();mode='results';gameAudio.stopWorld();mouseDown=false;slow=false;document.exitPointerLock?.();$('hud').hidden=true;weaponGroup.visible=false;$('slowTint').style.opacity=0;$('damage').style.opacity=0;const survived=r<=3;const reward=[250,190,150][r-1]||0;if(survived)credits+=reward;best=Math.max(best,round);localStorage.setItem('dh-best',best);if(survived)saveRun();else localStorage.removeItem('dh-run');$('panel').hidden=false;$('panel').className='panel results-panel';$('panel').innerHTML=`<div class="results-shell"><div class="results-title"><span>ROUND ${String(round).padStart(2,'0')}</span><h2>${survived?'ROUND COMPLETE':'RUN OVER'}</h2></div><div class="results-summary"><strong>${r}<small>${['ST','ND','RD'][r-1]||'TH'}</small></strong><span>${survived?`+${reward}<small>CREDITS</small>`:`${best}<small>BEST ROUND</small>`}</span></div><div class="result-table" role="table" aria-label="Match results"><div class="result-row result-head" role="row"><span>PLACE</span><span>PLAYER</span><span>POINTS</span><span>KILLS</span><span>ASSISTS</span><span>DEATHS</span></div>${rankList().map((b,i)=>`<div class="result-row ${b.player?'you':''} ${i===2?'cutoff':''}" role="row"><span>${i+1}</span><b>${b.name}</b><strong>${b.score}</strong><span>${b.kills}</span><span>${b.assists}</span><span>${b.deaths}</span></div>`).join('')}</div><div class="panel-actions"><button class="primary" id="resultnext">${survived?'LOADOUT':'NEW RUN'}</button><button class="textbutton" id="backmenu">MAIN MENU</button></div></div>`;$('resultnext').onclick=()=>survived?showShop():startRandomMatch();$('backmenu').onclick=mainMenu}
-function beginPractice(){
- practiceMode=true;if(mobile)mobile.practice=true;startMatch(false);owned=[...WEAPON_ORDER];equipped=0;builds=practiceBuilds||normalizeBuilds();feedSystem.reset(owned,i=>playerWeapon(i));magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));ammo=playerWeapon().mag;buildWeapon();if(mobile){mobile.weapon=null;mobile.applyLayout();}notify('PRACTICE · ALL WEAPONS · NO DAMAGE');
+function practiceMapFromURL(){if(typeof location==='undefined')return null;const id=new URLSearchParams(location.search).get('practice');return MAPS.some(m=>m.id===id)?id:null;}
+function practiceMaps(){const descriptions={testworks:'Public-works maintenance plant.',reservoir:'Pumping, filtration and deep waterworks.','tidal-lock':'Flood-control gates and hydraulic galleries.',parallax:'Compressors, heat exchange and service towers.',foundry:'Forge, hydraulic press and dispatch.',rust:'Refinery tower, pipe racks and service yard.',shipment:'Container stacks, open cargo and loading lanes.'};return MAPS.map(m=>({id:m.id,name:m.name,description:descriptions[m.id],current:m.id===MAP.id}));}
+function showPracticeMaps(){
+ if(mobile?.enabled){mobile.showPracticeMaps();return;}
+ $('panel').hidden=false;$('panel').className='panel controls-panel settings-panel';$('panel').innerHTML='<div class="controls-heading"><div><small>FRAGONY / PRACTICE</small><h2>PRACTICE MAPS</h2></div><button id="practice-maps-back">BACK</button></div><div class="practice-map-grid">'+practiceMaps().map(m=>'<button class="practice-map-card '+(m.current?'selected':'')+'" data-practice-map="'+m.id+'"><b>'+m.name+'</b><span>'+m.description+'</span><small>'+(m.current?'CURRENT MAP':'ENTER PRACTICE ↗')+'</small></button>').join('')+'</div>';$('practice-maps-back').onclick=renderControls;$('panel').querySelectorAll('[data-practice-map]').forEach(b=>b.onclick=()=>beginPractice(b.dataset.practiceMap));
+}
+function beginPractice(mapId){
+ const preserveLoadout=typeof mapId==='string'&&isPractice(),practiceGun=preserveLoadout?equipped:0,practiceLoadout=preserveLoadout?builds:practiceBuilds,requestedMap=typeof mapId==='string'&&MAPS.some(m=>m.id===mapId)?mapId:practiceMapFromURL();if(requestedMap)changeArena(requestedMap);
+ practiceMode=true;if(mobile)mobile.practice=true;startMatch(false);owned=[...WEAPON_ORDER];equipped=practiceGun;builds=practiceLoadout||normalizeBuilds();feedSystem.reset(owned,i=>playerWeapon(i));magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));ammo=playerWeapon().mag;buildWeapon();if(mobile){mobile.weapon=null;mobile.applyLayout();}notify('PRACTICE · ALL WEAPONS · NO DAMAGE');
 }
 function returnToPractice(){
  practiceBuilds=builds;equipped=shopGun;pendingPart=null;shopPreview=null;mode='play';$('panel').hidden=true;$('hud').hidden=false;weaponGroup.visible=true;feedSystem.reset(owned,i=>playerWeapon(i));magazines=Object.fromEntries(owned.map(i=>[i,playerWeapon(i).mag]));ammo=playerWeapon().mag;reloading=0;resetFireControl();buildWeapon();lock();
@@ -730,13 +717,13 @@ function pause(){if(mode!=='play')return;resetFireControl();locked=false;mobile?
 function showControls(back=controlsBack){if(mobile?.enabled){mobile.showSettings(back);return;}controlsBack=back;bindingPending=null;controlsMessage='';renderControls()}
 function saveControls(){localStorage.setItem('dh-controls',JSON.stringify(controls.bindings));localStorage.setItem('dh-settings',JSON.stringify(settings))}
 function renderControls(){
- $('panel').hidden=false;$('panel').className='panel controls-panel settings-panel';$('panel').innerHTML=`<div class="controls-heading"><div><small>${controlsBack==='play'?'PAUSED':''}</small><h2>SETTINGS</h2></div><div class="controls-heading-actions">${isPractice()?'<button id="practice-workbench">WORKBENCH</button><button id="practice-exit">END PRACTICE</button>':''}<button id="reset-controls">RESET CONTROLS</button><button class="primary" id="controls-back">${controlsBack==='play'?'RESUME':'BACK'}</button></div></div><div class="settings-overview"><section class="settings-category"><h3>CONTROLS</h3>${controlsOptionsHTML(settings)}</section>${settingsHTML()}</div><section class="settings-bindings"><h3>KEY BINDINGS</h3>${bindingsHTML(controls,settings,bindingPending,controlsMessage,false)}</section>`;
+ $('panel').hidden=false;$('panel').className='panel controls-panel settings-panel';$('panel').innerHTML=`<div class="controls-heading"><div><small>${controlsBack==='play'?'PAUSED':''}</small><h2>SETTINGS</h2></div><div class="controls-heading-actions">${isPractice()?'<button id="practice-maps">MAPS</button><button id="practice-workbench">WORKBENCH</button><button id="practice-exit">END PRACTICE</button>':''}<button id="reset-controls">RESET CONTROLS</button><button class="primary" id="controls-back">${controlsBack==='play'?'RESUME':'BACK'}</button></div></div><div class="settings-overview"><section class="settings-category"><h3>CONTROLS</h3>${controlsOptionsHTML(settings)}</section>${settingsHTML()}</div><section class="settings-bindings"><h3>KEY BINDINGS</h3>${bindingsHTML(controls,settings,bindingPending,controlsMessage,false)}</section>`;
  $('panel').querySelectorAll('[data-binding]').forEach(b=>b.onclick=()=>{const[id,slot]=b.dataset.binding.split(':');bindingPending={id,slot:Number(slot)};renderControls()});
  $('controls-back').onclick=()=>{bindingPending=null;$('panel').className='panel';if(controlsBack==='play')lock();else $('panel').hidden=true};
  $('reset-controls').onclick=()=>{controls=new ControlBindings();settings.sensitivity=1;settings.invertY=settings.crouchToggle=false;saveControls();controlsMessage='Default controls restored.';renderControls()};
  $('control-sensitivity').oninput=e=>{settings.sensitivity=Number(e.target.value);e.target.setAttribute('aria-valuetext',settings.sensitivity.toFixed(2)+'×');e.target.style.setProperty('--fill',(settings.sensitivity-.2)/2.8*100+'%');saveControls();e.target.nextElementSibling&&(e.target.nextElementSibling.textContent=settings.sensitivity.toFixed(2)+'×')};
  $('control-hold-semi').onchange=e=>{settings.holdSemi=e.target.checked;saveControls();};$('control-invert').onchange=e=>{settings.invertY=e.target.checked;saveControls()};$('control-crouch').onchange=e=>{settings.crouchToggle=e.target.value==='toggle';crouchLatch=false;saveControls()};
- if(isPractice()){$('practice-workbench').onclick=()=>showShop(false);$('practice-exit').onclick=mainMenu;}
+ if(isPractice()){$('practice-maps').onclick=showPracticeMaps;$('practice-workbench').onclick=()=>showShop(false);$('practice-exit').onclick=mainMenu;}
  if(bindingPending){$('bind-escape').onclick=()=>commitBinding('Escape');$('bind-cancel').onclick=()=>{bindingPending=null;renderControls()};if($('bind-clear'))$('bind-clear').onclick=()=>commitBinding('');if(bindingPending.code)$('bind-replace').onclick=()=>commitBinding(bindingPending.code,true)}bindSettings();
 }
 function commitBinding(code,replace=false){const p=bindingPending,result=controls.assign(p.id,p.slot,code,replace);if(Array.isArray(result)&&result.length){bindingPending={...p,code,conflicts:result};renderControls();return}controlsMessage=ACTIONS.find(a=>a.id===p.id).label+': '+keyLabel(code);bindingPending=null;saveControls();physicalKeys.clear();keys.clear();mouseDown=false;renderControls()}
