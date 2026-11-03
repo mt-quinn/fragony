@@ -1,0 +1,1 @@
+{"name":"Fragony","short_name":"Fragony","description":"A chalk-and-ink arena shooter. You aim. Your weapon fires.","start_url":"./","scope":"./","display":"standalone","orientation":"landscape","background_color":"#182127","theme_color":"#182127","icons":[{"src":"touch-icon.png","sizes":"180x180","type":"image/png","purpose":"any"}]}

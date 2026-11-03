@@ -8,6 +8,8 @@ Run `npm start` and open http://127.0.0.1:4173. No install or build is required;
 
 WASD move, Shift sprint, mouse aim, left click fire, right click aim down sights, Space jump, hold Q slow motion, R reload, G grenade, F selected killstreak, 1–6 or wheel switch owned weapons, Escape pause. Browsers without mouse capture use free mouse aiming within the viewport and arrow-key turning; Resume retries capture. A regular desktop browser supports full pointer-lock FPS controls. Headphones are recommended for directional audio.
 
+On iPhone/iPad, play in landscape. The mobile interface defaults to Simple Mode: move with the left joystick, swipe to aim, and keep a visible opponent in the crosshair to fire automatically. ADS and manual hip-fire remain separate. Touch Settings includes sensitivity, layout presets, a full HUD editor, graphics and optional gyro. Practice lets you try all weapons without changing your saved run. [Mobile controls and implementation notes](docs/mobile-implementation.md) · [COD Mobile research](docs/mobile-controls-research.md).
+
 Each run starts with two distinct random weapons. Buy more weapons, attachments, perks and throwables between rounds. Each opponent rolls two weapons at match start and retains that pair through respawns. Reserve ammunition is unlimited; magazines must be reloaded. Switching preserves partial or empty magazines. Reload completion clamps the timer to zero, so repeated reloads cannot lock firing.
 
 90-second free-for-all against five opponents. Unlimited respawns. Finish in the top three to advance; otherwise the run ends. Ties favor fewer deaths. Three consecutive kills earn the selected killstreak. Progress saves in this browser.
@@ -41,6 +43,8 @@ Bots perceive visible targets and remember last-seen locations briefly. Gunfire 
 ## Audio
 
 `dist/audio.js` contains original layered effects and `AUDIO_TUNING` for the mix. Gunfire combines a short filtered-noise attack, low-frequency body, mechanical detail and a restrained tail. Fast weapons use shorter effects to limit masking; there are no continuous sawtooth gun tones.
+
+Mobile audio requests an ambient session where supported, allowing it to mix with other apps' music. Music and effects share one persistent AudioContext, with gesture and foreground recovery after interruptions and safe rebuilding if the context closes. Backgrounding silences game output; returning respects the audio toggle. iOS still controls interruptions and silent-mode behavior.
 
 Positional sources are mono and use Web Audio HRTF spatialization. Listener position and orientation follow the camera. Sources are omnidirectional: a sound behind the listener is not turned down by a source cone. Distance attenuation is applied once, with panner rolloff disabled. Footsteps fade to zero at 23 m, gunfire at 52 m and explosions at 55 m; these are editable game curves, not acoustic measurements. Higher frequencies also attenuate with distance. Three visibility samples estimate partial occlusion; walls lower volume and low-pass the sound rather than switching it off.
 

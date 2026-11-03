@@ -72,23 +72,54 @@ export function synthesize(name,sampleRate=32000,seed=17){
 }
 export class GameAudio{
   constructor({createContext=null,visibility=null}={}){
-    this.createContext=createContext||(()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context({latencyHint:'interactive'}):null});this.visibility=visibility;this.context=null;this.cache=new Map();this.voices=new Set();this.listener={x:0,y:0,z:0};this.muted=false;this.slow=false;this.stepIndex=0;this.feedbackIndex=0;this.levels={guns:1,steps:1,feedback:1,music:1};this.warmed=false;this.music=null;this.musicRequested=false;
+    this.createContext=createContext||(()=>{const Context=globalThis.AudioContext||globalThis.webkitAudioContext;return Context?new Context({latencyHint:'interactive'}):null});this.visibility=visibility;this.context=null;this.cache=new Map();this.voices=new Set();this.listener={x:0,y:0,z:0};this.muted=false;this.slow=false;this.stepIndex=0;this.feedbackIndex=0;this.levels={guns:1,steps:1,feedback:1,music:1};this.warmed=false;this.music=null;this.musicRequested=false;this.resumePending=null;this.needsPrime=true;this.background=false;this.lifecycle=null;
   }
-  unlock(){
-    if(!this.context){let c;try{c=this.createContext()}catch{return}if(!c)return;this.context=c;this.master=c.createGain();this.master.gain.value=this.muted?0:AUDIO_TUNING.master;
+  // Set this before constructing/resuming Web Audio: 'playback' can stop the user's music.
+  configureSession(){try{const session=globalThis.navigator?.audioSession;if(session&&session.type!=='ambient')session.type='ambient'}catch{}}
+  bindLifecycle(doc=globalThis.document,win=globalThis.window){
+    if(this.lifecycle||!doc?.addEventListener||!win?.addEventListener)return;
+    this.configureSession();this.background=!!doc.hidden;
+    const gesture=e=>{if(e.isTrusted===false||doc.hidden||this.muted)return;this.unlock({gesture:true});if(this.musicRequested)this.startMusic();};
+    const leave=()=>{this.background=true;this.stopWorld();this.setMasterGain();};
+    const enter=()=>{if(doc.hidden)return;this.background=false;this.configureSession();if(this.context&&!this.muted)this.unlock();this.setMasterGain();};
+    const visibility=()=>doc.hidden?leave():enter();
+    for(const type of ['pointerdown','touchend','keydown'])doc.addEventListener(type,gesture,{capture:true,passive:true});
+    doc.addEventListener('visibilitychange',visibility);win.addEventListener('pagehide',leave);win.addEventListener('pageshow',enter);win.addEventListener('focus',enter);
+    this.lifecycle={doc,win,gesture,visibility,leave,enter};
+  }
+  setMasterGain(){if(this.master&&this.context?.state!=='closed')this.master.gain.setTargetAtTime(this.muted||this.background?0:AUDIO_TUNING.master,this.context.currentTime,.015)}
+  resetClosedContext(){
+    this.music?.dispose?.();this.music=null;for(const v of [...this.voices]){try{v.source.onended=null;v.source.stop()}catch{}this.release(v)}
+    for(const node of [...Object.values(this.buses||{}),this.master,this.musicGain])try{node?.disconnect()}catch{}
+    this.context=null;this.master=null;this.buses=null;this.musicGain=null;this.cache.clear();this.warmed=false;this.resumePending=null;this.needsPrime=true;
+  }
+  unlock({gesture=false}={}){
+    this.configureSession();
+    if(this.context?.state==='closed')this.resetClosedContext();
+    if(!this.context){let c;try{c=this.createContext()}catch{return}if(!c)return;this.context=c;this.master=c.createGain();this.master.gain.value=this.muted||this.background?0:AUDIO_TUNING.master;
       const highpass=c.createBiquadFilter();highpass.type='highpass';highpass.frequency.value=32;
       const limiter=c.createDynamicsCompressor();limiter.threshold.value=-8;limiter.knee.value=4;limiter.ratio.value=12;limiter.attack.value=.002;limiter.release.value=.13;
       this.buses={};for(const key of ['self','world','gunfire','steps','ui','explosions']){this.buses[key]=c.createGain();this.buses[key].connect(highpass)}highpass.connect(limiter);limiter.connect(this.master);this.master.connect(c.destination);this.musicGain=c.createGain();this.musicGain.connect(this.master);this.applySettings(this.levels);
+      c.addEventListener?.('statechange',()=>{if(this.context!==c)return;if(c.state==='running'){this.setMasterGain();if(this.musicRequested&&!this.muted&&!this.background)this.startMusic()}else this.needsPrime=true;});
     }
-    if(this.context.state==='suspended')this.context.resume()?.catch?.(()=>{});
+    const c=this.context;
+    // Retry within the actual gesture even if an earlier autoplay resume is still pending.
+    if((c.state==='suspended'||c.state==='interrupted')&&(!this.resumePending||gesture)&&!this.background){
+      try{const pending=Promise.resolve(c.resume());this.resumePending=pending;
+        pending.then(()=>{if(this.resumePending===pending)this.resumePending=null;if(this.context===c&&c.state==='running'){this.setMasterGain();if(this.musicRequested&&!this.muted&&!this.background)this.startMusic()}},()=>{if(this.resumePending===pending)this.resumePending=null;});
+      }catch{this.resumePending=null;}
+    }
+    // A real touch-end unlocks older iOS implementations without a media element or audio-focus hack.
+    if(gesture&&this.needsPrime&&!this.background){try{const source=c.createBufferSource();source.buffer=c.createBuffer(1,1,c.sampleRate||44100);source.connect(c.destination);source.onended=()=>source.disconnect();source.start(0);this.needsPrime=false}catch{this.needsPrime=true}}
+    return c;
   }
   buffer(name,variant=0){const key=name+variant;if(!this.cache.has(key)){const data=synthesize(name,this.context.sampleRate,17+variant*991),buffer=this.context.createBuffer(1,data.length,this.context.sampleRate);buffer.copyToChannel(data,0);this.cache.set(key,buffer)}return this.cache.get(key)}
   warm(){if(!this.context||this.warmed)return;this.warmed=true;for(const name of ['rifle','pistol','smg','rail','rocket','shotgun','explosion','reload-out','reload-in','bolt','impact','whiz','low-ammo','charge','stinger','slow-on','slow-off'])this.buffer(name);for(let i=0;i<4;i++)for(const name of ['confirm-hit','confirm-head','confirm-kill','confirm-headkill','step-solid','step-metal'])this.buffer(name,i)}
-  startMusic(){this.musicRequested=true;if(this.muted)return;this.unlock();if(!this.context)return;this.music??=new MusicPlaylist(this.context,this.musicGain);this.music.start().catch(error=>console.warn('Background music unavailable:',error))}
+  startMusic(){this.musicRequested=true;if(this.muted||this.background)return;this.unlock();if(!this.context)return;this.music??=new MusicPlaylist(this.context,this.musicGain);this.music.start().catch(error=>console.warn('Background music unavailable:',error))}
   applySettings(levels){this.levels={...this.levels,...levels};if(!this.context)return;for(const [bus,value]of Object.entries({self:this.levels.guns,gunfire:this.levels.guns,steps:this.levels.steps,ui:this.levels.feedback,explosions:this.levels.guns}))this.buses[bus].gain.setTargetAtTime(value,this.context.currentTime,.02);this.musicGain.gain.setTargetAtTime(AUDIO_TUNING.music*this.levels.music,this.context.currentTime,.03)}
   duck(bus,factor=.7,duration=.1){if(!this.context)return;const t=this.context.currentTime,g=this.buses[bus].gain,base=bus==='self'||bus==='gunfire'?this.levels.guns:1;g.cancelScheduledValues(t);g.setTargetAtTime(base*factor,t,.005);g.setTargetAtTime(base,t+duration,.055)}
   confirmation(kind){this.duck('gunfire',kind.includes('kill')?.62:.84,kind.includes('kill')?.14:.06);return this.play('confirm-'+kind,{volume:kind.includes('kill')?.62:.47,bus:'ui',priority:kind.includes('kill')?9:6,variant:this.feedbackIndex++%4})}
-  setMuted(muted){this.muted=muted;if(this.master)this.master.gain.setTargetAtTime(muted?0:AUDIO_TUNING.master,this.context.currentTime,.015);if(muted)this.stopWorld();else if(this.musicRequested)this.startMusic()}
+  setMuted(muted){this.muted=muted;this.setMasterGain();if(muted)this.stopWorld();else if(this.musicRequested)this.startMusic()}
   setSlow(slow){if(this.slow===slow)return;this.slow=slow;for(const v of this.voices)v.source.playbackRate.setTargetAtTime(v.rate*(slow?(v.bus==='self'?.92:v.bus==='ui'?1:.78):1),this.context.currentTime,.07)}
   updateListener(pos,forward){
     this.listener={x:pos.x,y:pos.y,z:pos.z};if(!this.context)return;const l=this.context.listener,c=this.context,t=c.currentTime;
@@ -101,7 +132,7 @@ export class GameAudio{
     v.gain.gain.setTargetAtTime(v.volume*gain*(1-v.occlusion*(1-AUDIO_TUNING.occlusion.gain)),this.context.currentTime,.025);
   }
   play(name,{pos=null,volume=1,curve='foley',bus='ui',priority=1,occlusion=true,variant=0,pan=0}={}){
-    if(this.muted)return null;this.unlock();const c=this.context;if(!c)return null;
+    if(this.muted||this.background)return null;this.unlock();const c=this.context;if(!c||c.state==='closed'||c.state==='suspended'||c.state==='interrupted')return null;
     const d=pos?Math.hypot(pos.x-this.listener.x,pos.y-this.listener.y,pos.z-this.listener.z):0,falloff=pos?attenuation(d,AUDIO_TUNING.curves[curve]):1;if(falloff<=.002)return null;
     const importance=priority*falloff,category=[...this.voices].filter(v=>v.bus===bus);if(category.length>=AUDIO_TUNING.limits[bus]||this.voices.size>=AUDIO_TUNING.limits.total){const pool=category.length>=AUDIO_TUNING.limits[bus]?category:[...this.voices],lowest=pool.sort((a,b)=>a.importance-b.importance||a.started-b.started)[0];if(lowest&&lowest.importance>importance)return null;if(lowest)this.stopVoice(lowest)}
     const source=c.createBufferSource(),gain=c.createGain(),filter=c.createBiquadFilter();source.buffer=this.buffer(name,variant);filter.type='lowpass';
