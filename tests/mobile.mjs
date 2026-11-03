@@ -85,3 +85,5 @@ proxy.position.x=0;scene.updateMatrixWorld(true);mobileTargetClock=0;syncTouchIn
 worldMeshes=[wall];scene.add(wall);scene.updateMatrixWorld(true);mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,false);assert.equal(triggerState.phase,'draining');assert.ok(triggerState.progress>0,'occlusion immediately prevents shots while charge drains');
 `);
 console.log('Acquisition margin: near misses, distance cutoff, rotated/scaled hitboxes, cover/corpses and native precharge/real-hit/drain integration pass.');
+
+controller.api.read=()=>({type:'rocket',chargeWeapon:true});globalThis.innerWidth=844;globalThis.innerHeight=390;controller.down(event(25,'fire',650,220));controller.move(event(25,null,650,20));controller.up(event(25,null,650,20));assert.ok(actions.some(a=>a[0]==='cancelCharge'),'dragging a charged launcher to the top cancels launch');delete globalThis.innerWidth;delete globalThis.innerHeight;

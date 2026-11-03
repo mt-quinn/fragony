@@ -10,7 +10,7 @@ WASD move, Shift sprint, mouse aim, left click fire, right click aim down sights
 
 On iPhone/iPad, play in landscape. The mobile interface defaults to Simple Mode: move with the left joystick, swipe to aim, and keep a visible opponent in the crosshair to fire automatically. ADS and manual hip-fire remain separate. Touch Settings includes sensitivity, layout presets, a full HUD editor, graphics and optional gyro. Practice lets you try all weapons without changing your saved run. [Mobile controls and implementation notes](docs/mobile-implementation.md) · [COD Mobile research](docs/mobile-controls-research.md).
 
-Each run starts with two distinct random weapons. Buy more weapons, attachments, perks and throwables between rounds. Each opponent rolls two weapons at match start and retains that pair through respawns. Reserve ammunition is unlimited; magazines must be reloaded. Switching preserves partial or empty magazines. Reload completion clamps the timer to zero, so repeated reloads cannot lock firing.
+Each run starts with two distinct random weapons. Buy more weapons, attachments, perks and throwables between rounds. Each opponent rolls two weapons at match start and retains that pair through respawns. Reserve ammunition is unlimited; firing the last round immediately starts a reload. Switching preserves partial or empty magazines. Reload completion clamps the timer to zero, so repeated reloads cannot lock firing.
 
 90-second free-for-all against five opponents. Unlimited respawns. Finish in the top three to advance; otherwise the run ends. Ties favor fewer deaths. Three consecutive kills earn the selected killstreak. Progress saves in this browser.
 
@@ -83,26 +83,15 @@ The synthesized sound mix includes varied dry hit thwips, a wet headshot layer a
 
 ### Loadout bench and attachment system
 
-Between rounds, LOADOUT presents a compact board with Weapons, Attachments, Perks and Equipment visible together. Each visit has persistent randomized stock: up to two guns, four compatible parts, two perks and two equipment offers. Purchases fit directly; owned parts and gear can be changed freely. The full catalog can also be browsed read-only through ARSENAL in the main menu.
+The redesigned arsenal has 72 purchasable gameplay attachments: three action, ammunition and feed choices per weapon, plus three handling rigs available separately on each weapon. Fit three gameplay parts across four slots, plus a free sight. Semi-auto, automatic, burst, paired and charged conversions change real firing behavior. Special ammunition includes explosive impacts, full-first-target penetration, frangible damage, duplex shots, slugs, arc chains and flak. Slamfire preserves full shell damage and builds recoil/spread during continuous firing; release settles it within 80 ms.
 
-Each weapon has five slots. There are three weapon-specific alternatives in each mechanical slot, plus six optics per weapon (three 1× and three 2×). That is 18 choices per weapon, 72 distinct mechanical parts and six shared optic designs. Stock parts are free. Purchased parts belong to that weapon for the run; swapping or removing them is free. Prices, benefits, penalties, fitted state and insufficient-credit states are explicit. RESET BUILD returns to standard without deleting owned parts. Buying additional weapons preserves the initial random pair; all owned guns remain available during a match. The starting weapon selection applies at round start.
+The six-offer shop supplies two actions, two ammunition choices and two feed/handling choices. One first-shop conversion costs 150 credits. Pin one unbought offer for the next shop; purchases and pins persist. A fourth part requires an explicit replacement choice, with the removed part kept owned. Free sights never consume a gameplay slot. Existing runs migrate matching feeds and refund retired purchases exactly once.
 
-| Weapon | Slots |
-| --- | --- |
-| AR-9 | Optic, Muzzle, Barrel, Magazine, Stock |
-| IRON .50 | Optic, Muzzle, Barrel, Magazine, Trigger |
-| WASP | Optic, Muzzle, Barrel, Magazine, Stock |
-| LONGSHOT | Optic, Barrel, Capacitor, Magazine, Stock |
-| THUMPER | Optic, Warhead, Motor, Loader, Grip |
-| DOORBREAKER | Optic, Choke, Barrel, Tube, Pump |
+Practice → Pause → Weapon Workbench makes every part free to try without writing campaign progression. Arsenal previews also leave the run unchanged. Inspect Gun opens a rotatable, lit 3D component view with an action-cycling demonstration. Conversion hardware includes visible paired bores/rails/tubes, actual magazine/loading silhouettes, ammunition carriers and animated charging/feed mechanisms. Model buffers are disposed when replaced; the viewer reuses the game's WebGL renderer.
 
-`dist/loadout.js` owns catalog data, stat composition, compatibility, purchase/equip rules, preview builds and normalization. Damage, spread/core spread, recoil, cadence, magazine size, reload, aim time, movement, weapon switching and rocket characteristics connect to the actual game. 2× magnification uses the FOV tangent relationship; optics have distinct open/round/box/tube models and reticles, with scaled aiming sensitivity. Rocket modifiers are snapshotted at launch so switching weapons cannot alter a projectile already in flight. Bots retain their existing tuned weapon stats and random pairs.
+[Approved catalog, composition and control rules](docs/attachment-redesign.md). `dist/loadout.js` owns the catalog/stat resolver, `dist/weapon-cycle.js` owns trigger/feed state, `dist/ballistics.js` groups direct and payload events, and `dist/attachment-models.js` builds/animates the physical conversion parts. New player rockets snapshot their configured payload and use swept contact; bot weapons, grenades and killstreak tuning retain their own paths.
 
-Perks include the original movement/armor/reload/focus upgrades and new Quickdraw and Recovery choices. Equipment offers frag, impact and quick-fuse grenades, plus Airstrike, Surge and Rocket Barrage killstreaks. One throwable and one killstreak are selected; purchased alternatives can be swapped free. Bandolier increases grenade allocation. All purchases save immediately. Existing saves migrate the former global gun attachments into compatible owned parts rather than stacking both systems.
-
-The loadout skips hidden arena rendering and needs no extra WebGL context. UI and part previews use the same stat resolver as combat. `tests/loadout.mjs` checks all 108 per-weapon choices, transactions, slot validation, migration/restoration, real reload/aim/projectile effects, and procedural model construction for every part.
-
-Design references: [COD BO6 attachment intel](https://www.callofduty.com/blog/2024/10/call-of-duty-black-ops-6-launch-comms-weapons-attachments-intel) and [Modern Warfare loadout guide](https://blog.activision.com/call-of-duty/2019-10/The-Basics-of-Call-of-Duty-Modern-Warfare-Loadouts). Adapted principles: a weapon-centered bench, relevant slot categories, understandable effects, and clear separation of weapons, perks and equipment. No third-party game assets are used.
+`npm test` covers the catalog, purchasing/save migration, burst/semi/charge timing, native ammunition and payload effects, coupled/individual/holstered loading, Practice safety, all 720 model kits/140 paired configurations, actual ADS alignment, and existing map/combat/audio regressions.
 
 Assists award proportional normal kill points for actual health removed since the target last healed. Killers always receive full kill/headshot points. Respawns and healing clear damage credit. Enemies shift green to red with health and grey on death; the aiming reticle is a fixed dot.
 

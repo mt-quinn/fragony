@@ -1,3 +1,4 @@
+import {modelAttachments,applyAttachmentModels,animateAttachmentModels} from '../dist/attachment-models.js';
 import {renderWeaponView} from '../dist/presentation.js';
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.js';
@@ -17,8 +18,8 @@ for(const optic of [null,...WEAPON_SLOTS[1].optic]){
  for(const phase of [0,.25,.8]){hero.emptyReload=true;animateNailer(hero,{ammo:0,reload:phase,reloading:true});assert.equal(hero.sightY,optic ? .355 : .244)}
 }
 // Physically visible combinations: barrels, all muzzle options and all magazines.
-for(const barrel of [null,...WEAPON_SLOTS[1].barrel])for(const muzzle of [null,...WEAPON_SLOTS[1].muzzle])for(const magazine of [null,...WEAPON_SLOTS[1].magazine]){
- const p=new THREE.Group(),hero=createNailer(p,{attachments:[barrel,muzzle,magazine].filter(Boolean)});p.updateMatrixWorld(true);assert.ok(hero.muzzleZ<-.45);assert.ok(hero.muzzleZ>-.95);let n=0;p.traverse(m=>{if(m.isMesh){n++;assert.ok(m.geometry.attributes.position.count>0)}});assert.ok(n<155,'bounded hero model detail');
+for(const barrel of [null,...WEAPON_SLOTS[1].action])for(const muzzle of [null,...WEAPON_SLOTS[1].ammunition])for(const magazine of [null,...WEAPON_SLOTS[1].feed]){
+ const p=new THREE.Group(),parts=[barrel,muzzle,magazine].filter(Boolean),hero=createNailer(p,{attachments:modelAttachments(1,parts)});applyAttachmentModels(hero,1,parts);p.updateMatrixWorld(true);assert.ok(hero.muzzleZ<-.45);assert.ok(hero.muzzleZ>-.95);let n=0;p.traverse(m=>{if(m.isMesh){n++;assert.ok(m.geometry.attributes.position.count>0)}});assert.ok(n<155,'bounded hero model detail');
 }
 assert.deepEqual(WEAPON_ORDER,[1,2,0,5,4,3]);assert.deepEqual(WEAPON_ORDER.map(weaponSlot),[1,2,3,4,5,6]);
 const game=createGameHarness();game.setup();game.run(`{
@@ -26,6 +27,6 @@ owned=[1,2,0,5,4,3];equipped=1;buildWeapon();ammo=0;reload();assert.ok(weaponGro
 reloading=0;ammo=7;keys.clear();weaponMotion.reset();nearWall=0;worldMeshes=[];viewHeight=playerPos.y;for(let i=0;i<120;i++){keys.add('MouseRight');present(1/60)}weaponGroup.updateMatrixWorld(true);const sight=weaponGroup.userData.nailer.irons.getObjectByName('front-sight-dot').getWorldPosition(new THREE.Vector3()).project(camera);assert.ok(Math.abs(sight.x)<1e-4&&Math.abs(sight.y)<1e-4,'iron sight on actual aim axis');keys.clear();
 for(let i=0;i<6;i++){locked=true;mode='play';inputPress('Digit'+(i+1));assert.equal(equipped,WEAPON_ORDER[i]);physicalKeys.clear();syncInputs()}
 }`);
-console.log('Nailer: finite animated reload/fire/empty poses, six clear centered optics, all64 barrel/muzzle/magazine combinations, preserved stats and approved slot binds pass.');
+console.log('Nailer: finite animated reload/fire/empty poses, six clear centered optics, all64 action/ammunition/feed combinations, preserved stats and approved slot binds pass.');
 
 const c=new THREE.PerspectiveCamera(33,1,.07,160);c.userData.weaponFovFloor=65;let fov;renderWeaponView({render:(s,c)=>fov=c.fov},{},c);assert.equal(fov,65);assert.equal(c.fov,33);assert.throws(()=>renderWeaponView({render:()=>{throw Error('render')}},{},c));assert.equal(c.fov,33);

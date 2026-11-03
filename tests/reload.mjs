@@ -6,7 +6,7 @@ function finishReload(){let frames=0;while(reloading>0&&frames++<100)update(.037
 for(let gun=0;gun<6;gun++){
  equipped=gun;ammo=weapons[gun].mag;magazines[gun]=ammo;reloading=0;buildWeapon();
  for(let cycle=0;cycle<3;cycle++){
-  while(ammo>0){shotTimer=0;shoot()}assert.equal(ammo,0);shotTimer=0;shoot();assert.ok(reloading>0,'empty gun auto-reloads');finishReload();
+  while(ammo>0){shotTimer=0;shoot()}assert.equal(ammo,0);assert.ok(reloading>0,'last cartridge starts reload without another trigger attempt');finishReload();
   shotTimer=0;shoot();assert.equal(ammo,weapons[gun].mag-1,'firing resumes after reload');reload();assert.ok(reloading>0,'manual partial-magazine reload still works');finishReload();
  }
 }

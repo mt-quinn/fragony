@@ -24,3 +24,10 @@ Base combat balance is unchanged: 83 damage, 7 rounds, .53 second shot interval,
 Each attachment family has explicit mounting geometry and an aligned sight axis. First-person magnification is separated from housing size for every gun. Matching simpler bot models retain the silhouettes; a simple arm-hit proxy keeps decorative geometry out of bullet-query costs. Static surfaces are merged within their independently moving groups; merged buffers are disposed when a model is replaced. Health colors remain limited to crash-dummy hands/arms. Existing balance, attachment effects, ownership and saved IDs are preserved.
 
 Weapon UI silhouettes are baked from the actual base hero geometry by `node tools/bake-weapon-icons.mjs`. The shared `gunIcon` covers the HUD identity, owned weapon slots, shop offers and Arsenal catalog. Arms and transparent optics are excluded; trigger guards and stock openings remain transparent. Runtime loads only the generated SVG paths.
+
+
+## Conversion hardware
+
+The approved attachment redesign is implemented in [attachment-redesign.md](docs/attachment-redesign.md). All six weapons now have action, ammunition, feed and handling kits, with up to three gameplay parts plus a free sight. Original stock silhouettes remain. Distinct paired bores/rails/tubes, rotary/burst/charge mechanisms, proportional magazines/cassettes, cartridge markings and rigs are authored in `dist/attachment-models.js`. Inspection, live recoil/charging/feed animation and disposal share the actual weapon geometry; they are not image-only previews.
+
+Penetrators retain the converted weapon’s full first-target damage. Slamfire keeps the full shell budget and visually/mechanically builds recoil and spread, then settles on release. The older presentation notes above describe the stock model history; the new catalog replaces the old barrel/muzzle/stat-upgrade slots.

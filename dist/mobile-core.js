@@ -1,9 +1,9 @@
 // Touch tuning is in CSS-pixel / screen-relative units, independent of render resolution.
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export const MOBILE_DEFAULTS={fireMode:'simple',limitHipRange:true,manualFire:true,adsMode:'toggle',adsDrag:true,stickMode:'floating',sprint:0.88,sensitivity:1,adsSensitivity:.7,scopeSensitivity:.45,vertical:1,aimAssist:true,invertY:false,gyro:'off',gyroSensitivity:1,quality:'balanced',fov:78,focusMode:'toggle',preset:'thumbs',controlScale:1,controlOpacity:.65};
+export const MOBILE_DEFAULTS={fireMode:'simple',holdSemi:true,limitHipRange:true,manualFire:true,adsMode:'toggle',adsDrag:true,stickMode:'floating',sprint:0.88,sensitivity:1,adsSensitivity:.7,scopeSensitivity:.45,vertical:1,aimAssist:true,invertY:false,gyro:'off',gyroSensitivity:1,quality:'balanced',fov:78,focusMode:'toggle',preset:'thumbs',controlScale:1,controlOpacity:.65};
 export function mobileSettings(saved={}){
  const s={...MOBILE_DEFAULTS};
- for(const k of ['limitHipRange','manualFire','adsDrag','aimAssist','invertY'])if(typeof saved?.[k]==='boolean')s[k]=saved[k];
+ for(const k of ['holdSemi','limitHipRange','manualFire','adsDrag','aimAssist','invertY'])if(typeof saved?.[k]==='boolean')s[k]=saved[k];
  for(const [k,choices]of Object.entries({fireMode:['simple','manual'],adsMode:['toggle','hold'],stickMode:['floating','fixed'],gyro:['off','ads','always'],quality:['battery','balanced','high'],focusMode:['toggle','hold'],preset:['thumbs','claw','left']}))if(choices.includes(saved?.[k]))s[k]=saved[k];
  for(const [k,min,max]of [['sprint',.65,1],['sensitivity',.3,2.5],['adsSensitivity',.2,1.5],['scopeSensitivity',.15,1.2],['vertical',.5,1.5],['gyroSensitivity',.2,2],['fov',65,95],['controlScale',.7,1.4],['controlOpacity',.2,1]])if(Number.isFinite(saved?.[k]))s[k]=clamp(saved[k],min,max);
  return s;
