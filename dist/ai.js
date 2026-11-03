@@ -6,6 +6,10 @@ import { inBlock, blockedAt, surfaceAt, launchTime,blockSpan,nearBlocks } from '
 // timing uses world seconds, so slow motion affects thinking, aim and movement alike.
 export const AI_TUNING = {
   progressionRounds: 30,
+  // Extra opening-round forgiveness fades out by round 13, preserving the
+  // established mid/late challenge instead of weakening the whole campaign.
+  openingRounds: 12,
+  opening: { reaction: 1.05, aimError: .13, think: 1.15, rest: 1.8, aggression: .5, dodgeChance: .08, dodgeReaction: .65 },
   early: { slideSkill: .15, speed: 4.8, reaction: .4, aimError: .045, memory: 1.8, think: .72, rest: 1, aggression: .7, dodgeChance: .25, dodgeReaction: .32 },
   late: { slideSkill: .9, speed: 6.6, reaction: .105, aimError: .004, memory: 4.5, think: .18, rest: .12, aggression: 1.4, dodgeChance: .8, dodgeReaction: .12 },
   senses: { interval: .16, range: 35, fieldOfView: 220, hearing: 23 },
@@ -36,38 +40,43 @@ const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 export function difficultyForRound(round,tuning=AI_TUNING){
   const t=clamp((round-1)/tuning.progressionRounds,0,1),e=Math.pow(t,.65);
   if(t===1)return {...tuning.late};
-  return Object.fromEntries(Object.keys(tuning.early).map(k=>[k,tuning.early[k]+(tuning.late[k]-tuning.early[k])*e]));
+  const opening=Math.pow(1-clamp((round-1)/(tuning.openingRounds||1),0,1),2);
+  return Object.fromEntries(Object.keys(tuning.early).map(k=>[k,tuning.early[k]+(tuning.late[k]-tuning.early[k])*e+((tuning.opening?.[k]??tuning.early[k])-tuning.early[k])*opening]));
 }
 export function solidAt(blocks,x,z,y,r=.38,step=.32){return blockedAt(blocks,x,z,y,r,1.9,step)}
 function clearSegment(blocks,a,b,action='walk',query=null,stepHeight=.3){
  // A descending edge must leave the upper floor, not point through it.
- if(action==='drop'&&surfaceAt(query?query(b.x,b.z):blocks,b.x,b.z,a.y)>b.y+.31)return false;
+ if(action==='drop'&&surfaceAt(query?query(b.x,b.z,a.y,b.y+.31):blocks,b.x,b.z,a.y)>b.y+.31)return false;
  const steps=Math.ceil(Math.max(horizontal(a,b),Math.abs(a.y-b.y))*4);
  for(let i=0;i<=steps;i++){
-  const t=i/Math.max(1,steps),x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,y=action==='drop'?a.y:action==='jump'?Math.max(a.y,b.y)+Math.sin(t*Math.PI)*.8:a.y+(b.y-a.y)*t,near=query?query(x,z):blocks;
+  const t=i/Math.max(1,steps),x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,y=action==='drop'?a.y:action==='jump'?Math.max(a.y,b.y)+Math.sin(t*Math.PI)*.8:a.y+(b.y-a.y)*t,near=query?query(x,z,y):blocks;
   if(solidAt(near,x,z,y,.38,stepHeight+.02))return false;
-  if(action==='walk'&&surfaceAt(near,x,z,y)<y-.34)return false;
+  if(action==='walk'&&surfaceAt(near,x,z,y)<y-Math.max(.34,stepHeight+.04))return false;
  }return true;
 }
 export function buildNavigation(blocks,pads=[],anchors=null,options={}){
- const boundX=options.bounds?.x??Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2))-.8,boundZ=options.bounds?.z??Math.max(...blocks.map(b=>Math.abs(b.z)+b.d/2))-.8,maxHeight=options.maxHeight??8;
- const nodes=[],columns=new Map(),spatial=new Map(),query=(x,z)=>spatial.get(`${Math.round(x)},${Math.round(z)}`)||[];
+ const boundX=options.bounds?.x??Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2))-.8,boundZ=options.bounds?.z??Math.max(...blocks.map(b=>Math.abs(b.z)+b.d/2))-.8,maxHeight=options.maxHeight??8,gridStep=options.gridStep||1;
+ const nodes=[],columns=new Map(),spatial=new Map(),query=(x,z,y=null,minY=null)=>{const near=blocks.triangleCollision?nearBlocks(blocks,x,z,.42,y===null?0:minY??y-.5,y===null?maxHeight+2:y+2.1):spatial.get(`${Math.round(x)},${Math.round(z)}`)||[];near.localized=true;return near};
  // One small neighborhood per grid cell avoids scanning the whole map for each edge.
  for(const b of blocks){const c=Math.abs(Math.cos(b.yaw||0)),s=Math.abs(Math.sin(b.yaw||0)),wx=(b.w*c+b.d*s)/2+1.2,dz=(b.w*s+b.d*c)/2+1.2;for(let x=Math.floor(b.x-wx);x<=Math.ceil(b.x+wx);x++)for(let z=Math.floor(b.z-dz);z<=Math.ceil(b.z+dz);z++){const key=`${x},${z}`;if(!spatial.has(key))spatial.set(key,[]);spatial.get(key).push(b)}}
- for(let x=Math.ceil(-boundX+.5);x<=Math.floor(boundX-.5);x++)for(let z=Math.ceil(-boundZ+.5);z<=Math.floor(boundZ-.5);z++){
-  const near=query(x,z),heights=new Set(options.noGround?[]:[0]);for(const b of near)if(b.top>0&&b.top<=maxHeight&&b.w>=(options.noGround?.2:.75)&&b.d>=(options.noGround?.2:.75)&&inBlock(b,x,z,options.noGround?0:-.38)){const span=blockSpan(b,x,z,.38);if(span)heights.add(Math.round(span.top*1000)/1000);}
+ for(let x=Math.ceil((-boundX+.5)/gridStep)*gridStep;x<=boundX-.5;x+=gridStep)for(let z=Math.ceil((-boundZ+.5)/gridStep)*gridStep;z<=boundZ-.5;z+=gridStep){
+  if(gridStep<1&&options.refinement?.length&&(!Number.isInteger(x)||!Number.isInteger(z))&&!options.refinement.some(r=>x>=r.minX&&x<=r.maxX&&z>=r.minZ&&z<=r.maxZ))continue;
+  const near=blocks.triangleCollision?(spatial.get(`${Math.round(x)},${Math.round(z)}`)||[]).concat(blocks.triangleCollision.point(x,z,0,maxHeight+2)):query(x,z),heights=new Set(options.noGround?[]:[0]);for(const b of near)if(b.top>=0&&b.top<=maxHeight&&b.w>=(options.noGround?.2:.75)&&b.d>=(options.noGround?.2:.75)&&inBlock(b,x,z,options.noGround?0:-.38)){const span=blockSpan(b,x,z,.38);if(span)heights.add(Math.max(0,Math.round(span.top*1000)/1000));}
   for(const w of options.water||[]){const span=blockSpan(w,x,z);if(span)for(let y=Math.max(2,Math.ceil(span.bottom));y<span.top;y+=4)heights.add(y);if(span)heights.add(span.top-.75)}
-  for(const y of heights){if(solidAt(near,x,z,y,.38,(options.stepHeight??.3)+.02))continue;const wet=(options.water||[]).some(w=>{const span=blockSpan(w,x,z);return span&&y>=span.bottom&&y<span.top});if(wet&&(x%2||z%2))continue;const n={id:nodes.length,x,y,z,wet,edges:[]};nodes.push(n);const key=`${x},${z}`;if(!columns.has(key))columns.set(key,[]);columns.get(key).push(n)}
+  const candidates=blocks.triangleCollision?Array.from(heights).sort((a,b)=>a-b).reduce((a,y)=>{if(a.length&&y-a[a.length-1]<.08)a[a.length-1]=y;else a.push(y);return a},[]):heights;
+  for(const y of candidates){if(solidAt(blocks.triangleCollision?query(x,z,y):near,x,z,y,.38,(options.stepHeight??.3)+.02))continue;const wet=(options.water||[]).some(w=>{const span=blockSpan(w,x,z);return span&&y>=span.bottom&&y<span.top});if(wet&&(x%2||z%2))continue;const n={id:nodes.length,x,y,z,wet,edges:[]};nodes.push(n);const key=`${x},${z}`;if(!columns.has(key))columns.set(key,[]);columns.get(key).push(n)}
  }
- for(const n of nodes)for(const [dx,dz]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]])for(const m of columns.get(`${n.x+dx},${n.z+dz}`)||[]){
-  const rise=m.y-n.y;if(n.wet||m.wet){if(Math.abs(rise)>4.1)continue;if(clearSegment(blocks,n,m,'swim',query,options.stepHeight??.3))n.edges.push({node:m,action:'swim',cost:distance(n,m)*1.3});continue}if(rise>1.35||rise< -8.1)continue;const action=rise>(options.stepHeight??.3)?'jump':rise< -.3?'drop':'walk';if(clearSegment(blocks,n,m,action,query,options.stepHeight??.3))n.edges.push({node:m,action,cost:distance(n,m)+(action==='walk'?0:1.2)});
+ options.onProgress?.('floors',nodes.length);
+ for(const n of nodes)for(const [dx,dz]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]])for(const m of columns.get(`${n.x+dx*gridStep},${n.z+dz*gridStep}`)||[]){
+  const rise=m.y-n.y;if(n.wet||m.wet){if(Math.abs(rise)>4.1)continue;if(clearSegment(blocks,n,m,'swim',query,options.stepHeight??.3))n.edges.push({node:m,action:'swim',cost:distance(n,m)*1.3});continue}if(rise>1.35||rise< -8.1)continue;const action=rise>(options.stepHeight??.3)?'jump':rise< -(options.stepHeight??.3)?'drop':'walk';if(clearSegment(blocks,n,m,action,query,options.stepHeight??.3))n.edges.push({node:m,action,cost:distance(n,m)+(action==='walk'?0:1.2)});
  }
  for(const column of columns.values())for(const n of column)if(n.wet)for(const m of column)if(n!==m&&Math.abs(n.y-m.y)<=4.1&&clearSegment(blocks,n,m,'swim',query,options.stepHeight??.3))n.edges.push({node:m,action:'swim',cost:distance(n,m)*1.3});
+ options.onProgress?.('edges',nodes.reduce((s,n)=>s+n.edges.length,0));
  const navigation={nodes,blocks,stepHeight:options.stepHeight??.3,pads:[],anchors:[],bounds:{x:boundX,z:boundZ}};
  for(const p of pads){const from=nearestNode(navigation,{x:p.x,y:p.y||0,z:p.z}),to=nearestNode(navigation,p.landing);if(from&&to&&Math.abs(to.y-p.landing.y)<.35&&Math.abs(from.y-(p.y||0))<.35){const pad={x:p.x,y:p.y||0,z:p.z,power:p.power||16.5,triggerRadius:p.triggerRadius,landing:{...p.landing}};from.edges.push({node:to,action:'pad',cost:horizontal(from,to)*.5+3,pad});navigation.pads.push({from,to,...pad})}}
- for(const lift of options.elevators||[]){const from=nearestNode(navigation,{...lift.entry,y:lift.low}),to=nearestNode(navigation,{...lift.entry,y:lift.high});if(from&&to&&Math.abs(from.y-lift.low)<.35&&Math.abs(to.y-lift.high)<.35){from.edges.push({node:to,action:'elevator',cost:8,lift,fromY:lift.low});to.edges.push({node:from,action:'elevator',cost:8,lift,fromY:lift.high})}}
+ for(const lift of options.elevators||[]){const from=nearestNode(navigation,{...(lift.entryLow||lift.entry),y:lift.low}),to=nearestNode(navigation,{...(lift.entryHigh||lift.entry),y:lift.high});if(from&&to&&Math.abs(from.y-lift.low)<.35&&Math.abs(to.y-lift.high)<.35){from.edges.push({node:to,action:'elevator',cost:8,lift,fromY:lift.low});to.edges.push({node:from,action:'elevator',cost:8,lift,fromY:lift.high})}}
  for(const [x,y,z]of anchors||[]){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}
- if(options.noGround&&anchors?.length){const start=nearestNode(navigation,{x:anchors[0][0],y:anchors[0][1],z:anchors[0][2]}),seen=new Set([start]),queue=[start];for(let i=0;i<queue.length;i++)for(const e of queue[i].edges)if(!seen.has(e.node)){seen.add(e.node);queue.push(e.node)}navigation.nodes=nodes.filter(n=>seen.has(n));navigation.nodes.forEach((n,i)=>n.id=i);navigation.anchors=navigation.anchors.filter(n=>seen.has(n))}
+ if(options.noGround&&anchors?.length&&!options.keepIslands){const start=nearestNode(navigation,{x:anchors[0][0],y:anchors[0][1],z:anchors[0][2]}),seen=new Set([start]),queue=[start];for(let i=0;i<queue.length;i++)for(const e of queue[i].edges)if(!seen.has(e.node)){seen.add(e.node);queue.push(e.node)}navigation.nodes=nodes.filter(n=>seen.has(n));navigation.nodes.forEach((n,i)=>n.id=i);navigation.anchors=navigation.anchors.filter(n=>seen.has(n))}
  return navigation;
 }
 export function nearestNode(navigation,pos){
@@ -122,7 +131,7 @@ export class ArenaAI{
     this.world.action?.(b,type,reason);
   }
   walkClear(from,to){
-    return !this.navigation.blocks||clearSegment(this.navigation.blocks,from,to,'walk',(x,z)=>nearBlocks(this.navigation.blocks,x,z),this.navigation.stepHeight??.3);
+    return !this.navigation.blocks||clearSegment(this.navigation.blocks,from,to,'walk',(x,z,y)=>nearBlocks(this.navigation.blocks,x,z,.42,y-.5,y+2.1),this.navigation.stepHeight??.3);
   }
   localPosition(pos){
     let best=null,score=Infinity;
@@ -386,8 +395,9 @@ export class ArenaAI{
 }
 // Compact precomputed graph avoids rebuilding a BSP map's navigation on the menu.
 export function restoreNavigation(encoded,elevators,anchors,bounds,blocks=null,stepHeight=.3,pads=[]){
- const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)),data=new DataView(bytes.buffer),count=data.getUint32(0,true),edgeBase=8+count*12,actions=['walk','jump','drop','swim','elevator','pad'];
- const nodes=Array.from({length:count},(_,id)=>{const i=8+id*12;return{id,x:data.getInt8(i),z:data.getInt8(i+1),y:data.getUint16(i+2,true)/1000,wet:!!data.getUint8(i+4),edges:[]}}),restoredPads=[];
- for(const n of nodes){const i=8+n.id*12,first=data.getUint32(i+8,true),length=data.getUint16(i+6,true);for(let j=first;j<first+length;j++){const k=edgeBase+j*8,action=actions[data.getUint8(k+4)],slot=data.getUint8(k+5)-1,lift=action==='elevator'?elevators[slot]:undefined,sourcePad=action==='pad'?pads[slot]:null,pad=sourcePad?{x:sourcePad.x,y:sourcePad.y||0,z:sourcePad.z,power:sourcePad.power,triggerRadius:sourcePad.triggerRadius,landing:{...sourcePad.landing}}:undefined,to=nodes[data.getUint16(k,true)];n.edges.push({node:to,cost:data.getUint16(k+2,true)/100,action,lift,pad,fromY:lift?data.getUint16(k+6,true)/1000:undefined});if(pad)restoredPads.push({from:n,to,...pad});}}
+ const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)),data=new DataView(bytes.buffer),header=data.getUint32(0,true),wide=!!(header&0x80000000),count=header&0x7fffffff,nodeBytes=wide?16:12,edgeBase=8+count*nodeBytes,actions=['walk','jump','drop','swim','elevator','pad'];
+ const nodes=Array.from({length:count},(_,id)=>{const i=8+id*nodeBytes;return{id,x:wide?data.getInt16(i,true)/2:data.getInt8(i),z:wide?data.getInt16(i+2,true)/2:data.getInt8(i+1),y:data.getUint16(i+(wide?4:2),true)/1000,wet:!!data.getUint8(i+(wide?6:4)),edges:[]}}),restoredPads=[];
+ for(const n of nodes){const i=8+n.id*nodeBytes,first=data.getUint32(i+(wide?12:8),true),length=data.getUint16(i+(wide?8:6),true);for(let j=first;j<first+length;j++){const k=edgeBase+j*8,action=actions[data.getUint8(k+4)],slot=data.getUint8(k+5)-1,lift=action==='elevator'?elevators[slot]:undefined,sourcePad=action==='pad'?pads[slot]:null,pad=sourcePad?{x:sourcePad.x,y:sourcePad.y||0,z:sourcePad.z,power:sourcePad.power,triggerRadius:sourcePad.triggerRadius,landing:{...sourcePad.landing}}:undefined,to=nodes[data.getUint16(k,true)];n.edges.push({node:to,cost:data.getUint16(k+2,true)/100,action,lift,pad,fromY:lift?data.getUint16(k+6,true)/1000:undefined});if(pad)restoredPads.push({from:n,to,...pad});}}
+
  const navigation={nodes,blocks,stepHeight,anchors:[],pads:restoredPads,bounds};for(const [x,y,z]of anchors){const n=nearestNode(navigation,{x,y,z});if(n&&!navigation.anchors.includes(n))navigation.anchors.push(n)}return navigation;
 }

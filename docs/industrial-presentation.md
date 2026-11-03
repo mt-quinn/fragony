@@ -1,6 +1,6 @@
-# Seven industrial arenas
+# Eight industrial arenas
 
-The approved Test Works slice establishes the material and construction language for all seven maps. Each facility has distinct internal districts, with broad material changes and recognizable equipment silhouettes. Architecture, cover and movement stay readable at phone scale. Decorative lime is restrained so characters, pickups, launch pads and combat effects remain the strongest signals.
+The approved Test Works slice establishes the material and construction language for all eight maps. Each facility has distinct internal districts, with broad material changes and recognizable equipment silhouettes. Architecture, cover and movement stay readable at phone scale. Decorative lime is restrained so characters, pickups, launch pads and combat effects remain the strongest signals.
 
 ## Individually authored identities
 
@@ -12,23 +12,20 @@ The approved Test Works slice establishes the material and construction language
 | Parallax | Refinery utilities | Compressor enclosures; heat-exchange housings; transfer hall; switchgear/service towers; loading return |
 | Foundry | Heavy fabrication | Forge vessels and machine guarding; hydraulic press; steel gantries; upper control; dispatch |
 | Rust | Supplied refinery-yard layout | Central process tower; pipe racks; container/loading apron; perimeter service plant |
-| Shipment | Supplied container-yard layout | Distinct container stacks, loading and power/service sides, original open cargo passages and elevated crossings |
+| Shipment | Stock compact cargo yard | North/south cargo, dispatch, power bay, central crossing |
+| Nuketown | Utility campus on the Nuked layout | Teal field operations house, warm systems lab, west/east service gardens, transit crossing |
 
 Shared construction details and a static lo-fi sky keep the maps part of one world. Surface variation stays quiet: world-scale mineral grain, matte enamel, restrained galvanized metal and plain coated floors. Source container variants retain recognizable muted teal, blue-gray, ochre and pale treatments. There is no decorative scenery beyond the playable imports, no new clutter in ground routes and no additional animated machinery or environmental audio masking footsteps.
 
 ## Exact supplied layouts
 
-Rust is imported from the supplied CoD1 IBSP59 version; Shipment is imported from the supplied CoD4 Shipment2 fastfile. These use recovered world triangles and original compiled movement collision, not estimated layouts. Source positions, names, transform metadata and fingerprints remain auditable. Rust's unavailable external prop art is represented by closed skins matching its authored collision hulls. Shipment retains the exact necessary in-play model geometry and native movement hulls, including vehicles, dumpsters, pallets and barrels. Distant backdrop, foliage and litter are omitted.
+Rust retains the supplied CoD1 IBSP59 conversion and its four verified tower launch routes. Shipment now uses Stendby’s editable stock Shipment source recovery rather than Carcass26’s expanded Shipment2. Nuketown uses Stendby’s Nuked adaptation for CoD4; it is not represented as an official Treyarch editor-source release. Both Radiant imports retain source brush planes, terrain, nested prefab transforms, source DM starts and available original static model geometry. Original textures, lightmaps, sounds and scripts are excluded.
 
-See `rust-source-import.md` and `imported-maps/shipment-source.md` for extraction details. The converters use the supplied files and Python's standard library; geometry buffers are encoded as Float32Arrays to reduce browser heap use.
+The new importer respects non-colliding and weapon-only source flags. Source convex solids keep their exact halfspaces; terrain uses inward thin collision prisms. Foot placement includes the full standing cylinder radius on sloped ground. Offline drop edges must physically walk off and land with the same controller as the game, preventing graph-only paths to a floor beneath a balcony. Exact zero-height source floors participate in navigation.
 
-## Eight deliberate launch routes
+Source scenery is first cut to each playable envelope, then visually clipped to the reachable navigation footprint with a two-metre boundary shell. This retains perimeter-defining walls and fences without distant buildings, landscape or prop clutter. Source geometry is indexed losslessly for storage and expanded into the existing batched renderer. See [source conversion](imported-maps/shipment-source.md) and [Nuketown conversion](imported-maps/nuketown-source.md).
 
-Rust has two ground entries onto the lower tower, a lateral lower-to-middle transfer, and the final upper ascent. Shipment has opposing routes onto original high stacks, a lower southern flank, and a doorway route onto the original elevated container network. The doorway route lands on an adjacent roof and uses the original open end and 0.25m step; it does not punch through a roof or add a bridge.
-
-Every landing has actual source-surface support across a 0.7m disk. All eight pads are checked from nine takeoff positions within their 0.75m trigger radius, with analytic clearance and real 120Hz standing-body arrival simulations. Pad plates stay on the existing source floors. Native AI completes both Rust entries through the summit stages and uses Shipment's original upper doorway. Return paths were checked with the real movement controller, including the ordinary jump needed over Rust's existing lower guardrail.
-
-Source navigation is baked ahead of time: Rust has 5,363 nodes / 59,516 edges; Shipment has 4,161 nodes / 47,478 edges. All 1,225 Rust and 484 Shipment source-spawn route pairs connect. Exact landing points remain separate from graph-node positions so rounding cannot change a launch parabola. Each map keeps the established health economy: one major pack, four standard packs and twelve small health pickups.
+Neither new import adds launch pads: Shipment retains its stock compact lanes and open containers; Nuketown reaches both upper rooms through its original stairs. Each keeps one 50 HP major and four 25 HP recoveries; Shipment has twelve 5 HP fragments and Nuketown sixteen. Both are in the automatic eight-map bag, practice chooser and saved-map flow.
 
 ## Critique and iteration
 
@@ -46,8 +43,6 @@ The existing authored arenas receive the same small light-catching chamfers as T
 
 ## Validation and access
 
-`npm test` includes source-surface conservation, winding, fence-hole visibility, supported signage, exact source spawns, navigation fingerprints, off-center/native launch arrivals, controlled AI traversal, full native matches and the existing weapon, progression, audio and mobile regressions. The seeded full matches recorded 297 shots / 22 pickups / 25 pad launches on Rust and 239 shots / 12 pickups / 8 pad launches on Shipment.
+`npm test` includes source-surface conservation, winding, fence-hole visibility, supported signage, source spawn clearance/support, navigation fingerprints, native Rust launch arrivals, controlled Nuketown stair/return traversal, complete native matches and the existing weapon, progression, audio and mobile regressions. `tests/radiant-maps.mjs` verifies all 64 Shipment and900 Nuketown directed source-start pairs and the exterior crop. Match counts and final checks are recorded in the source conversion documents.
 
-Practice now provides **Pause → Change Practice Map** on touch, or **Maps** in the desktop practice pause panel. Changing maps preserves the selected weapon and its fitted conversion; the campaign save and normal seven-map shuffled rotation remain untouched. Direct `?practice=rust`, `?practice=shipment` and other valid map IDs remain available.
-
-Browser validation covers native touch practice, map switching and landscape layouts. Physical iPhone performance and thermal behavior still require device testing.
+Practice provides **Pause → Change Practice Map** on touch, or **Maps** in the desktop practice pause panel. Changing maps preserves the selected weapon and fitted conversion; the campaign save stays intact.

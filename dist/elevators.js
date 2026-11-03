@@ -6,16 +6,16 @@ export class ElevatorSystem{
  constructor(definitions,blocks){
   // Seal the shaft below the moving slab. A missed lift is a short step back
   // onto its landing, never a fall into the space beneath the map.
-  for(const d of definitions)blocks.push({id:d.id+'-pit-floor',x:d.x,z:d.z,w:d.w+.8,d:d.d+.8,bottom:d.low-.8,top:d.low-.30});
-  this.staticBlocks=blocks.filter(b=>!b.dynamic);
-  this.lifts=definitions.map(d=>{const block={x:d.x,z:d.z,w:d.w,d:d.d,bottom:d.low-.28,top:d.low,dynamic:true,id:d.id};blocks.push(block);return{...d,y:d.low,target:d.low,wait:.65,idle:0,calls:new Set(),block}});
+  for(const d of definitions)blocks.push({id:d.id+'-pit-floor',x:d.x,z:d.z,w:d.pit?.w||d.w+.8,d:d.pit?.d||d.d+.8,yaw:d.yaw||0,bottom:d.low-.6,top:d.low});
+  this.staticBlocks=blocks.filter(b=>!b.dynamic);if(blocks.triangleCollision)this.staticBlocks.triangleCollision=blocks.triangleCollision;
+  this.lifts=definitions.map(d=>{const block={x:d.x,z:d.z,w:d.w,d:d.d,yaw:d.yaw||0,bottom:d.low-.28,top:d.low,dynamic:true,id:d.id};blocks.push(block);return{...d,y:d.low,target:d.low,wait:.65,idle:0,calls:new Set(),block}});
  }
  request(lift,floor){if(Math.abs(lift.y-floor)>.08||Math.abs(lift.target-floor)>.08)lift.calls.add(floor)}
  reset(){for(const l of this.lifts){l.y=l.target=l.low;l.wait=.65;l.idle=0;l.calls.clear();l.block.top=l.low;l.block.bottom=l.low-.28;l.mesh?.position.set(l.x,l.y,l.z)}}
  step(dt,actors){
   for(const l of this.lifts){
    const riders=actors.filter(a=>Math.abs(a.feet()-l.y)<.12&&a.velocityY()<=.15&&inBlock(l.block,a.x(),a.z(),-.16));
-   for(const a of actors)for(const floor of [l.low,l.high])if(Math.abs(a.feet()-floor)<.35&&Math.hypot(a.x()-l.entry.x,a.z()-l.entry.z)<2.5)this.request(l,floor);
+   for(const a of actors)for(const floor of [l.low,l.high])if(Math.abs(a.feet()-floor)<.35&&Math.hypot(a.x()-(floor===l.low?l.entryLow||l.entry:l.entryHigh||l.entry).x,a.z()-(floor===l.low?l.entryLow||l.entry:l.entryHigh||l.entry).z)<2.5)this.request(l,floor);
    if(Math.abs(l.target-l.y)<1e-6){
     l.wait=Math.max(0,l.wait-dt);l.idle+=dt;l.calls.delete(l.y);
     if(l.wait<=0){const other=l.y===l.low?l.high:l.low;if(riders.length||l.calls.has(other)||l.y===l.high&&l.idle>2){l.target=other;l.calls.delete(other);l.idle=0}}

@@ -1,0 +1,209 @@
+{
+  "firingrange": {
+    "folder": "batch-audit/mp_firingrange_source_cod4",
+    "filename": "mp_firingrange_geo.map",
+    "origin": [
+      400,
+      900,
+      -144
+    ],
+    "crop": [
+      -1700,
+      2300,
+      -1200,
+      3000,
+      -144,
+      1150
+    ],
+    "title": "Firing Range",
+    "author": "Treyarch; CoD4 adaptation Stendby",
+    "provenance": "https://customapscod.com/mod.php?id=MTE5",
+    "removeCollisionIds": [
+      "firingrange-brush-165"
+    ],
+    "collisionAdaptation": "Remove the CoD4 port\u2019s invisible tower-sealing player clip to restore the original watchtower platform; retain its original floor, walls, rails and roof."
+  },
+  "vacant": {
+    "folder": "batch-audit/mp_vacant_map_source_all",
+    "filename": "mp_vacant.map",
+    "origin": [
+      -160,
+      320,
+      -144
+    ],
+    "crop": [
+      -2400,
+      2080,
+      -1440,
+      2240,
+      -144,
+      800
+    ],
+    "title": "Vacant",
+    "author": "Infinity Ward; recovery xoxor4d / Stendby",
+    "provenance": "https://customapscod.com/mod.php?id=NTQ%3D"
+  },
+  "showdown": {
+    "folder": "batch-audit/mp_showdown_map_source",
+    "filename": "mp_showdown.map",
+    "origin": [
+      0,
+      100,
+      -48
+    ],
+    "crop": [
+      -1400,
+      1400,
+      -2240,
+      2400,
+      -48,
+      950
+    ],
+    "title": "Showdown",
+    "author": "Infinity Ward; recovery xoxor4d / Stendby",
+    "provenance": "https://customapscod.com/mod.php?id=ODY%3D"
+  },
+  "hijacked": {
+    "folder": "batch-audit/hijacked",
+    "filename": "mp_box_hjacked.map",
+    "origin": [
+      1360,
+      160,
+      176
+    ],
+    "crop": [
+      -1500,
+      4360,
+      -600,
+      1000,
+      176,
+      1250
+    ],
+    "title": "Hijacked",
+    "author": "Treyarch; CoD4 adaptation Hugo",
+    "provenance": "https://sps-snipers.com/tutoriales/",
+    "removeCollisionIds": [
+      "hijacked-brush-537"
+    ],
+    "collisionAdaptation": "Remove the source port\u2019s flat, invisible aft-hatch sealing clip; retain the original ship floor and hatch geometry and its native model collision. Replace the climb-only steel ladders with two bidirectional service elevators.",
+    "omitModels": [
+      "com_steel_ladder"
+    ]
+  },
+  "killhouse": {
+    "folder": "batch-audit/killhouse",
+    "filename": "mp_killhouse_geo.map",
+    "extraMaps": [
+      "mp_killhouse_xmodels.map"
+    ],
+    "origin": [
+      656,
+      1376,
+      16
+    ],
+    "crop": [
+      -64,
+      1376,
+      0,
+      2752,
+      16,
+      820
+    ],
+    "meshCaulkVisible": true,
+    "title": "Killhouse",
+    "author": "Infinity Ward; geometry recovery xoxor4d",
+    "provenance": "https://customapscod.com/mod.php?id=NjM%3D",
+    "spawns": [
+      [
+        128,
+        256,
+        36,
+        90
+      ],
+      [
+        1152,
+        256,
+        36,
+        90
+      ],
+      [
+        128,
+        2464,
+        36,
+        270
+      ],
+      [
+        1152,
+        2464,
+        36,
+        270
+      ],
+      [
+        192,
+        1100,
+        36,
+        0
+      ],
+      [
+        1120,
+        1650,
+        36,
+        180
+      ],
+      [
+        656,
+        400,
+        36,
+        90
+      ],
+      [
+        656,
+        2310,
+        36,
+        270
+      ]
+    ]
+  },
+  "summit": {
+    "external": "t6",
+    "folder": "batch-audit/summit-bo1",
+    "filename": "",
+    "origin": [
+      3000,
+      -625,
+      96
+    ],
+    "crop": [
+      1300,
+      4700,
+      -4000,
+      2750,
+      96,
+      1600
+    ],
+    "title": "Summit",
+    "author": "Treyarch; BO1 to BO2 port Shep",
+    "provenance": "https://fastdl.cukservers.net/t6/downloads/Summit/"
+  },
+  "shoothouse": {
+    "external": "unity",
+    "folder": "batch-audit/shoothouse",
+    "filename": "",
+    "origin": [
+      -2080,
+      9600,
+      7840
+    ],
+    "crop": [
+      -3200,
+      -928,
+      7840,
+      11296,
+      7840,
+      8544
+    ],
+    "title": "Shoot House",
+    "author": "Infinity Ward; MW2019 geometry port usaMi",
+    "provenance": "https://catalogue.smods.ru/archives/167499"
+  }
+}

@@ -1,4 +1,4 @@
-import assert from'node:assert/strict';import{ORIGINAL_ARENAS}from'../dist/maps/original-arenas.js';import{buildNavigation,findRoute}from'../dist/ai.js';import{createGameHarness}from'./harness.mjs';
+import assert from'node:assert/strict';import{ORIGINAL_ARENAS}from'../tests/fixtures/original-arenas.js';import{buildNavigation,findRoute}from'../dist/ai.js';import{createGameHarness}from'./harness.mjs';
 for(const m of ORIGINAL_ARENAS){assert.equal(m.pickups.filter(p=>p.amount===50).length,1);assert.ok(m.pickups.every(p=>p.kind==='health'&&[5,25,50].includes(p.amount)&&p.overhealth===(p.amount!==25)));if(m.id!=='foundry'){
  const key=b=>[b.x,b.z,b.w,b.d,b.bottom,b.top,((b.yaw||0)%Math.PI+Math.PI)%Math.PI].map(v=>v.toFixed(4)).join(','),count=new Map();for(const b of m.brushes){const k=key(b);count.set(k,(count.get(k)||0)+1)}for(const b of m.brushes)assert.equal(count.get(key(b)),count.get(key({...b,x:-b.x,z:-b.z})),'180-degree matching architecture '+m.id+' '+b.id);
  for(const p of m.pickups.filter(p=>p.amount!==50))assert.ok(m.pickups.some(q=>q.amount===p.amount&&Math.abs(q.x+p.x)<1e-6&&Math.abs(q.z+p.z)<1e-6&&q.y===p.y),'paired resource '+p.id);

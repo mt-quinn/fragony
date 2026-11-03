@@ -1,4 +1,8 @@
-"""Recover exact playable geometry from the user-supplied Shipment2 CoD4 fastfile.
+"""Legacy converter for the user-supplied Shipment2 CoD4 fastfile.
+
+The production Shipment map now uses import-radiant.py. This converter remains
+the format reference for extract-iw3-model-library.py and writes a separate
+legacy asset when run directly; it cannot overwrite the stock Shipment import.
 
 Usage: python3 tools/import-shipment.py /path/to/mp_shipment2.ff
 This is a fingerprint-checked converter for this supplied asset, not a general
@@ -215,6 +219,6 @@ def f32blob(values):return base64.b64encode(struct.pack('<%df'%len(values),*valu
 for g in groups.values():
  for key in('p','n','c'):g[key]=f32blob(g[key])
 out['collisionTriangles']=f32blob(triangle_collision)
-path=pathlib.Path(__file__).resolve().parent.parent/'dist/maps/shipment-data.js'
+path=pathlib.Path(__file__).resolve().parent.parent/'dist/maps/shipment2-legacy-data.js'
 path.write_text('// Generated from the supplied Shipment2 fastfile by tools/import-shipment.py.\nconst decode=s=>{const raw=atob(s),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);return new Float32Array(bytes.buffer)};\nconst data='+json.dumps(out,separators=(',',':'))+';\nfor(const group of Object.values(data.groups))for(const key of ["p","n","c"])group[key]=decode(group[key]);data.collisionTriangles=decode(data.collisionTriangles);export default data;\n')
 print(json.dumps({'file':str(path),'bytes':path.stat().st_size,'brushes':len(collision),'groups':len(groups),'spawns':len(spawns),'retainedModelInstances':len(retained_models),'modelTypes':dict(model_counts),'omitted':dict(omitted)},indent=2))

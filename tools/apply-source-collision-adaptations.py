@@ -1,0 +1,6 @@
+import json,gzip,base64,pathlib,numpy as np,sys
+root=pathlib.Path(__file__).resolve().parents[1];configs=json.loads((root/'tools/source-map-config.json').read_text())
+for name in sys.argv[1:]:
+ p=root/'dist/maps'/f'{name}-data.json.gz';d=json.loads(gzip.decompress(p.read_bytes()));c=d['collision'];ids=configs[name].get('removeCollisionIds',[]);bounds=np.frombuffer(base64.b64decode(c['bounds']),dtype='<f4').reshape(-1,7);offsets=np.frombuffer(base64.b64decode(c['offsets']),dtype='<u4');planes=np.frombuffer(base64.b64decode(c['planes']),dtype='<f4').reshape(-1,4);kept=[i for i,key in enumerate(c['ids'])if key not in ids];newplanes=[];newoffsets=[0]
+ for i in kept:newplanes.extend(planes[offsets[i]:offsets[i+1]]);newoffsets.append(len(newplanes))
+ c.update(ids=[c['ids'][i]for i in kept],bounds=base64.b64encode(bounds[kept].tobytes()).decode(),offsets=base64.b64encode(np.array(newoffsets,dtype='<u4').tobytes()).decode(),planes=base64.b64encode(np.array(newplanes,dtype='<f4').tobytes()).decode());d['source']['collisionAdaptation']=configs[name]['collisionAdaptation'];tmp=p.with_suffix('.gz.tmp');tmp.write_bytes(gzip.compress(json.dumps(d,separators=(',',':')).encode(),compresslevel=6,mtime=0));tmp.replace(p);print(name,'retained',len(kept),'source collision brushes')

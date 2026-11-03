@@ -1,0 +1,19 @@
+# Nuketown / Nuked source conversion
+
+New map identity: `nuketown`. Input: Stendby’s **Nuked (day, night, xmas) (Map Source)** pack, [source package](https://www.customapscod.com/mod.php?id=ODk%3D), `mp_nuked_pack_map_source.rar`. The day map is used. This is a CoD4 adaptation of BO1 Nuketown, not a verified official Treyarch editor-source release.
+
+The converter reads the supplied `mp_nuked.map` and nested architectural prefabs: both playable houses, upper rooms, stairs, doors/windows, garden fences, garages, terrain and vehicle collision. Available source model geometry includes the school bus, moving truck and other in-play cover. v25 `xmodel`/`xmodelsurfs` geometry and surface material-role references are decoded directly. New matte bodywork, rubber, glass and metal roles replace original pixels; original decal/text surfaces are omitted. Model-format reference: [cod-asset-importer v25 templates](https://github.com/mauserzjeh/cod-asset-importer/tree/master/templates). No implementation code from that project is distributed.
+
+Coordinates transform as `[x/32,(z+80)/32,(500−y)/32]`. All thirty DM starts retain their horizontal positions, including starts in both upstairs rooms. Grounding checks the full player footprint. Convex brushes and mesh terrain provide native player collision. Source `weaponClip` and `nonColliding` flags are respected. Bot navigation is baked offline; descending links require a real walk-off and landing rather than merely a sampled line below a balcony. Both houses use their source stair access, with no added launch pads.
+
+The source envelope is `x[−2290,2290],y[−650,1530],z[−100,700]`. A second render cut follows the reachable source navigation footprint with a 2 m perimeter shell. Distant houses, terrain, vegetation, loose decorations and remote props are removed. Boundary-defining fences and walls remain. Source input fingerprints, omissions and counts live in `NUKETOWN_SOURCE.source`.
+
+Districts: cool **Field Operations**, warm **Systems Lab**, west/east service gardens and the central transit crossing. Signs and service panels are attached only where sample rays verify a fully opaque source backing; they cannot fill a firing window or doorway. The school bus and truck receive distinct muted ochre/teal body finishes. Source geometry is indexed for storage and rendered in a bounded number of shared material batches.
+
+Unpack the archive into `../reference-maps/nuketown` using 7zip; the system tar reader cannot decode every RAR filter and can silently leave zero-filled model assets. Run `python3 tools/import-radiant.py nuketown`, then `node tools/bake-imported-nav.mjs nuketown`. `tools/export-playable-footprint.mjs nuketown` regenerates the exterior footprint; if it changes, regenerate geometry and bake navigation again. `tests/radiant-maps.mjs` checks source starts, real support, health placements, all 900 directed start pairs, crop boundaries, cache fingerprint and actual controller travel through both upper houses and the cross-map yard route.
+
+Radiant terrain uses the explicit vertex grid and its per-cell turned-edge flag, while `curve` patches use quadratic Bezier evaluation. These are distinct source primitive types. The distinction and terrain winding were checked against [IW3xo Radiant’s terrain collision implementation](https://github.com/xoxor4d/iw3xo-radiant/blob/master/src/components/modules/physx_impl.cpp).
+
+## Final verification
+
+The final asset contains 273,633 visible triangles and 16,637 collision solids/prisms. Cached navigation has 4,532 nodes and 55,154 edges; all900 source-start pairs connect. All thirty starts pass actual standing clearance and floor-contact checks. Native bots physically complete both upstairs entries/returns and a cross-map yard route. The seeded 90-second native combat check completed with 428 shots and 15 health collections. Desktop and 844×390 touch practice entry/map switching were inspected in the actual game.

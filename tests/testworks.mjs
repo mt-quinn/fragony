@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.js';
+import {TEST_WORKS} from './fixtures/testworks-map.js';
 import {MAP,selectMap} from '../dist/map.js';
 import {buildTestworks,setArenaAtmosphere,TESTWORKS_AREAS,testworksArea} from '../dist/testworks.js';
 import {createGameHarness} from './harness.mjs';
 import {launchTime} from '../dist/geometry.js';
-selectMap('testworks');const arena=new THREE.Group(),blocks=[],world=[];buildTestworks(arena,MAP,blocks,world);arena.updateMatrixWorld(true);
+Object.keys(MAP).forEach(key=>delete MAP[key]);Object.assign(MAP,TEST_WORKS);const arena=new THREE.Group(),blocks=[],world=[];buildTestworks(arena,MAP,blocks,world);arena.updateMatrixWorld(true);
 for(const b of MAP.solids){const c=blocks.find(c=>c.id===b.id);assert.ok(c,b.id);for(const [key,value]of Object.entries({x:b.x,z:b.z,w:b.w,d:b.d,bottom:b.y-b.h/2,top:b.y+b.h/2,yaw:b.yaw||0}))assert.equal(c[key],value,b.id+' retains '+key);}
 const overhead=blocks.filter(b=>!MAP.solids.some(s=>s.id===b.id));assert.ok(overhead.length>6);for(const b of overhead)assert.ok(b.bottom>10.5,'new structures are above fighting and movement space');
 // Every original jump-pad arc, including a standing body, clears the new roof and services.
@@ -19,5 +20,5 @@ const scene=new THREE.Scene();scene.fog=new THREE.Fog(0,1,2);const hemi=new THRE
 console.log('Testworks: unchanged cover bounds, all jump arcs clear, real roof/cover shot collision, five material districts, finite geometry, '+renderMeshes.length+' static draws / '+triangles+' triangles, and map-specific sky/lighting restoration pass.');
 
 const h=createGameHarness(187);h.setup();h.context.location={search:'?touch=1&practice=testworks'};h.context.URLSearchParams=URLSearchParams;h.run(`
-changeArena('reservoir');mode='play';saveRun();const campaignBefore=localStorage.getItem('dh-run'),rotationBefore=localStorage.getItem('dh-map-rotation');beginPractice();assert.equal(MAP.id,'testworks');assert.ok(scene.background.isDataTexture);assert.equal(localStorage.getItem('dh-run'),campaignBefore);assert.equal(localStorage.getItem('dh-map-rotation'),rotationBefore);mainMenu();$('continue').onclick();assert.equal(MAP.id,'reservoir');assert.ok(scene.background.isDataTexture);changeArena('testworks');assert.ok(scene.background.isDataTexture);changeArena('reservoir');assert.ok(scene.background.isDataTexture);console.log('Testworks practice link leaves campaign/rotation untouched; cached map switches restore the correct sky.');
+changeArena('reservoir');mode='play';saveRun();const campaignBefore=localStorage.getItem('dh-run'),rotationBefore=localStorage.getItem('dh-map-rotation');beginPractice();assert.equal(MAP.id,'reservoir');assert.ok(scene.background.isDataTexture);assert.equal(localStorage.getItem('dh-run'),campaignBefore);assert.equal(localStorage.getItem('dh-map-rotation'),rotationBefore);mainMenu();$('continue').onclick();assert.equal(MAP.id,'reservoir');assert.ok(scene.background.isDataTexture);changeArena('testworks');assert.ok(scene.background.isDataTexture);changeArena('reservoir');assert.ok(scene.background.isDataTexture);console.log('Testworks practice link leaves campaign/rotation untouched; cached map switches restore the correct sky.');
 `);

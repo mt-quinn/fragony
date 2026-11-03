@@ -1,4 +1,4 @@
-import fs from'node:fs';import assert from'node:assert/strict';import{ORIGINAL_ARENAS}from'../dist/maps/original-arenas.js';import{createGameHarness}from'./harness.mjs';
+import fs from'node:fs';import assert from'node:assert/strict';import{ORIGINAL_ARENAS}from'../tests/fixtures/original-arenas.js';import{createGameHarness}from'./harness.mjs';
 const results=[];for(const m of ORIGINAL_ARENAS.filter(m=>!process.argv[2]||process.argv.slice(2).includes(m.id))){const h=createGameHarness(17);h.setup();h.run(`changeArena('${m.id}');makeBots();mode='play';respawnTime=1e6;playerPos.set(1000,1000,1000);bots=bots.slice(0,1);`);const major=m.pickups.find(p=>p.amount===50),pairs=[];
  for(const [i,s]of m.spawns.entries())pairs.push([{name:'spawn'+i,x:s[0],y:s[1],z:s[2]},{...major,name:'major'}]);
  for(const a of m.landmarks)for(const b of m.landmarks)if(a!==b)pairs.push([a,b]);

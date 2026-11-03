@@ -95,20 +95,23 @@ export function animateDummy(b,brain,dt,groundAt){
  }
  a.lastPos.copy(b.pos);a.initialized=true;
 }
-export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,sliding=0,pitch=0,reload=0,weapon='rifle',groundAt,relaxed=false}={}){
+export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,sliding=0,pitch=0,reload=0,weapon='rifle',groundAt,relaxed=false,menu=false}={}){
  const a=b.anim,run=clamp((speed-3.2)/3,0,1),moving=clamp(speed/2,0,1),yaw=b.group.rotation.y,c=Math.cos(yaw),s=Math.sin(yaw);
  const hit=impactPose(b,a.impactPose??={}),twist=a.twist||0,bank=clamp((c*(a.accelX||0)-s*(a.accelZ||0))*.006,-.075,.075),drive=clamp((s*(a.accelX||0)+c*(a.accelZ||0))*.005,-.07,.07);
  const lx=c*dx-s*dz,lz=s*dx+c*dz,d=Math.hypot(lx,lz)||1,dirX=lx/d,dirZ=lz/d,phase=a.phase;
  const bob=(Math.cos(phase*2)*.018*moving+a.land)*(1-crouch*.6),hipY=.9-crouch*.43-sliding*.08-bob-moving*(.035+run*.035),lean=clamp(speed*.012,0,.10)*(1-crouch*.7);
  const hip=b.parts.pelvis;hip.position.set(hit.x*.035,hipY-hit.balance*.045,-crouch*.07+hit.z*.035);hip.rotation.set(lean+crouch*.13+drive,Math.sin(phase)*.035*moving,Math.sin(phase)*.025*moving-bank);
+ if(menu){hip.position.x=-.025;hip.rotation.z=.035;}
  const chest=b.parts.torso;chest.position.set(0,hipY+.4-crouch*.06+Math.sin(a.time*2.2)*.004*(1-moving),.015+crouch*.04);chest.rotation.set(lean+crouch*.19-pitch*.16,-Math.sin(phase)*.045*moving,Math.sin(phase)*.016*moving);
  chest.position.x+=hit.x*.08;chest.position.z+=hit.z*.07;chest.rotation.x+=hit.z*.9+drive;chest.rotation.z-=hit.x*.9+bank;chest.rotation.y+=twist+hit.twist;
- b.parts.head.position.set(hit.x*.10,hipY+.835-crouch*.09-hit.balance*.035,.012+crouch*.075+hit.z*.06);b.parts.head.rotation.set(-pitch*.55+hit.z*.3+hit.head*.35,twist+hit.twist*.5+Math.sin(a.time*.6)*.025*(1-moving),-hit.x*.25);
+ b.parts.head.position.set(hit.x*.10,hipY+.835-crouch*.09-hit.balance*.035,.012+crouch*.075+hit.z*.06);b.parts.head.rotation.set(-pitch*.55+hit.z*.3+hit.head*.35,twist+(menu?.22:0)+hit.twist*.5+Math.sin(a.time*.6)*.025*(1-moving),-hit.x*.25);
+ if(menu){chest.position.x+=.015;chest.rotation.z-=.025;b.parts.head.rotation.z=.035;}
  const legTargets=[];
  for(const side of [-1,1]){
   const pre=side<0?'left':'right',p=phase+(side<0?0:Math.PI),cycle=((p/(Math.PI*2))%1+1)%1,stance=.28-run*.06,stride=(2.2+run*1.2)*stance*.5*moving*(1-crouch*.45),inStance=cycle<stance;
   const travel=inStance?1-cycle/stance*2:-Math.cos((cycle-stance)/(1-stance)*Math.PI),lift=inStance?0:Math.sin((cycle-stance)/(1-stance)*Math.PI);
   let footX=side*.165+dirX*travel*stride,footZ=dirZ*travel*stride+.035,footY=.09+lift*(.105+run*.09)*moving;
+  if(menu){footX=side*.21;footZ=side<0?.14:-.10;}
   if(sliding>.1){footX=side*.21;footZ=.25+(side<0?.08:0);footY=.09;}
   if(!grounded){footY=.24+(side<0?.06:0);footZ=(side<0?.12:-.12);footX=side*.19}
   else if(groundAt&&b.pos){const wx=b.pos.x+c*footX+s*footZ,wz=b.pos.z-s*footX+c*footZ;const floor=groundAt(wx,wz,b.pos.y+.34);footY+=clamp(floor-b.pos.y,-.22,.3)}
@@ -126,7 +129,7 @@ export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,sl
  let drop=0;if(grounded)for(const leg of legTargets){const reach=Math.sqrt(Math.max(.1,.783**2-(leg.end.x-leg.start.x)**2-(leg.end.z-leg.start.z)**2));drop=Math.max(drop,leg.start.y-leg.end.y-reach)}
  drop=clamp(drop,0,.12);if(drop>0){for(const name of ['pelvis','torso','head'])b.parts[name].position.y-=drop;for(const leg of legTargets){leg.start.y-=drop;setLimb(b.parts[leg.pre+'Leg'],b.joints[leg.pre+'Knee'],leg.start,leg.end,leg.pole,.4,.39);q.copy(b.parts[leg.pre+'Leg'].quaternion).multiply(b.joints[leg.pre+'Knee'].quaternion).invert();b.joints[leg.pre+'Foot'].quaternion.copy(q);b.joints[leg.pre+'Foot'].rotation.x+=leg.toe}}
  const recoil=a.shot,reloadPose=reload>0?Math.sin(clamp(reload,0,1)*Math.PI):0,shoulderY=chest.position.y+.16;
- const gunPitch=relaxed?.65:-pitch-recoil*.10+reloadPose*.65,gunCenter=relaxed?new THREE.Vector3(.25,shoulderY-.50,.10):new THREE.Vector3(.17,shoulderY-.20-reloadPose*.1,.30-recoil*.045);
+ const gunPitch=menu?.32:relaxed?.65:-pitch-recoil*.10+reloadPose*.65,gunCenter=menu?new THREE.Vector3(.18,shoulderY-.30,.26):relaxed?new THREE.Vector3(.25,shoulderY-.50,.10):new THREE.Vector3(.17,shoulderY-.20-reloadPose*.1,.30-recoil*.045);
  // Arms solve to grip positions. Both hands remain attached as the gun aims/recoils.
  const supportOffset=new THREE.Vector3(-.27,-.015,weapon==='rocket'?.16:weapon==='pistol'?.03:.13).applyAxisAngle(new THREE.Vector3(1,0,0),gunPitch);
  const leftTarget=relaxed?new THREE.Vector3(-.33,shoulderY-.53,.015):weapon==='pistol'?new THREE.Vector3(-.25,shoulderY-.37,.20):gunCenter.clone().add(supportOffset);

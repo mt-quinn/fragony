@@ -14,7 +14,7 @@ function footprint(b,x,z,r){
  return px<pz?{nx:c*(u<0?-1:1),nz:-s*(u<0?-1:1),depth:px}:{nx:s*(v<0?-1:1),nz:c*(v<0?-1:1),depth:pz};
 }
 export function bodyContacts(blocks,p){
- const out=[];for(const b of nearBlocks(blocks,p.x,p.z,p.radius)){
+ const out=[];for(const b of nearBlocks(blocks,p.x,p.z,p.radius,p.feet,p.feet+p.height)){
   const span=blockSpan(b,p.x,p.z,p.radius);if(!span||span.top<=p.feet+COLLISION.skin*.1||span.bottom>=p.feet+p.height-COLLISION.skin*.1)continue;
   let hit;
   if(b.planes){let depth=Infinity,nx=0,nz=0,clear=false;for(const [x,y,z,d] of b.planes){const h=Math.hypot(x,z),q=x*p.x+y*(p.feet+p.height/2)+z*p.z-d-p.radius*h-Math.abs(y)*p.height/2;if(q>=-1e-7){clear=true;break}if(h>1e-6&&-q/h<depth){depth=-q/h;nx=x/h;nz=z/h}}if(!clear&&Number.isFinite(depth))hit={nx,nz,depth}}
@@ -52,14 +52,14 @@ function horizontal(blocks,p,dx,dz,step,bounds,normals,stepHeight){
   for(const h of impact.length?impact:hits){normals.push({x:h.nx,z:h.nz});const into=x*h.nx+z*h.nz;if(into<0){x-=h.nx*into;z-=h.nz*into}}
  }
 }
-function support(blocks,p,from,to){let floor=to<=0&&from>=-COLLISION.skin?0:-Infinity;for(const b of nearBlocks(blocks,p.x,p.z,p.radius)){const span=blockSpan(b,p.x,p.z,p.radius);if(span&&span.top<=from+COLLISION.skin&&span.top>=to-COLLISION.skin&&footprint(b,p.x,p.z,p.radius))floor=Math.max(floor,span.top)}return floor}
+function support(blocks,p,from,to){let floor=to<=0&&from>=-COLLISION.skin?0:-Infinity;for(const b of nearBlocks(blocks,p.x,p.z,p.radius,to-COLLISION.skin,from+COLLISION.skin)){const span=blockSpan(b,p.x,p.z,p.radius);if(span&&span.top<=from+COLLISION.skin&&span.top>=to-COLLISION.skin&&footprint(b,p.x,p.z,p.radius))floor=Math.max(floor,span.top)}return floor}
 export function moveCharacter(blocks,body,delta,{grounded=false,bounds=null,stepHeight=COLLISION.step}={}){
  let p=recoverBody(blocks,body,bounds);const recovery=Math.hypot(p.x-body.x,p.feet-body.feet,p.z-body.z),normals=[];
  const count=Math.max(1,Math.ceil(Math.max(Math.abs(delta.x),Math.abs(delta.y),Math.abs(delta.z))/COLLISION.maxTravel)),dx=delta.x/count,dy=delta.y/count,dz=delta.z/count;let ceiling=false,landed=false;
  for(let i=0;i<count;i++){
   const onGround=grounded;horizontal(blocks,p,dx,dz,onGround&&dy<=0,bounds,normals,stepHeight);
   const old=p.feet;let next=old+dy;
-  if(dy>0){for(const b of nearBlocks(blocks,p.x,p.z,p.radius)){const span=blockSpan(b,p.x,p.z,p.radius);if(span&&span.bottom>=old+p.height-COLLISION.skin&&span.bottom<next+p.height&&footprint(b,p.x,p.z,p.radius)){next=Math.min(next,span.bottom-p.height);ceiling=true}}}
+  if(dy>0){for(const b of nearBlocks(blocks,p.x,p.z,p.radius,old+p.height-COLLISION.skin,next+p.height)){const span=blockSpan(b,p.x,p.z,p.radius);if(span&&span.bottom>=old+p.height-COLLISION.skin&&span.bottom<next+p.height&&footprint(b,p.x,p.z,p.radius)){next=Math.min(next,span.bottom-p.height);ceiling=true}}}
   else{const floor=support(blocks,p,old,next);if(Number.isFinite(floor)){next=floor;landed=true}}
   p.feet=Math.max(0,next);grounded=false;
   const floor=support(blocks,p,p.feet+COLLISION.skin*2,p.feet-(onGround&&dy<=0?stepHeight:COLLISION.skin*2));

@@ -1,6 +1,8 @@
 /* Landscape touch interface. Screen coordinates stay independent of HUD zoom. */
 #mobile{position:fixed;inset:0;z-index:20;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);--acid:#d9ef45;--chalk:#eef0e6;--ink:#182127}
-.touch-device{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+/* Keep the installed app rooted to its real viewport; only interactive content
+   uses device safe insets. Never reserve a browser-toolbar-sized strip. */
+.touch-device{position:fixed;inset:0;width:100%;height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%}
 .touch-device #viewport,.touch-device #hud{touch-action:none;user-select:none;-webkit-user-select:none}
 .touch-device button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .touch-device #hud{zoom:1!important;width:100%!important;height:100%!important}

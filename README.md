@@ -154,13 +154,11 @@ Opponents share attack, brace, reposition, pursuit, retreat and recovery actions
 Six weapon impact profiles give resolved shots distinct local body and limb responses. Heavy impacts briefly interrupt firing and charged shots, with a cooldown preventing repeated stagger lock; reload progress continues. Grouped pellets produce one body reaction. Respawning clears impact state, and deaths retain the existing posed momentum and shattering rules. [Implementation and tuning](docs/dynamic-combat.md) · [Research background](docs/bot-behavior-research.md).
 
 
-### Three original arenas
+### Map roster
 
-All seven maps—**Test Works**, **Reservoir**, **Tidal Lock**, **Parallax**, **Foundry**, **Rust**, and **Shipment**—rotate automatically from a persistent shuffled bag, with no repeat until all seven appear and no immediate repeat across bag boundaries. New runs keep the bag; continuing a saved match keeps its current map. Tidal Lock is a symmetric waterworks with layered crossings; Parallax uses paired tower/launch/drop cycles; Foundry interlocks asymmetric rooms and three floor levels. They use the current AI, shared native movement, water, lifts, pads and the exact5/25/one50 health economy. [Layouts, iteration and validation](MAPS.md#tidal-lock). Run `npm run test:maps` for geometry, sightlines, symmetry,402 controller routes and real player water/launch checks.
+The eleven active maps are **Reservoir**, **Rust**, **Shipment**, **Nuketown**, **Killhouse**, **Vacant**, **Showdown**, **Firing Range**, **Hijacked**, **Summit**, and **Shoot House**. A persistent shuffled bag plays every map before repeating. Practice offers the same roster. Test Works, Tidal Lock, Parallax and Foundry have been retired from the production build and rotation; their geometry remains in test fixtures for legacy movement checks.
 
-### Test Works presentation
-
-Test Works is a public-works maintenance plant with five distinct material districts: ochre fabrication presses, a pale process tower, teal pump service, electrical switchgear and dispatch loading bays. Partial industrial roofs frame a quiet lo-fi sky. Original ground-level cover, routes and jump transfers are retained. Open `?practice=testworks` and select **Practice Test Works** to inspect it without changing your campaign or match rotation. See `docs/testworks-presentation.md` for construction and verification details.
+The seven new source conversions use authored area palettes, native source collision, trimmed playable footprints and prepared rendering files. Killhouse, Firing Range and Summit gain targeted access pads; Hijacked gains two service elevators. Reservoir's four shafts have permanent rendered and physical pit floors, verified with platforms raised. [Map details and provenance](MAPS.md).
 
 ## Enemy progression
 
@@ -176,4 +174,4 @@ Sprinting has been replaced by a generous momentum crouch slide with forgiving u
 
 ### Industrial presentation and imported arenas
 
-All seven maps now share the approved quiet industrial material language, with distinct internal equipment/material districts and a static lo-fi sky. The supplied Rust and Shipment2 layouts are imported directly, with distant nonplayable scenery removed and four deliberate jump routes each. Practice offers a map chooser and keeps your selected weapon/conversion when switching maps. [Design, source fidelity and validation](docs/industrial-presentation.md).
+All eight maps now share the approved quiet industrial material language, with distinct internal equipment/material districts and a static lo-fi sky. Rust retains its supplied refinery layout and four deliberate jump routes. Stock Shipment replaces the previous Shipment2 variant; Nuketown is added from Stendby’s editable Nuked adaptation. Both Radiant imports preserve source architecture, interiors and cover, use cached bot navigation, and remove exterior scenery. Practice offers a map chooser and keeps your selected weapon/conversion when switching maps. [Design, source fidelity and validation](docs/industrial-presentation.md).

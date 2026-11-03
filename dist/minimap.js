@@ -30,9 +30,19 @@ export function sliceSolid(b,y){
 }
 export function mapSlice(map,feet){
  const solids=map.brushes||map.solids||[],floor=[],walls=[];
+ if(solids.triangleCollision&&map.navigation){const footprint=sourceFloorFootprint(sourceFloorNodes(map.navigation),feet);floor.push(...footprint.floor);walls.push(...footprint.walls);}
  for(const b of solids){const f=sliceSolid(b,feet-.12),w=sliceSolid(b,feet+.9);if(f.length)floor.push(f);if(w.length)walls.push(w);}
  return {floor,walls,ground:!map.brushes&&feet<.4};
 }
+function sourceFloorFootprint(nodes,feet){
+ const cells=new Set(),rows=new Map();for(const n of nodes)if(n.y<=feet+.25&&n.y>=feet-.65)for(let dx=-1;dx<=0;dx++)for(let dz=-1;dz<=0;dz++){const x=Math.round(n.x*2)+dx,z=Math.round(n.z*2)+dz;cells.add(x+','+z);if(!rows.has(z))rows.set(z,new Set());rows.get(z).add(x);}
+ const floor=[],walls=[];for(const [z,set]of rows){const xs=[...set].sort((a,b)=>a-b);let start=xs[0],last=start;const emit=()=>floor.push([{x:start/2,z:z/2},{x:(last+1)/2,z:z/2},{x:(last+1)/2,z:(z+1)/2},{x:start/2,z:(z+1)/2}]);for(const x of xs.slice(1)){if(x!==last+1){emit();start=x;}last=x;}if(xs.length)emit();}
+ for(const key of cells){const [i,j]=key.split(',').map(Number),x=i/2,z=j/2,e=.035;for(const[dx,dz]of[[-1,0],[1,0],[0,-1],[0,1]])if(!cells.has((i+dx)+','+(j+dz))){const a=x+(dx>0?.5:0),b=z+(dz>0?.5:0);walls.push(dx?[{x:a-e,z},{x:a+e,z},{x:a+e,z:z+.5},{x:a-e,z:z+.5}]:[{x,z:b-e},{x:x+.5,z:b-e},{x:x+.5,z:b+e},{x,z:b+e}]);}}
+ return{floor,walls};
+}
+
+const sourceFloorCache=new Map();
+function sourceFloorNodes(encoded){if(sourceFloorCache.has(encoded))return sourceFloorCache.get(encoded);const s=atob(encoded),b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);const v=new DataView(b.buffer),nodes=[],header=v.getUint32(0,true),wide=!!(header&0x80000000),n=header&0x7fffffff,stride=wide?16:12;for(let i=0;i<n;i++){const o=8+i*stride;nodes.push({x:wide?v.getInt16(o,true)/2:v.getInt8(o),z:wide?v.getInt16(o+2,true)/2:v.getInt8(o+1),y:v.getUint16(o+(wide?4:2),true)/1000})}sourceFloorCache.set(encoded,nodes);if(sourceFloorCache.size>2)sourceFloorCache.delete(sourceFloorCache.keys().next().value);return nodes;}
 const path=(ctx,polygon)=>{ctx.beginPath();polygon.forEach((p,i)=>i?ctx.lineTo(p.x,p.z):ctx.moveTo(p.x,p.z));ctx.closePath();};
 export class Minimap{
  constructor(canvas,{createCanvas=()=>document.createElement('canvas')}={}){this.canvas=canvas;this.ctx=canvas.getContext('2d');this.createCanvas=createCanvas;this.reveals=new ShotReveals();this.cache=new Map();this.map=null;this.resolution=0;}
@@ -45,7 +55,7 @@ export class Minimap{
  const x=map.floor.w/2+2,z=map.floor.d/2+2,ppm=4,canvas=this.createCanvas();canvas.width=Math.ceil(x*2*ppm);canvas.height=Math.ceil(z*2*ppm);const ctx=canvas.getContext('2d'),slice=mapSlice(map,level);
  ctx.setTransform(ppm,0,0,ppm,x*ppm,z*ppm);ctx.fillStyle='#53665e';if(slice.ground)ctx.fillRect(-map.floor.w/2,-map.floor.d/2,map.floor.w,map.floor.d);
  for(const polygon of slice.floor){path(ctx,polygon);ctx.fill();}
- ctx.strokeStyle='#a6b3a0';ctx.lineWidth=.16;for(const polygon of slice.floor){path(ctx,polygon);ctx.stroke();}
+ ctx.strokeStyle='#a6b3a0';ctx.lineWidth=.16;if(!map.brushes?.triangleCollision)for(const polygon of slice.floor){path(ctx,polygon);ctx.stroke();}
  for(const volume of map.water||[]){if(level>=volume.bottom-.5&&level<=volume.top+1){const polygon=sliceSolid(volume,clamp(level,volume.bottom,volume.top));path(ctx,polygon);ctx.fillStyle='#3b7577';ctx.fill();ctx.strokeStyle='#82aaa1';ctx.stroke();}}
  ctx.fillStyle='#202d30';ctx.strokeStyle='#89988e';ctx.lineWidth=.18;for(const polygon of slice.walls){path(ctx,polygon);ctx.fill();ctx.stroke();}
  // Tread/connection lines communicate stairs without projecting overhead roofs.
