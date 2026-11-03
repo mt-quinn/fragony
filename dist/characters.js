@@ -51,7 +51,7 @@ export function createDummyRig({mat,target,weapon='rifle'}){
  const weaponMount=pivot(group);weaponMount.name='weapon-mount';parts.rightArm.userData.weaponMount=weaponMount;
  // The gun remains a member of the right-arm damage region, including shattering.
  parts.rightArm.add(weaponMount);
- const rig={group,parts,joints,markers,legs:[parts.leftLeg,parts.rightLeg],weaponMount,weapon,anim:{phase:0,speed:0,crouch:0,shot:0,land:0,air:0,time:0,feet:{},lastPos:new THREE.Vector3(),initialized:false},ragdoll:null};
+ const rig={group,parts,joints,markers,legs:[parts.leftLeg,parts.rightLeg],weaponMount,weapon,anim:{phase:0,speed:0,crouch:0,shot:0,land:0,air:0,time:0,feet:{},lastPos:new THREE.Vector3(),slide:0,initialized:false},ragdoll:null};
  for(const [name,p]of Object.entries(parts))p.traverse(o=>o.userData.part=name);
  resetDummyRig(rig);return rig;
 }
@@ -65,7 +65,7 @@ export function resetDummyRig(b){
  resetImpact(b);
  b.ragdoll=null;b.group.rotation.set(0,0,0);if(b.pos)b.group.position.copy(b.pos);for(const p of Object.values(b.parts)){p.visible=true;p.rotation.set(0,0,0)}
  b.weaponMount.visible=true;for(const p of Object.values(b.joints))p.rotation.set(0,0,0);
- Object.assign(b.anim,{phase:0,speed:0,crouch:0,shot:0,land:0,air:0,time:0,feet:{},twist:0,accelX:0,accelZ:0,initialized:false});
+ Object.assign(b.anim,{phase:0,speed:0,crouch:0,shot:0,land:0,air:0,time:0,feet:{},twist:0,accelX:0,accelZ:0,slide:0,initialized:false});
  poseDummy(b,{dt:1,dx:0,dz:0,speed:0,grounded:true,crouch:0,pitch:0,reload:0,weapon:b.brain?.weaponType||b.weapon||'rifle'});
 }
 export function fireDummy(b,type){b.anim.shot=type==='rocket'||type==='shotgun'?1:type==='pistol'?.8:type==='rail'?.9:.45}
@@ -73,7 +73,8 @@ export function animateDummy(b,brain,dt,groundAt){
  const a=b.anim,dx=b.pos.x-brain.previous.x,dz=b.pos.z-brain.previous.z,speed=Math.hypot(dx,dz)/Math.max(dt,.001),grounded=Math.abs(b.vy)<.05;
  a.time+=dt;a.speed=damp(a.speed,speed,12,dt);if(grounded&&a.air>.3)a.land=.12;a.air=damp(a.air,grounded?0:1,14,dt);a.land=damp(a.land,0,12,dt);a.shot=damp(a.shot,0,17,dt);
  // Deliberate braced crouches on aimed shots and sheltered reloads; never random bobbing.
- const brace=b.crouched??(speed<2.7&&grounded&&(brain.charge>.15||brain.reload>0&&brain.underFire>0));a.crouch=damp(a.crouch,brace?1:0,8,dt);
+ const sliding=brain.slide?.active?1:0;a.slide=damp(a.slide||0,sliding,18,dt);
+ const brace=sliding||(b.crouched??(speed<2.7&&grounded&&(brain.charge>.15||brain.reload>0&&brain.underFire>0)));a.crouch=damp(a.crouch,brace?1:0,sliding?22:8,dt);
  const run=clamp((a.speed-3.2)/3,0,1);a.phase+=Math.hypot(dx,dz)/(2.2+run*1.2)*Math.PI*2;a.footfall=false;
  a.velocity??=new THREE.Vector3();a.velocity.set(dx/dt,0,dz/dt);
  const target=brain.aim||brain.memory?.get(brain.target)?.eye,pitch=target?clamp(Math.atan2(target.y-(b.pos.y+1.3),Math.hypot(target.x-b.pos.x,target.z-b.pos.z)),-.75,.75):0;
@@ -85,7 +86,7 @@ export function animateDummy(b,brain,dt,groundAt){
  a.bodyYaw+=delta(brain.facing+travelOffset,a.bodyYaw)*(1-Math.exp(-dt*9));a.twist=clamp(delta(brain.facing,a.bodyYaw),-.85,.85);
  const vx=dx/Math.max(dt,.001),vz=dz/Math.max(dt,.001);a.accelX=damp(a.accelX,clamp((vx-a.lastVX)/Math.max(dt,.001),-16,16),10,dt);a.accelZ=damp(a.accelZ,clamp((vz-a.lastVZ)/Math.max(dt,.001),-16,16),10,dt);a.lastVX=vx;a.lastVZ=vz;
  b.group.position.copy(b.pos);b.group.rotation.set(0,a.bodyYaw,0);stepImpact(b,dt);
- poseDummy(b,{dt,dx,dz,speed:a.speed,grounded,crouch:a.crouch,pitch,reload:brain.reload>0?1-brain.reload/brain.weapon.reload:0,weapon:brain.weaponType,groundAt});
+ poseDummy(b,{dt,dx,dz,speed:a.speed,grounded,crouch:a.crouch,sliding:a.slide,pitch,reload:brain.reload>0?1-brain.reload/brain.weapon.reload:0,weapon:brain.weaponType,groundAt});
  b.group.updateMatrixWorld(true);a.jointPosition??={};a.jointVelocity??={};
  for(const [name,marker]of Object.entries(b.markers)){
   const now=v3.setFromMatrixPosition(marker.matrixWorld),last=a.jointPosition[name];
@@ -94,11 +95,11 @@ export function animateDummy(b,brain,dt,groundAt){
  }
  a.lastPos.copy(b.pos);a.initialized=true;
 }
-export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,pitch=0,reload=0,weapon='rifle',groundAt,relaxed=false}={}){
+export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,sliding=0,pitch=0,reload=0,weapon='rifle',groundAt,relaxed=false}={}){
  const a=b.anim,run=clamp((speed-3.2)/3,0,1),moving=clamp(speed/2,0,1),yaw=b.group.rotation.y,c=Math.cos(yaw),s=Math.sin(yaw);
  const hit=impactPose(b,a.impactPose??={}),twist=a.twist||0,bank=clamp((c*(a.accelX||0)-s*(a.accelZ||0))*.006,-.075,.075),drive=clamp((s*(a.accelX||0)+c*(a.accelZ||0))*.005,-.07,.07);
  const lx=c*dx-s*dz,lz=s*dx+c*dz,d=Math.hypot(lx,lz)||1,dirX=lx/d,dirZ=lz/d,phase=a.phase;
- const bob=(Math.cos(phase*2)*.018*moving+a.land)*(1-crouch*.6),hipY=.9-crouch*.43-bob-moving*(.035+run*.035),lean=clamp(speed*.012,0,.10)*(1-crouch*.7);
+ const bob=(Math.cos(phase*2)*.018*moving+a.land)*(1-crouch*.6),hipY=.9-crouch*.43-sliding*.08-bob-moving*(.035+run*.035),lean=clamp(speed*.012,0,.10)*(1-crouch*.7);
  const hip=b.parts.pelvis;hip.position.set(hit.x*.035,hipY-hit.balance*.045,-crouch*.07+hit.z*.035);hip.rotation.set(lean+crouch*.13+drive,Math.sin(phase)*.035*moving,Math.sin(phase)*.025*moving-bank);
  const chest=b.parts.torso;chest.position.set(0,hipY+.4-crouch*.06+Math.sin(a.time*2.2)*.004*(1-moving),.015+crouch*.04);chest.rotation.set(lean+crouch*.19-pitch*.16,-Math.sin(phase)*.045*moving,Math.sin(phase)*.016*moving);
  chest.position.x+=hit.x*.08;chest.position.z+=hit.z*.07;chest.rotation.x+=hit.z*.9+drive;chest.rotation.z-=hit.x*.9+bank;chest.rotation.y+=twist+hit.twist;
@@ -108,9 +109,10 @@ export function poseDummy(b,{dt=1/60,dx=0,dz=0,speed=0,grounded=true,crouch=0,pi
   const pre=side<0?'left':'right',p=phase+(side<0?0:Math.PI),cycle=((p/(Math.PI*2))%1+1)%1,stance=.28-run*.06,stride=(2.2+run*1.2)*stance*.5*moving*(1-crouch*.45),inStance=cycle<stance;
   const travel=inStance?1-cycle/stance*2:-Math.cos((cycle-stance)/(1-stance)*Math.PI),lift=inStance?0:Math.sin((cycle-stance)/(1-stance)*Math.PI);
   let footX=side*.165+dirX*travel*stride,footZ=dirZ*travel*stride+.035,footY=.09+lift*(.105+run*.09)*moving;
+  if(sliding>.1){footX=side*.21;footZ=.25+(side<0?.08:0);footY=.09;}
   if(!grounded){footY=.24+(side<0?.06:0);footZ=(side<0?.12:-.12);footX=side*.19}
   else if(groundAt&&b.pos){const wx=b.pos.x+c*footX+s*footZ,wz=b.pos.z-s*footX+c*footZ;const floor=groundAt(wx,wz,b.pos.y+.34);footY+=clamp(floor-b.pos.y,-.22,.3)}
-  if(b.pos&&grounded&&moving>.15){
+  if(b.pos&&grounded&&moving>.15&&sliding<.1){
    let plant=a.feet[pre];const wx=b.pos.x+c*footX+s*footZ,wz=b.pos.z-s*footX+c*footZ;
    if(inStance){if(!plant||!plant.stance){a.footfall=true;plant={x:wx,z:wz,y:b.pos.y+footY,stance:true};a.feet[pre]=plant}const px=plant.x-b.pos.x,pz=plant.z-b.pos.z;footX=c*px-s*pz;footZ=s*px+c*pz;footY=plant.y-b.pos.y}
    else a.feet[pre]={x:wx,z:wz,y:b.pos.y+footY,stance:false};

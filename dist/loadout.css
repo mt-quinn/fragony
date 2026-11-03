@@ -34,3 +34,7 @@
 @media(max-width:700px){.armory-board{grid-template-columns:minmax(0,1fr) 230px;gap:18px}.armory-board .owned-loadout{padding-left:15px}.armory-board .weapon-stats{gap:12px 7px}.armory-board .weapon-stat strong{font-size:20px}.armory-tabs{gap:15px}.armory-tabs button{font-size:13px}.armory-weapons .gun-icon{width:39px}.armory-weapons>div{min-width:110px}.attachment-card .offer-top>b{font-size:22px}.armory-shell .shop-header{gap:12px}.armory-shell .shop-actions{width:auto;gap:8px}.armory-shell .shop-actions button{padding:8px;font-size:9px}.armory-shell .shop-heading h1{font-size:25px}.shop-offer-heading>span{display:none}.armory-shell .shop-heading>small{font-size:7px}.armory-shell .shop-credits{font-size:25px}.weapon-inspect h2{font-size:30px}.weapon-inspect header{top:14px}.weapon-inspect header small{font-size:7px}.weapon-inspect button{font-size:10px}.weapon-inspect footer>span{font-size:10px}}
 @media(orientation:portrait) and (max-width:600px){.armory-board{grid-template-columns:1fr}.armory-board .owned-loadout{border-left:0;border-top:1px solid var(--line);padding:20px 0}}
 .armory-weapons>div{flex:0 0 auto;min-width:130px}.armory-board .owned-heading{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:10px;margin:0}.armory-board .owned-heading>span{margin:0}.armory-shell .shop-heading{display:block}.armory-shell .shop-heading>small{display:block}
+
+
+.compact-gun-mode{display:none}
+.attachment-card.previewed{border:1px dashed var(--orange);background:#d9ef4508}

@@ -1,4 +1,6 @@
 import { FEEL } from './feel.js';
+export const BODY_MULTIPLIERS=Object.freeze({head:1.5,torso:1,pelvis:1,leftArm:.75,rightArm:.75,leftLeg:.75,rightLeg:.75});
+export const bodyDamage=(damage,part='torso')=>damage*(BODY_MULTIPLIERS[part]??1);
 // A health transition is the sole authority for scoring and confirmation.
 export function resolveDamage(target,amount,{head=false}={}){
  const before=Math.max(0,target.hp||0);

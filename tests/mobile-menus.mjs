@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import {createGameHarness} from './harness.mjs';
+const h=createGameHarness(716);h.setup();h.run(`{
+ mode='shop';owned=[0,2,3];equipped=startingWeapon=0;credits=2000;round=8;perks={};builds=normalizeBuilds();equipment=normalizeEquipment();shopOffers=null;mobile={enabled:true,clear(){},closeOverlay(){},applyLayout(){},practice:false};showShop();
+ const html=$('panel').innerHTML;assert.ok(html.includes('compact-armory'));assert.ok(html.includes('shop-mode'));assert.ok(html.includes('armory-toolbar'));assert.ok(html.includes('compact-start'));assert.equal((html.match(/id="reset-build"/g)||[]).length,1);assert.equal((html.match(/data-owned-gear=/g)||[]).length,2);assert.equal((html.match(/class="attachment-card/g)||[]).length,6);assert.equal((html.match(/data-start=/g)||[]).length,1,'one clear starting-gun action avoids six tiny adjacent star buttons');assert.equal((html.match(/data-shop-gun=/g)||[]).length,2);assert.equal((html.match(/data-buy=/g)||[]).length>=2,true);assert.ok(html.includes('id="nextmatch"'));assert.ok(html.includes('aria-label="Pin '));
+ const offer=shopOffers.attachments[0],price=offer.price??attachment(offer.gun,offer.id).price;assert.ok(buyPart(offer.gun,offer.id));assert.equal(credits,2000-price);assert.equal(builds[offer.gun].slots[attachment(offer.gun,offer.id).slot],offer.id);assert.ok($('panel').innerHTML.includes('FITTED'));assert.ok($('panel').innerHTML.includes('compact-armory'));
+ const saved=localStorage.getItem('dh-run');showShop(true);assert.ok($('panel').innerHTML.includes('catalog-mode'));assert.ok($('panel').innerHTML.includes('PREVIEW BUILD'));assert.equal(localStorage.getItem('dh-run'),saved,'arsenal changes cannot alter the real run');mobile=null;
+}`);
+console.log('Mobile menus: single-board shop, six visible offers, retained categories, one starting-gun action, unique reset/gear controls, real purchases and run-safe catalog routing pass.');

@@ -1,3 +1,4 @@
+import {bodyDamage} from './combat.js';
 import * as THREE from './vendor/three.module.js';
 import {distanceDamage} from './weapon-cycle.js';
 // Return grouped direct-hit packets; a cartridge may supply one payload event, never one per pellet.
@@ -17,7 +18,7 @@ export function traceCartridges(w,origin,forward,targets,{rounds=w.volley,ads=fa
     if(!b){traces.push({point:hit.point,hit,pellet:p,round,wall:true});break;}
     if(seen.has(b))continue;seen.add(b);
     const multiplier=w.penetration[Math.min(passed,w.penetration.length-1)]??0;if(passed>=w.penetration.length)break;
-    const part=hit.object.userData.part||'torso',head=part==='head',damage=w.damage*distanceDamage(w,hit.distance)*multiplier*(head?1.5:1);
+    const part=hit.object.userData.part||'torso',head=part==='head',damage=bodyDamage(w.damage*distanceDamage(w,hit.distance)*multiplier,part);
     const packet=hits.get(b)||{damage:0,headDamage:0,part,point:hit.point.clone(),headPoint:null,parts:[]};packet.damage+=damage;packet.parts.push({part,damage});packet.part=part;if(head){packet.headDamage+=damage;packet.headPoint=hit.point.clone()}hits.set(b,packet);
     if(!b.dead&&b.hp>0&&!arcTarget)arcTarget=b;
     passed++;if(passed>=w.penetration.length)break;

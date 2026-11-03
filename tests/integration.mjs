@@ -5,7 +5,7 @@ muted=true;scene=new THREE.Scene();arena=new THREE.Group();scene.add(arena);came
 startMatch();assert.equal(owned.length,2);assert.equal(new Set(owned).size,2);assert.ok(bots.every(b=>b.loadout.length===2&&new Set(b.loadout).size===2));
 const rolled=bots[0].loadout.join(',');spawnBot(bots[0]);assert.equal(bots[0].loadout.join(','),rolled,'respawning preserves bot weapon pair');
 const runPair=owned.join(',');spawnPlayer();assert.equal(owned.join(','),runPair,'respawning preserves player pair');
-results.push('Player rolls two weapons per run; bots roll two per match; respawns retain each pair.');
+results.push('Player rolls two weapons per run; bots retain their persistent starting weapons; respawns retain each pair.');
 owned=[0,1];equipped=0;ammo=3;magazines={0:3,1:7};switchWeapon(1);switchWeapon(0);assert.equal(ammo,3);ammo=0;magazines[0]=0;switchWeapon(1);switchWeapon(0);assert.equal(ammo,0);reload();assert.ok(reloading>0);reloading=0;
 results.push('Switching preserves partial and empty magazines; empty weapons still require reloads.');
 for(const a of spawnPoints)assert.equal(blocked(a[0],a[2],a[1]),false,'spawns must not intersect cover');

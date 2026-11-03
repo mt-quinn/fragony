@@ -1,6 +1,7 @@
 import {MOBILE_DEFAULTS,mobileSettings,CONTROL_DEFS,presetLayout,normalizeLayout,controlRect,layoutOverlaps,TouchState,AutoFire,touchLook} from './mobile-core.js';
 
 const paths={
+ minimap:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 3v3m0 8v3M5 12h3m8 0h3m-4 2-3-7-3 7 3-1Z',
  ads:'M12 2v5m0 10v5M2 12h5m10 0h5M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z',
  fire:'m9 3 3-2 3 2v12H9ZM9 18h6m-6 3h6',
  jump:'m8 21 2-7-3-3 4-5 4 3 4-1M11 6l1-3m-2 11 5 1 2 6M4 5l3-3 3 3M7 2v7',
@@ -10,7 +11,7 @@ const paths={
  focus:'m13 2-9 12h7l-1 8 10-13h-7Z',
  streak:'m12 2 3 6 7 1-5 5 1 8-6-4-6 4 1-8-5-5 7-1Z',
  swap:'M3 7h16l-4-4m4 14H3l4 4M19 7l-4 4M3 17l4-4',
- pause:'M7 5v14M17 5v14',sprint:'m13 6 4 3 5-1M13 6l-5 6 5 3-2 6M8 12l-4 6H1M15 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z'
+ pause:'M7 5v14M17 5v14'
 };
 const icon=id=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[id]||paths.ads}"/></svg>`;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -26,8 +27,8 @@ export class MobileController{
    <div id="touch-controls" hidden><div id="touch-look" aria-label="Swipe to look"></div>
     <div class="touch-top"><button id="touch-score" aria-label="Show scoreboard"><span id="touch-placement">1ST</span><small id="touch-match">ROUND 01</small></button><div class="touch-clock"><strong id="touch-time">1:30</strong><small id="touch-map"></small></div><button id="touch-pause" aria-label="Pause">${icon('pause')}</button></div>
     <div id="touch-acquire" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="acquire-track" cx="32" cy="32" r="25"/><circle class="acquire-fill" cx="32" cy="32" r="25"/></svg><small></small></div>
-    <div id="touch-sprint" aria-hidden="true">${icon('sprint')}<span>SPRINT</span></div>
-    ${Object.entries(CONTROL_DEFS).map(([id,d])=>id==='stick'?`<div class="touch-control touch-stick" data-control="stick" aria-label="Movement joystick"><i></i><span>SPRINT ↑</span></div>`:`<button class="touch-control" data-control="${id}" aria-label="${d.label}">${icon(id)}<small>${d.label}</small><b></b></button>`).join('')}
+    <div id="touch-slide" aria-hidden="true">${icon('crouch')}<span>SLIDING</span></div>
+    ${Object.entries(CONTROL_DEFS).map(([id,d])=>id==='minimap'?`<div class="touch-control touch-minimap" data-control="minimap" role="img" aria-label="Local minimap. Enemy shots appear briefly in red."><canvas aria-hidden="true"></canvas></div>`:id==='stick'?`<div class="touch-control touch-stick" data-control="stick" aria-label="Movement joystick"><i></i><span>MOVE</span></div>`:`<button class="touch-control" data-control="${id}" aria-label="${d.label}">${icon(id)}<small>${d.label}</small><b></b></button>`).join('')}
     <div class="touch-status"><div class="touch-health"><span>+</span><strong id="touch-hp">100</strong><i><em></em></i></div><button id="touch-weapon" aria-label="Choose weapon"><span id="touch-gun-icon"></span><span><small id="touch-gun-name"></small><small id="touch-gun-mode"></small><b id="touch-ammo"></b></span><em>⌃</em></button></div>
     <div id="touch-feedback" role="status"></div>
    </div>
@@ -53,7 +54,7 @@ export class MobileController{
  get area(){const s=getComputedStyle(this.root),left=parseFloat(s.paddingLeft)||0,right=parseFloat(s.paddingRight)||0,top=parseFloat(s.paddingTop)||0,bottom=parseFloat(s.paddingBottom)||0;return{x:left+8,y:top+8,w:innerWidth-left-right-16,h:innerHeight-top-bottom-16};}
  applyLayout(layout=this.layout){
   const area=this.area;
-  for(const [id,node]of Object.entries(this.buttons)){const d=layout[id],r=controlRect(id,layout,area,this.settings.controlScale);node.style.left=r.x+'px';node.style.top=r.y+'px';node.style.setProperty('--control-size',r.size+'px');node.style.setProperty('--control-opacity',d.opacity*this.settings.controlOpacity);node.hidden=id==='fire'?(this.settings.fireMode==='simple'&&this.api.read().type!=='rocket'&&(d.hidden||!this.settings.manualFire)):d.hidden;}
+  for(const [id,node]of Object.entries(this.buttons)){const d=layout[id],r=controlRect(id,layout,area,this.settings.controlScale);node.style.left=r.x+'px';node.style.top=r.y+'px';node.style.setProperty('--control-size',r.size+'px');node.style.setProperty('--control-opacity',d.opacity*(id==='minimap'?1:this.settings.controlOpacity));node.hidden=id==='fire'?(this.settings.fireMode==='simple'&&this.api.read().type!=='rocket'&&(d.hidden||!this.settings.manualFire)):d.hidden||id==='minimap'&&this.api.read().minimapEnabled===false;}
  }
  resize(){
   const portrait=!this.landscape;this.rotate.hidden=!portrait;document.body.classList.toggle('touch-portrait',portrait);
@@ -65,7 +66,7 @@ export class MobileController{
  releaseWake(){this.wake?.release().catch(()=>{});this.wake=null;}
  down(e){
   if(!this.active||this.overlay||this.editor)return;
-  if(e.target.closest('#touch-pause,#touch-score,#touch-weapon'))return;
+  if(e.target.closest('#touch-pause,#touch-score,#touch-weapon,[data-control="minimap"]'))return;
   e.preventDefault();const id=e.pointerId,button=e.target.closest('[data-control]');let role=button?.dataset.control||'look';
   const leftHand=this.settings.preset==='left',movementSide=leftHand?e.clientX>innerWidth*.65:e.clientX<innerWidth*.35;
   if(!button&&movementSide&&e.clientY>innerHeight*.35)role='stick';
@@ -74,7 +75,7 @@ export class MobileController{
   const node=this.buttons[role];node?.classList.add('pressed');
   if(role==='stick'){
    const c=this.state.contacts.get(id),r=controlRect('stick',this.layout,this.area,this.settings.controlScale);
-   if(this.settings.stickMode==='fixed'){c.originX=r.x;c.originY=r.y;this.state.moveContact(id,e.clientX,e.clientY,r.size*.43);this.state.sprinting=this.state.move.y>this.settings.sprint&&Math.abs(this.state.move.x)<.55;}else{this.buttons.stick.style.left=e.clientX+'px';this.buttons.stick.style.top=e.clientY+'px';}
+   if(this.settings.stickMode==='fixed'){c.originX=r.x;c.originY=r.y;this.state.moveContact(id,e.clientX,e.clientY,r.size*.43);}else{this.buttons.stick.style.left=e.clientX+'px';this.buttons.stick.style.top=e.clientY+'px';}
   }else if(role==='ads'){this.state.ads=this.settings.adsMode==='toggle'?!this.state.ads:true;}
   else if(role==='focus'){this.state.focus=this.settings.focusMode==='toggle'?!this.state.focus:true;}
   else if(role==='crouch')this.crouch=!this.crouch;
@@ -84,7 +85,7 @@ export class MobileController{
  move(e){
   if(!this.state.contacts.has(e.pointerId))return;e.preventDefault();const r=controlRect('stick',this.layout,this.area,this.settings.controlScale),d=this.state.moveContact(e.pointerId,e.clientX,e.clientY,r.size*.43);
   if(!d)return;
-  if(d.role==='stick'){const m=this.state.move;this.state.sprinting=m.y>this.settings.sprint&&Math.abs(m.x)<.55;this.buttons.stick.querySelector('i').style.transform=`translate(calc(-50% + ${m.x*r.size*.32}px),calc(-50% + ${-m.y*r.size*.32}px))`;}
+  if(d.role==='stick'){const m=this.state.move;this.buttons.stick.querySelector('i').style.transform=`translate(calc(-50% + ${m.x*r.size*.32}px),calc(-50% + ${-m.y*r.size*.32}px))`;}
   else if(d.role==='look'||d.role==='fire'||d.role==='grenade'||d.role==='ads'&&this.settings.adsDrag)this.api.look(d.x,d.y);
   if(d.role==='fire'&&this.api.read().type==='rocket'&&this.api.read().chargeWeapon){this.cancelFire=e.clientY<innerHeight*.22;this.setFeedback(this.cancelFire?'RELEASE TO CANCEL':'HOLD TO CHARGE · RELEASE TO LAUNCH',Infinity);}
   if(d.role==='grenade'){this.cancelGrenade=e.clientY<innerHeight*.22;this.buttons.grenade.classList.toggle('cancel',this.cancelGrenade);this.setFeedback(this.cancelGrenade?'RELEASE TO CANCEL':'AIM · RELEASE TO THROW · DRAG TO TOP TO CANCEL',Infinity);}
@@ -105,7 +106,7 @@ export class MobileController{
   this.controls.classList.toggle('inactive',!this.active);document.body.classList.toggle('touch-playing',g.mode==='play');
   if(g.mode!==this.lastMode){this.clear();this.lastMode=g.mode;if(g.mode!=='play'){this.closeOverlay();this.releaseWake();}}
   if(!this.active){this.auto.reset();this.nodes['touch-acquire'].dataset.phase='unavailable';return;}
-  this.buttons.ads.classList.toggle('selected',this.state.ads&&!this.state.held.has('fire'));this.buttons.focus.classList.toggle('selected',this.state.focus&&g.focus>0);this.buttons.crouch.classList.toggle('selected',g.crouched);this.nodes['touch-sprint'].hidden=!g.sprinting;
+  this.buttons.ads.classList.toggle('selected',this.state.ads&&!this.state.held.has('fire'));this.buttons.focus.classList.toggle('selected',this.state.focus&&g.focus>0);this.buttons.crouch.classList.toggle('selected',g.crouched);this.nodes['touch-slide'].hidden=!g.sliding;
   if(this.gyroReady&&(this.settings.gyro==='always'||this.settings.gyro==='ads'&&this.state.ads)){this.api.gyro?.(this.gyroDelta.x,this.gyroDelta.y);this.gyroDelta={x:0,y:0};}
   else this.gyroDelta={x:0,y:0};
   const ring=this.nodes['touch-acquire'];ring.dataset.phase=g.charge>0?'acquiring':this.auto.phase;ring.style.setProperty('--acquire',g.charge>0?g.charge:this.auto.progress);ring.querySelector('small').textContent=g.charge>0?'CHARGING '+Math.round(g.charge*100)+'%':g.type==='rocket'?(g.chargeWeapon?'HOLD · RELEASE':'MANUAL'):this.auto.reason==='range'?'AIM DOWN SIGHTS':this.settings.fireMode==='manual'?'MANUAL':'';
@@ -146,7 +147,7 @@ export class MobileController{
   const toggle=(id,label,hint)=>`<label class="touch-option"><span>${label}<small>${hint}</small></span><input data-option="${id}" type="checkbox" ${this.settings[id]?'checked':''}></label>`;
   const range=(id,label,min,max,step=0.05)=>`<label class="touch-range"><span>${label}</span><output>${id==='fov'?this.settings[id]+'°':Math.round(this.settings[id]*100)+'%'}</output><input aria-label="${label}" data-range="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${this.settings[id]}"></label>`;
   this.showPanel('settings',`${this.header('SETTINGS',back==='play'?'RESUME':'BACK')}<nav class="touch-tabs" aria-label="Settings categories">${['Controls','Aim','Layout','Audio','Visuals'].map((t,i)=>`<button data-tab="${t.toLowerCase()}" class="${i?'':'selected'}">${t}</button>`).join('')}</nav><div class="touch-settings-body">
-   <section data-section="controls"><div class="touch-section-intro"><h3>YOU AIM. WE HANDLE THE TRIGGER.</h3><p>Keep a dummy in your sights. Your weapon fires when it has a clear shot. Rockets are manual.</p></div>${select('fireMode','Firing mode',[['simple','Simple · auto-fire'],['manual','Manual']])}${toggle('manualFire','Manual hip-fire button','Fire on demand, without entering sights.')}${toggle('limitHipRange','Limit automatic hip-fire range','Aim down sights to engage distant targets.')}${toggle('holdSemi','Hold to repeat semi-auto','Manual hip-fire repeats at the weapon’s legal cadence.')}${select('adsMode','Aim down sights',[['toggle','Tap to toggle'],['hold','Hold']])}${toggle('adsDrag','Aim by dragging the ADS button','Keep tracking without lifting your thumb.')}${select('stickMode','Movement joystick',[['floating','Floating'],['fixed','Fixed']])}${range('sprint','Sprint threshold',.65,1,.01)}${select('focusMode','Slow motion',[['toggle','Tap to toggle'],['hold','Hold']])}<button class="touch-row-action" data-guide>HOW TO PLAY <span>↗</span></button></section>
+   <section data-section="controls"><div class="touch-section-intro"><h3>YOU AIM. WE HANDLE THE TRIGGER.</h3><p>Keep a dummy in your sights. Your weapon fires when it has a clear shot. Rockets are manual.</p></div>${select('fireMode','Firing mode',[['simple','Simple · auto-fire'],['manual','Manual']])}${toggle('manualFire','Manual hip-fire button','Fire on demand, without entering sights.')}${toggle('limitHipRange','Limit automatic hip-fire range','Aim down sights to engage distant targets.')}${toggle('holdSemi','Hold to repeat semi-auto','Manual hip-fire repeats at the weapon’s legal cadence.')}${select('adsMode','Aim down sights',[['toggle','Tap to toggle'],['hold','Hold']])}${toggle('adsDrag','Aim by dragging the ADS button','Keep tracking without lifting your thumb.')}${select('stickMode','Movement joystick',[['floating','Floating'],['fixed','Fixed']])}${select('focusMode','Slow motion',[['toggle','Tap to toggle'],['hold','Hold']])}<button class="touch-row-action" data-guide>HOW TO PLAY <span>↗</span></button></section>
    <section data-section="aim" hidden>${range('sensitivity','Look sensitivity',.3,2.5)}${range('adsSensitivity','ADS sensitivity',.2,1.5)}${range('scopeSensitivity','Scoped sensitivity',.15,1.2)}${range('vertical','Vertical sensitivity',.5,1.5)}${toggle('aimAssist','Aim slowdown','Slows your swipe near a visible target. You steer.')}${toggle('invertY','Invert vertical aim','Reverse vertical touch movement.')}${select('gyro','Gyroscope',[['off','Off'],['ads','While aiming'],['always','Always']],'Optional fine aiming by tilting your phone.')}${range('gyroSensitivity','Gyro sensitivity',.2,2)}<button class="touch-row-action" data-gyro>${this.gyroReady?'RECENTER GYRO':'ENABLE MOTION ACCESS'} <span>↗</span></button><p class="touch-help" id="gyro-status">${this.gyroReady?'Motion access is enabled.': 'Motion access is optional. Touch aiming always works.'}</p></section>
    <section data-section="layout" hidden>${select('preset','Layout preset',[['thumbs','Two thumbs'],['claw','Four fingers'],['left','Left handed']])}${range('controlScale','Control size',.7,1.4)}${range('controlOpacity','Control opacity',.2,1)}<button class="touch-row-action" data-editor>EDIT INDIVIDUAL CONTROLS <span>↗</span></button><p class="touch-help">Each preset remembers its own positions, sizes and opacity.</p></section>
    <section data-section="audio" hidden>${this.api.audioHTML()}</section>
@@ -161,7 +162,7 @@ export class MobileController{
  }
  commitSettings(){const ok=this.save();this.applyLayout();this.clear();this.api.settingsChanged?.();const status=this.panel.querySelector('#touch-settings-status');if(status)status.textContent=ok?'SAVED ON THIS DEVICE':'STORAGE UNAVAILABLE · SETTINGS ACTIVE FOR THIS SESSION';}
  showGuide(back='menu'){
-  this.showPanel('guide',`${this.header('SIMPLE. NEVER EASY.','GOT IT')}<div class="touch-guide-grid"><article><b>01</b><h3>MOVE & TRACK</h3><p>Drag on the ${this.settings.preset==='left'?'right':'left'} to move. Push farther forward to sprint. Swipe the ${this.settings.preset==='left'?'left':'right'} side to aim.</p></article><article><b>02</b><h3>HOLD YOUR SIGHTS</h3><p>Keep a visible dummy under the crosshair. The ring fills, then your weapon fires. Track through recoil.</p></article><article><b>03</b><h3>TAKE CONTROL</h3><p>Tap Aim to enter sights. Drag that button to keep aiming. Use Hip fire for immediate shots. Rockets always use it.</p></article><article><b>04</b><h3>STAY IN THE FIGHT</h3><p>Reload between fights. Tap Slow time to spend focus. Release a held grenade to throw; drag to the top to cancel.</p></article></div><div class="touch-guide-footer"><span>Jump and crouch also move you up and down in water.</span><button class="touch-primary" data-practice>PRACTICE</button></div>`);
+  this.showPanel('guide',`${this.header('SIMPLE. NEVER EASY.','GOT IT')}<div class="touch-guide-grid"><article><b>01</b><h3>MOVE & TRACK</h3><p>Drag on the ${this.settings.preset==='left'?'right':'left'} to move. Crouch while moving to knee slide. Tap again to stand. Swipe the ${this.settings.preset==='left'?'left':'right'} side to aim.</p></article><article><b>02</b><h3>HOLD YOUR SIGHTS</h3><p>Keep a visible dummy under the crosshair. The ring fills, then your weapon fires. Track through recoil.</p></article><article><b>03</b><h3>TAKE CONTROL</h3><p>Tap Aim to enter sights. Drag that button to keep aiming. Use Hip fire for immediate shots. Rockets always use it.</p></article><article><b>04</b><h3>STAY IN THE FIGHT</h3><p>Reload between fights. Tap Slow time to spend focus. Release a held grenade to throw; drag to the top to cancel.</p></article></div><div class="touch-guide-footer"><span>Crouch while moving to slide. In water, crouch dives and jump rises.</span><button class="touch-primary" data-practice>PRACTICE</button></div>`);
   this.panel.querySelector('[data-close]').onclick=()=>{store('fg-touch-intro',true);if(back==='pause')this.showPause();else if(back==='settings')this.showSettings(this.settingsBack);else{this.closeOverlay();if(this.api.read().mode==='play')this.api.resume();}};this.panel.querySelector('[data-practice]').onclick=()=>this.beginPractice();
  }
  showPracticeMaps(){this.showPanel('maps',`${this.header('PRACTICE MAPS')}<div class="practice-map-grid">${(this.api.maps?.()||[]).map(m=>`<button class="practice-map-card ${m.current?'selected':''}" data-practice-map="${esc(m.id)}"><b>${esc(m.name)}</b><span>${esc(m.description)}</span><small>${m.current?'CURRENT MAP':'ENTER PRACTICE ↗'}</small></button>`).join('')}</div>`);this.panel.querySelector('[data-close]').onclick=()=>this.showPause();this.panel.querySelectorAll('[data-practice-map]').forEach(b=>b.onclick=()=>this.beginPractice(b.dataset.practiceMap));}

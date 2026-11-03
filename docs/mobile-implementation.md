@@ -4,7 +4,7 @@ The touch version activates for coarse pointers and iPhones/iPads. Desktop keeps
 
 ## Playing
 
-- Left floating joystick: analog movement. Push forward beyond 88% to sprint. A fixed joystick is available in settings. ADS, firing, crouching and grenade preparation interrupt sprint.
+- Left floating joystick: analog movement. Crouch while moving to knee slide; tap again to stand. A fixed joystick is available in settings. Sprinting has been removed.
 - Swipe the open area on the right to aim. Each finger owns its original control until release or cancellation, including when it crosses other buttons.
 - Simple Mode is the default. A small 6 cm margin around each live, visible hitbox starts acquisition slightly before the actual crosshair reaches the opponent. Firing still requires the real crosshair to hit the opponent. Losing the target, encountering cover or leaving hip range immediately releases fire and drains charge to zero within 180 ms. Returning to the same opponent retains the remaining charge; another opponent starts fresh. Reloading, switching weapons, dying and pausing clear acquisition immediately. Corpses do not trigger it.
 - ADS is independent: tap to toggle by default, or choose hold. Dragging the ADS button continues aiming. ADS permits automatic shots beyond the optional hip-fire range limit.
@@ -16,7 +16,7 @@ The game retains its existing recoil, spread, ammunition, attachment stats, weap
 
 ## Controls and presentation
 
-Settings include Simple/manual mode, optional hip-fire button, hip range limit, ADS toggle/hold/drag, floating/fixed movement, sprint threshold, focus toggle/hold, look/ADS/scope/vertical sensitivity, aim slowdown, invert Y, optional gyro, FOV, graphics, audio and camera motion.
+Settings include Simple/manual mode, optional hip-fire button, hip range limit, ADS toggle/hold/drag, floating/fixed movement, focus toggle/hold, look/ADS/scope/vertical sensitivity, aim slowdown, invert Y, optional gyro, FOV, graphics, audio and camera motion.
 
 Two-thumb, four-finger and left-handed presets each retain their own layout. The editor supports dragging, size, opacity, optional visibility, fine nudges, overlap warnings, reset, cancel, save and practice. Controls clamp to safe-area bounds and retain a 44 CSS-pixel hit target. The visual treatment uses Fragony's ink, chalk, acid accent, authored icons and existing weapon silhouettes.
 
@@ -54,5 +54,7 @@ Browser verification covers phone-sized menu, first-run guide, live practice, AD
 ## Redesigned arsenal
 
 Practice pause now opens the free Weapon Workbench. Fit all72 parts, inspect/rotate/cycle the physical model, then return directly with the selected weapon equipped. The campaign remains saved separately. The firing HUD shows automatic/semi/burst/charge mode and loaded trigger pulls; charging and slamfire recoil state are visible. Manual hip-fire defaults to hold-to-repeat for semi-auto weapons, with a setting to change it. Simple Mode pulses/repeats at each conversion’s legal cadence; losing the real target cancels an unspent burst while preserving the recovery. Charged rockets require holding and releasing the manual control; dragging to the top cancels without spending a round. Existing acquisition margin/drain and ambient audio handling remain in place.
+
+The landscape non-combat UI has since been redesigned around a fixed shop board, denser multi-column settings, and side-by-side results. See [current menu design](mobile-menu-redesign.md) and [momentum slide](momentum-slide.md).
 
 Practice pause now includes **Change Practice Map** for all seven arenas. It keeps the current practice weapon and attachment build, leaves the campaign save untouched, and does not draw from the normal match-rotation bag.

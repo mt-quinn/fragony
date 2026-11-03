@@ -1,19 +1,20 @@
 // Touch tuning is in CSS-pixel / screen-relative units, independent of render resolution.
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export const MOBILE_DEFAULTS={fireMode:'simple',holdSemi:true,limitHipRange:true,manualFire:true,adsMode:'toggle',adsDrag:true,stickMode:'floating',sprint:0.88,sensitivity:1,adsSensitivity:.7,scopeSensitivity:.45,vertical:1,aimAssist:true,invertY:false,gyro:'off',gyroSensitivity:1,quality:'balanced',fov:78,focusMode:'toggle',preset:'thumbs',controlScale:1,controlOpacity:.65};
+export const MOBILE_DEFAULTS={fireMode:'simple',holdSemi:true,limitHipRange:true,manualFire:true,adsMode:'toggle',adsDrag:true,stickMode:'floating',sensitivity:1,adsSensitivity:.7,scopeSensitivity:.45,vertical:1,aimAssist:true,invertY:false,gyro:'off',gyroSensitivity:1,quality:'balanced',fov:78,focusMode:'toggle',preset:'thumbs',controlScale:1,controlOpacity:.65};
 export function mobileSettings(saved={}){
  const s={...MOBILE_DEFAULTS};
  for(const k of ['holdSemi','limitHipRange','manualFire','adsDrag','aimAssist','invertY'])if(typeof saved?.[k]==='boolean')s[k]=saved[k];
  for(const [k,choices]of Object.entries({fireMode:['simple','manual'],adsMode:['toggle','hold'],stickMode:['floating','fixed'],gyro:['off','ads','always'],quality:['battery','balanced','high'],focusMode:['toggle','hold'],preset:['thumbs','claw','left']}))if(choices.includes(saved?.[k]))s[k]=saved[k];
- for(const [k,min,max]of [['sprint',.65,1],['sensitivity',.3,2.5],['adsSensitivity',.2,1.5],['scopeSensitivity',.15,1.2],['vertical',.5,1.5],['gyroSensitivity',.2,2],['fov',65,95],['controlScale',.7,1.4],['controlOpacity',.2,1]])if(Number.isFinite(saved?.[k]))s[k]=clamp(saved[k],min,max);
+ for(const [k,min,max]of [['sensitivity',.3,2.5],['adsSensitivity',.2,1.5],['scopeSensitivity',.15,1.2],['vertical',.5,1.5],['gyroSensitivity',.2,2],['fov',65,95],['controlScale',.7,1.4],['controlOpacity',.2,1]])if(Number.isFinite(saved?.[k]))s[k]=clamp(saved[k],min,max);
  return s;
 }
 export const CONTROL_DEFS={
- stick:{label:'Move',size:112,x:.13,y:.72},ads:{label:'Aim',size:62,x:.88,y:.36},fire:{label:'Hip fire',size:72,x:.78,y:.57},jump:{label:'Jump',size:54,x:.94,y:.56},crouch:{label:'Crouch',size:54,x:.90,y:.78},reload:{label:'Reload',size:50,x:.79,y:.80},grenade:{label:'Grenade',size:48,x:.69,y:.78},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
+ minimap:{label:'Minimap',size:130,x:.13,y:.30,passive:true},
+ stick:{label:'Move',size:112,x:.13,y:.72},ads:{label:'Aim',size:62,x:.88,y:.36},fire:{label:'Hip fire',size:72,x:.78,y:.57},jump:{label:'Jump',size:54,x:.94,y:.56},crouch:{label:'Crouch / slide',size:54,x:.90,y:.78},reload:{label:'Reload',size:50,x:.79,y:.80},grenade:{label:'Grenade',size:48,x:.69,y:.78},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
 };
 export function presetLayout(preset='thumbs'){
  const layout=Object.fromEntries(Object.entries(CONTROL_DEFS).map(([id,d])=>[id,{x:d.x,y:d.y,scale:1,opacity:1,hidden:false}]));
- if(preset==='claw'){Object.assign(layout.fire,{x:.14,y:.22});Object.assign(layout.ads,{x:.87,y:.23});Object.assign(layout.jump,{x:.93,y:.48});}
+ if(preset==='claw'){Object.assign(layout.minimap,{x:.33,y:.28});Object.assign(layout.fire,{x:.14,y:.22});Object.assign(layout.ads,{x:.87,y:.23});Object.assign(layout.jump,{x:.93,y:.48});}
  if(preset==='left')for(const d of Object.values(layout))d.x=1-d.x;
  return layout;
 }
@@ -27,7 +28,7 @@ export function normalizeLayout(saved,preset='thumbs'){
  return result;
 }
 export function controlRect(id,layout,area,scale=1){
- const v=layout[id],size=CONTROL_DEFS[id].size*v.scale*scale;
+ const v=layout[id],requested=CONTROL_DEFS[id].size*v.scale*scale,size=CONTROL_DEFS[id].passive?Math.min(requested,area.w,area.h):requested;
  const width=Math.max(44,size),height=width;
  return {x:area.x+clamp(v.x*area.w,width/2,Math.max(width/2,area.w-width/2)),y:area.y+clamp(v.y*area.h,height/2,Math.max(height/2,area.h-height/2)),size,width,height};
 }
@@ -46,10 +47,10 @@ export function stickVector(dx,dy,radius=48,dead=.12){
 // Pointer roles are fixed on contact. Crossing another control never steals a gesture.
 export class TouchState{
  constructor(){this.contacts=new Map();this.clear();}
- clear(){this.contacts.clear();this.move={x:0,y:0,magnitude:0};this.held=new Set();this.ads=false;this.focus=false;this.sprinting=false;}
+ clear(){this.contacts.clear();this.move={x:0,y:0,magnitude:0};this.held=new Set();this.ads=false;this.focus=false;}
  begin(id,role,x,y){if(this.contacts.has(id)||[...this.contacts.values()].some(c=>c.role===role))return false;this.contacts.set(id,{role,x,y,originX:x,originY:y});this.held.add(role);return true;}
  moveContact(id,x,y,radius=48){const c=this.contacts.get(id);if(!c)return null;const delta={x:x-c.x,y:y-c.y,role:c.role};c.x=x;c.y=y;if(c.role==='stick')this.move=stickVector(x-c.originX,y-c.originY,radius);return delta;}
- end(id){const c=this.contacts.get(id);if(!c)return null;this.contacts.delete(id);if(![...this.contacts.values()].some(p=>p.role===c.role))this.held.delete(c.role);if(c.role==='stick'){this.move={x:0,y:0,magnitude:0};this.sprinting=false;}return c;}
+ end(id){const c=this.contacts.get(id);if(!c)return null;this.contacts.delete(id);if(![...this.contacts.values()].some(p=>p.role===c.role))this.held.delete(c.role);if(c.role==='stick'){this.move={x:0,y:0,magnitude:0};}return c;}
 }
 // Evidence-informed approximation, deliberately separate from weapon fire intervals.
 export const AUTO_FIRE={rifle:{acquire:.12,hipRange:23},pistol:{acquire:.16,hipRange:18},smg:{acquire:.09,hipRange:19},rail:{acquire:.24,hipRange:12},rocket:{manual:true,acquire:.2,hipRange:20},shotgun:{acquire:.15,hipRange:13}};

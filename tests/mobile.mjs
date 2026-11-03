@@ -39,7 +39,7 @@ for(let i=0;i<12;i++)syncTouchInputs(1/60);assert.equal(mouseDown,true,'native s
 const wall=new THREE.Mesh(new THREE.BoxGeometry(3,4,.5),new THREE.MeshBasicMaterial());wall.position.set(0,1.7,-4);scene.add(wall);worldMeshes.push(wall);scene.updateMatrixWorld(true);mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,false,'cover cancels automatic fire');
 worldMeshes.pop();scene.remove(wall);dummy.dead=1;mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,false,'corpses cannot acquire');dummy.dead=0;
 touchState.ads=true;syncTouchInputs(1/60);assert.ok(keys.has('MouseRight'));touchState.held.add('fire');syncTouchInputs(1/60);assert.equal(keys.has('MouseRight'),false,'manual button is hip fire');assert.equal(mouseDown,true);
-touchState.held.clear();touchState.focus=true;touchState.sprinting=true;mobile.crouch=true;syncTouchInputs(1/60);assert.ok(keys.has('KeyQ')&&keys.has('KeyC'));assert.equal(keys.has('ShiftLeft'),false,'ADS and crouch prevent sprint');touchState.ads=false;mobile.crouch=false;worldMeshes=[];mobileTargetClock=0;syncTouchInputs(1/60);assert.ok(keys.has('ShiftLeft'),'full forward stick resumes sprint when ready');
+touchState.held.clear();touchState.focus=true;mobile.crouch=true;syncTouchInputs(1/60);assert.ok(keys.has('KeyQ')&&keys.has('KeyC'));assert.equal(keys.has('ShiftLeft'),false,'sprint action is removed');touchState.ads=false;mobile.crouch=false;worldMeshes=[];mobileTargetClock=0;syncTouchInputs(1/60);assert.ok(!keys.has('ShiftLeft'),'full forward stick never sprints');
 reloading=1;syncTouchInputs(1/60);assert.equal(mouseDown,false,'reload resets acquisition');reloading=0;mobile.active=false;syncTouchInputs(1/60);assert.equal(keys.size,0);assert.equal(mouseDown,false,'suspended touch state cannot fire or move');
 `);
 console.log('Mobile: acquisition, loss, cover, corpses, range, weapon exceptions, manual hip fire, ADS, multi-pointer ownership, cancellation, layout bounds, tuning and native input integration pass.');
@@ -53,7 +53,7 @@ Object.defineProperties(controller,{area:{value:{x:8,y:8,w:828,h:374}},layout:{v
 globalThis.innerWidth=844;globalThis.innerHeight=390;
 const event=(pointerId,role,x,y)=>({pointerId,clientX:x,clientY:y,preventDefault(){},target:{closest:selector=>selector==='[data-control]'&&role?{dataset:{control:role}}:null}});
 controller.down(event(10,'stick',110,280));controller.down(event(11,null,530,160));controller.move(event(10,null,110,225));controller.move(event(11,null,560,160));
-assert.equal(controller.state.move.magnitude,1);assert.equal(controller.state.sprinting,true);assert.deepEqual(actions.at(-1),['look',30,0]);
+assert.equal(controller.state.move.magnitude,1);assert.equal(controller.state.sprinting,undefined);assert.deepEqual(actions.at(-1),['look',30,0]);
 controller.down(event(12,'ads',710,125));controller.up(event(12,'ads',710,125));assert.equal(controller.state.ads,true);assert.equal(controller.state.contacts.size,2);
 controller.down(event(13,'fire',650,220));assert.ok(controller.state.held.has('fire'));controller.up(event(13,'fire',650,220),true);assert.ok(!controller.state.held.has('fire'));assert.equal(controller.state.ads,true);
 controller.down(event(14,'grenade',580,300));controller.move(event(14,null,580,20));controller.up(event(14,null,580,20));assert.ok(!actions.some(a=>a[0]==='grenade'),'cancel zone suppresses grenade release');

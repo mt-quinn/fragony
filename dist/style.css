@@ -69,3 +69,14 @@ body.respawning #crosshair,body.respawning #hitmarker,body.respawning #scorepop,
 @media(max-width:560px){#hud{--edge:calc(16px / var(--hud-scale))}}
 .settings-overview{padding:14px 0 10px}.settings-category>h3{margin-bottom:10px;padding-bottom:8px}.setting-row{gap:5px 14px;margin-bottom:9px}.setting-row input[type=range]{margin:3px 0}.settings-category .controls-toolbar input[type=range]{appearance:none;-webkit-appearance:none;background:linear-gradient(to right,var(--orange) 0 var(--fill),#eef0e632 var(--fill) 100%);height:4px;cursor:pointer}.settings-category .controls-toolbar input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:13px;height:13px;border:0;border-radius:50%;background:var(--paper);box-shadow:0 0 0 3px #182127}.settings-category .controls-toolbar input[type=range]::-moz-range-thumb{width:13px;height:13px;border:0;border-radius:50%;background:var(--paper)}
 .hud-compact .focus{bottom:95px}.hud-compact #death-recap{top:50%;bottom:auto;transform:translateY(-50%);max-height:calc(100% - 2 * var(--edge));overflow:auto}
+
+.recap-loadout{border-top:1px solid #eef0e633;padding:8px 0 10px}.recap-loadout>div{display:flex;align-items:baseline;gap:9px}.recap-loadout>div>small{font-size:9px;letter-spacing:.6px;opacity:.65}.recap-loadout strong{font:800 17px "Barlow Condensed";color:var(--orange)}.recap-loadout ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;list-style:none;margin:5px 0 0;padding:0}.recap-loadout li{font-size:11px;line-height:1.5;overflow-wrap:anywhere}.recap-loadout li small{font-size:8px;text-transform:uppercase;opacity:.55;margin-right:3px}.recap-stock{opacity:.65}@media(max-height:650px){.recap-loadout{padding:5px 0}.recap-loadout ul{gap:1px 9px;margin-top:2px}.recap-loadout li{font-size:9px}}
+
+/* Fixed-range navigation instrument. The entire unit scales, including its marks. */
+#minimap-module{position:absolute;left:var(--edge);top:calc(var(--edge) + 53px);width:160px;height:160px;isolation:isolate;filter:drop-shadow(0 2px 3px #101b2266)}
+#minimap-module canvas{width:100%;height:100%}
+#hud #leaderboard{left:calc(var(--edge) + var(--minimap-offset,0px))}
+.minimap-setting{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:12px;min-height:36px;border-bottom:1px solid var(--line);padding:7px 0}
+.minimap-setting input{width:17px;height:17px;accent-color:var(--orange);cursor:pointer}
+.minimap-help{font-size:10px;line-height:1.5;color:#b6c1b5;margin:8px 0}
+.minimap-settings-heading{font:700 20px var(--display);letter-spacing:1px;margin:18px 0 7px;color:var(--orange)}

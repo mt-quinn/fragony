@@ -1,12 +1,13 @@
+import {rivalCombat} from './rivals.js';
 import {healthAfterPickup} from './pickups.js';
 import {IMPACT} from './impact.js';
 import { inBlock, blockedAt, surfaceAt, launchTime,blockSpan,nearBlocks } from './geometry.js';
 // All campaign difficulty and personality controls live here. Distances are metres;
 // timing uses world seconds, so slow motion affects thinking, aim and movement alike.
 export const AI_TUNING = {
-  progressionRounds: 10,
-  early: { speed: 4.5, reaction: .58, aimError: .075, memory: 1.8, think: .72, rest: 1, aggression: .7, dodgeChance: .25, dodgeReaction: .32 },
-  late: { speed: 5.9, reaction: .27, aimError: .032, memory: 3.2, think: .4, rest: .67, aggression: 1.15, dodgeChance: .6, dodgeReaction: .2 },
+  progressionRounds: 30,
+  early: { slideSkill: .15, speed: 4.8, reaction: .4, aimError: .045, memory: 1.8, think: .72, rest: 1, aggression: .7, dodgeChance: .25, dodgeReaction: .32 },
+  late: { slideSkill: .9, speed: 6.6, reaction: .105, aimError: .004, memory: 4.5, think: .18, rest: .12, aggression: 1.4, dodgeChance: .8, dodgeReaction: .12 },
   senses: { interval: .16, range: 35, fieldOfView: 220, hearing: 23 },
   fairness: { spawnGrace: 1.05, maxPlayerAttackers: 2, targetCommitment: 1.2 },
   navigation: { repath: .85, stuckRepath: .6, retreatHealth: 35, pickupRespawn: 15 },
@@ -33,7 +34,8 @@ const horizontal=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const copy=p=>({x:p.x,y:p.y||0,z:p.z});
 const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 export function difficultyForRound(round,tuning=AI_TUNING){
-  const t=clamp((round-1)/tuning.progressionRounds,0,1),e=t*t*(3-2*t);
+  const t=clamp((round-1)/tuning.progressionRounds,0,1),e=Math.pow(t,.65);
+  if(t===1)return {...tuning.late};
   return Object.fromEntries(Object.keys(tuning.early).map(k=>[k,tuning.early[k]+(tuning.late[k]-tuning.early[k])*e]));
 }
 export function solidAt(blocks,x,z,y,r=.38,step=.32){return blockedAt(blocks,x,z,y,r,1.9,step)}
@@ -92,11 +94,11 @@ export class ArenaAI{
     // for the same room. Keep spatially distinct routes at equal weight.
     this.patrolAnchors=[];for(const n of navigation.anchors)if(!this.patrolAnchors.some(p=>distance(p,n)<18))this.patrolAnchors.push(n);
     this.localNodes=new Map();for(const n of navigation.nodes){const key=Math.round(n.x)+','+Math.round(n.z);if(!this.localNodes.has(key))this.localNodes.set(key,[]);this.localNodes.get(key).push(n)}
-    this.stats={shots:0,spotted:0,pads:0,drops:0,pickups:0,dodges:0,switches:0,weapons:{},repaths:0,stuckRecoveries:0,goals:{},actions:{},staggers:0,detours:0};
+    this.stats={shots:0,spotted:0,pads:0,drops:0,pickups:0,dodges:0,switches:0,weapons:{},repaths:0,stuckRecoveries:0,goals:{},actions:{},staggers:0,detours:0,slides:0,slideReasons:{}};
   }
   reset(bot,index=0){
-    const profile=this.tuning.profiles[index%this.tuning.profiles.length],loadout=(bot.loadout||[profile.weapon]).filter(w=>this.tuning.weapons[w]),weaponType=loadout.includes(profile.weapon)?profile.weapon:loadout[0],weapon=this.tuning.weapons[weaponType];
-    const brain={profile,index,loadout,weaponType,preferredRange:weapon.idealRange*.8+profile.preferredRange*.2,magazines:Object.fromEntries(loadout.map(w=>[w,this.tuning.weapons[w].magazine])),weaponHeld:0,weaponDecisionIn:0,swapIn:0,spawnAt:this.clock,facing:Math.atan2(-bot.pos.x,-bot.pos.z),memory:new Map(),target:null,visible:false,reaction:0,
+    const profile=this.tuning.profiles[index%this.tuning.profiles.length],loadout=(bot.loadout||[profile.weapon]).filter(w=>this.tuning.weapons[w]),weaponType=loadout.includes(profile.weapon)?profile.weapon:loadout[0],weapon=this.world.weapon?.(bot,weaponType)||this.tuning.weapons[weaponType];
+    const brain={profile,index,loadout,weaponType,preferredRange:weapon.idealRange*.8+profile.preferredRange*.2,magazines:Object.fromEntries(loadout.map(w=>[w,(this.world.weapon?.(bot,w)||this.tuning.weapons[w]).magazine])),weaponHeld:0,weaponDecisionIn:0,swapIn:0,spawnAt:this.clock,facing:Math.atan2(-bot.pos.x,-bot.pos.z),memory:new Map(),target:null,visible:false,reaction:0,
       senseIn:this.random()*.15,thinkIn:.15+this.random()*.35,path:[],pathIn:0,goal:null,goalAge:0,visits:new Map(),tiers:new Map(),lastSeen:null,regionOrigin:copy(bot.pos),regionAge:0,roamUntil:0,
       aim:copy(bot.pos),aimReady:false,aimBias:{x:0,y:0},biasIn:0,strafe:this.random()<.5?-1:1,strafeIn:.7+this.random()*.7,
       action:'travel',actionAt:this.clock,actionReason:'spawn',exposure:0,pressure:0,recover:0,recoverCooldown:0,moveX:0,moveZ:0,detour:null,detourIn:0,
@@ -283,7 +285,7 @@ export class ArenaAI{
     if(b.liftRide){this.world.elevator?.(bot,b,dt);return}
     if(!b.goal)return;
     // Plant for the final rail wind-up; the visible crouched brace is also a dodge window.
-    if(b.weaponType==='rail'&&b.charge>.2&&b.visible&&b.goal.type==='engage'&&!b.underFire&&!b.dodge&&!b.flight){b.moveX=b.moveZ=0;this.setAction(b,'brace','precision windup');return}
+    if(!b.slide?.active&&b.weaponType==='rail'&&b.charge>.2&&b.visible&&b.goal.type==='engage'&&!b.underFire&&!b.dodge&&!b.flight){b.moveX=b.moveZ=0;this.setAction(b,'brace','precision windup');return}
     if(b.flight){this.world.move(bot,b.flight.vx*dt,b.flight.vz*dt);return}
     if(b.dodge){b.dodge.delay-=dt;if(b.dodge.delay<=0){const d=Math.max(.01,Math.hypot(b.dodge.x,b.dodge.z)),step=this.difficulty.speed*1.2*dt,next={x:bot.pos.x+b.dodge.x/d*step*4,y:bot.pos.y,z:bot.pos.z+b.dodge.z/d*step*4};if(this.walkClear(bot.pos,next)){this.setAction(b,'dodge','perceived projectile');this.world.move(bot,b.dodge.x/d*step,b.dodge.z/d*step)}b.dodge.left-=dt;if(b.dodge.left<=0){b.dodge=null;b.thinkIn=0;b.moveX=b.moveZ=0}return}}
     b.pathIn-=dt;
@@ -311,8 +313,9 @@ export class ArenaAI{
     }
     if(destination.action==='jump'&&destination.y>bot.pos.y+.3&&Math.abs(bot.vy)<.01)bot.vy=8.5;
     const d=horizontal(bot.pos,destination);if(d<.05)return;
-    const speed=this.difficulty.speed*(b.goal.type==='retreat'||b.goal.type==='heal'?1.08:1)*(b.reload>0?.8:1)*(b.recover>0?.28:1),step=Math.min(d,speed*dt),blend=1-Math.exp(-this.tuning.combat.acceleration*dt);
-    b.moveX+=((destination.x-bot.pos.x)/d*speed-b.moveX)*blend;b.moveZ+=((destination.z-bot.pos.z)/d*speed-b.moveZ)*blend;
+    const speed=this.difficulty.speed*(bot.rival?.perks.speed?1.2:1)*(b.weapon.native?.move||1)*(b.goal.type==='retreat'||b.goal.type==='heal'?1.08:1)*(b.reload>0?.8:1)*(b.recover>0?.28:1),step=Math.min(d,speed*dt),blend=1-Math.exp(-this.tuning.combat.acceleration*dt);
+    if(!b.slide?.active){b.moveX+=((destination.x-bot.pos.x)/d*speed-b.moveX)*blend;b.moveZ+=((destination.z-bot.pos.z)/d*speed-b.moveZ)*blend;}
+    if(this.world.slideMove?.(bot,b,dt,destination,speed))return;
     let mx=b.moveX*dt,mz=b.moveZ*dt;
     // Smoothing must not carry a grounded actor over an unsupported edge.
     if(destination.action==='walk'&&!this.walkClear(bot.pos,{x:bot.pos.x+mx,y:bot.pos.y,z:bot.pos.z+mz})){mx=(destination.x-bot.pos.x)/d*step;mz=(destination.z-bot.pos.z)/d*step;b.moveX=b.moveZ=0}
@@ -324,16 +327,17 @@ export class ArenaAI{
   chooseWeapon(bot,b){
     const memory=b.memory.get(b.target);if(!memory||!b.visible||b.reload>0||b.weaponHeld<1.7)return;
     const d=distance(bot.pos,memory.pos);let chosen=b.weaponType,best=-Infinity,current=-Infinity;
-    for(const name of b.loadout){const w=this.tuning.weapons[name];let score=12-Math.abs(d-w.idealRange)*.5+(name===b.profile.weapon?3:0);
+    for(const name of b.loadout){const w=this.world.weapon?.(bot,name)||this.tuning.weapons[name];let score=12-Math.abs(d-w.idealRange)*.5+(name===b.profile.weapon?3:0);
       if(d>w.range)score-=20;if(name==='rocket'&&d<7)score-=100;if(name==='rail'&&d<10)score-=12;if(name==='shotgun'&&d>18)score-=8;
       if(b.magazines[name]===0)score-=4;if(name===b.weaponType)current=score;
       if(score>best){chosen=name;best=score}
     }
     if(chosen===b.weaponType||best<current+2)return;
-    b.magazines[b.weaponType]=b.ammo;b.weaponType=chosen;b.weapon=this.tuning.weapons[chosen];b.ammo=b.magazines[chosen];b.preferredRange=b.weapon.idealRange*.8+b.profile.preferredRange*.2;b.weaponHeld=0;b.swapIn=.35;b.charge=0;b.burst=0;b.cool=Math.max(b.cool,.35);b.reaction=Math.max(b.reaction,.2);b.thinkIn=0;
+    b.magazines[b.weaponType]=b.ammo;b.weaponType=chosen;b.weapon=this.world.weapon?.(bot,chosen)||this.tuning.weapons[chosen];b.ammo=b.magazines[chosen];b.preferredRange=b.weapon.idealRange*.8+b.profile.preferredRange*.2;b.weaponHeld=0;b.swapIn=.35*(b.weapon.native?.switch||1)*(bot.rival?.perks.quickdraw?.65:1);b.charge=0;b.burst=0;b.cool=Math.max(b.cool,.35);b.reaction=Math.max(b.reaction,.2);b.thinkIn=0;
     this.world.equip?.(bot,chosen);this.stats.switches++;
   }
   combat(bot,b,dt,actors){
+    if(b.weapon.native)return rivalCombat(this,bot,b,dt,actors);
     const w=b.weapon;b.cool=Math.max(0,b.cool-dt);b.rest=Math.max(0,b.rest-dt);b.reaction=Math.max(0,b.reaction-dt);
     if(b.swapIn>0)return;
     if(b.reload>0){b.reload-=dt;if(b.reload<=0){b.ammo=w.magazine;b.magazines[b.weaponType]=b.ammo}return}
@@ -363,7 +367,7 @@ export class ArenaAI{
   update(dt){
     this.clock+=dt;const actors=this.actors();
     for(const [bot,b]of this.brains){if(bot.dead)continue;b.goalAge+=dt;b.regionAge+=dt;if(horizontal(bot.pos,b.regionOrigin)>18||Math.abs(bot.pos.y-b.regionOrigin.y)>10){b.regionOrigin=copy(bot.pos);b.regionAge=0}b.weaponHeld+=dt;b.weaponDecisionIn-=dt;b.swapIn=Math.max(0,b.swapIn-dt);b.dodgeCooldown=Math.max(0,b.dodgeCooldown-dt);b.underFire=Math.max(0,b.underFire-dt);b.thinkIn-=dt;b.senseIn-=dt;b.strafeIn-=dt;
-      if(b.senseIn<=0){this.perceive(bot,b,actors);this.noticeProjectiles(bot,b);b.senseIn=this.tuning.senses.interval*(.85+this.random()*.3)}
+      if(b.senseIn<=0){this.perceive(bot,b,actors);this.noticeProjectiles(bot,b);b.senseIn=Math.min(this.tuning.senses.interval,this.difficulty.reaction*.6)*(.85+this.random()*.3)}
       if(b.thinkIn<=0){this.chooseGoal(bot,b);b.thinkIn=this.difficulty.think*(.8+this.random()*.4)}
       b.pressure*=Math.exp(-dt*1.6);b.exposure=b.visible?b.exposure+dt:Math.max(0,b.exposure-dt*2);b.biasIn-=dt;b.detourIn-=dt;b.recoverCooldown=Math.max(0,b.recoverCooldown-dt);
       if(b.recover>0){b.recover=Math.max(0,b.recover-dt);if(b.recover===0){b.thinkIn=0;this.setAction(b,'reposition','balance regained')}}
@@ -371,6 +375,8 @@ export class ArenaAI{
       const memory=b.memory.get(b.target),look=memory?.eye||b.heard&&this.clock-b.heard.at<this.difficulty.memory&&b.heard.pos||b.path[0]||b.goal;
       if(look){const a=Math.atan2(look.x-bot.pos.x,look.z-bot.pos.z);b.facing+=clamp(angleDelta(a,b.facing),-3.8*dt,3.8*dt)}
       if(b.weaponDecisionIn<=0){this.chooseWeapon(bot,b);b.weaponDecisionIn=.65}
+      b.slideTryIn=Math.max(0,(b.slideTryIn||0)-dt);b.tacticalSlideCooldown=Math.max(0,(b.tacticalSlideCooldown||0)-dt);
+      if(b.slide?.active&&(b.flight||b.dodge||b.recover>0||b.liftRide)){b.slide.stop();}
       this.navigate(bot,b,dt);this.world.physics(bot,b,dt);
       b.tiers.set(Math.round(bot.pos.y/4),this.clock);
       for(const n of this.navigation.anchors)if(distance(bot.pos,n)<12&&Math.abs(bot.pos.y-n.y)<1.5)b.visits.set(n.id,this.clock);

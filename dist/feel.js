@@ -30,15 +30,15 @@ export function accelerate(vx,vz,wx,wz,dt,grounded,speedScale=1){
  const cap=FEEL.airSpeedCap*speedScale,total=Math.hypot(vx,vz);if(total>cap){vx*=cap/total;vz*=cap/total}return{x:vx,z:vz};
 }
 export class WeaponMotion{
- constructor(){this.kick=new Spring();this.land=new Spring();this.equip=0;this.ads=0;this.sprint=0;this.swayX=0;this.swayY=0;this.shotAge=10;this.trauma=0}
+ constructor(){this.kick=new Spring();this.land=new Spring();this.equip=0;this.ads=0;this.swayX=0;this.swayY=0;this.shotAge=10;this.trauma=0}
  fire(profile){this.kick.impulse(20*profile.kick);this.shotAge=0}
  landed(speed){this.land.impulse(Math.min(1.8,Math.abs(speed)*.1));this.trauma=Math.min(.4,this.trauma+Math.abs(speed)*.012)}
  blast(distance){this.trauma=Math.min(.8,this.trauma+Math.max(0,1-distance/15)*.5)}
  switch(){this.equip=1;this.kick.reset();this.ads=0}
- reset(){this.kick.reset();this.land.reset();this.ads=this.sprint=this.trauma=0;this.equip=0;this.shotAge=10}
- step(dt,p,{aiming=false,sprinting=false,turnX=0,turnY=0,adsSpeed=1}={}){
+ reset(){this.kick.reset();this.land.reset();this.ads=this.trauma=0;this.equip=0;this.shotAge=10}
+ step(dt,p,{aiming=false,turnX=0,turnY=0,adsSpeed=1}={}){
   this.shotAge+=dt;this.kick.step(dt,p.stiffness,p.damping);this.land.step(dt,210,24);
-  const blend=1-Math.exp(-dt*15*adsSpeed);this.ads+=((aiming?1:0)-this.ads)*blend;this.sprint+=((sprinting?1:0)-this.sprint)*blend;
+  const blend=1-Math.exp(-dt*15*adsSpeed);this.ads+=((aiming?1:0)-this.ads)*blend;
   this.swayX+=(Math.max(-.045,Math.min(.045,turnX)) - this.swayX)*(1-Math.exp(-dt*12));
   this.swayY+=(Math.max(-.03,Math.min(.03,turnY)) - this.swayY)*(1-Math.exp(-dt*12));
   this.equip=Math.max(0,this.equip-dt*5);this.trauma=Math.max(0,this.trauma-dt*1.8);

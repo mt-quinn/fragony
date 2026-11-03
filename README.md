@@ -6,11 +6,11 @@ Single-player Three.js arena FPS roguelike. Chalk geometry, ink silhouettes, yel
 
 Run `npm start` and open http://127.0.0.1:4173. No install or build is required; Three.js is vendored.
 
-WASD move, Shift sprint, mouse aim, left click fire, right click aim down sights, Space jump, hold Q slow motion, R reload, G grenade, F selected killstreak, 1–6 or wheel switch owned weapons, Escape pause. Browsers without mouse capture use free mouse aiming within the viewport and arrow-key turning; Resume retries capture. A regular desktop browser supports full pointer-lock FPS controls. Headphones are recommended for directional audio.
+WASD move, crouch while moving to knee slide, mouse aim, left click fire, right click aim down sights, Space jump, hold Q slow motion, R reload, G grenade, F selected killstreak, 1–6 or wheel switch owned weapons, Escape pause. Browsers without mouse capture use free mouse aiming within the viewport and arrow-key turning; Resume retries capture. A regular desktop browser supports full pointer-lock FPS controls. Headphones are recommended for directional audio.
 
 On iPhone/iPad, play in landscape. The mobile interface defaults to Simple Mode: move with the left joystick, swipe to aim, and keep a visible opponent in the crosshair to fire automatically. ADS and manual hip-fire remain separate. Touch Settings includes sensitivity, layout presets, a full HUD editor, graphics and optional gyro. Practice lets you try all weapons without changing your saved run. [Mobile controls and implementation notes](docs/mobile-implementation.md) · [COD Mobile research](docs/mobile-controls-research.md).
 
-Each run starts with two distinct random weapons. Buy more weapons, attachments, perks and throwables between rounds. Each opponent rolls two weapons at match start and retains that pair through respawns. Reserve ammunition is unlimited; firing the last round immediately starts a reload. Switching preserves partial or empty magazines. Reload completion clamps the timer to zero, so repeated reloads cannot lock firing.
+Each run starts with two distinct random weapons. Buy more weapons, attachments, perks and throwables between rounds. Each named opponent starts with two weapons and keeps a hidden wallet, guns, attachments, and perks throughout the run. Rivals earn the same kill and placement money as you and shop between matches. Reserve ammunition is unlimited; firing the last round immediately starts a reload. Switching preserves partial or empty magazines. Reload completion clamps the timer to zero, so repeated reloads cannot lock firing.
 
 90-second free-for-all against five opponents. Unlimited respawns. Finish in the top three to advance; otherwise the run ends. Ties favor fewer deaths. Three consecutive kills earn the selected killstreak. Progress saves in this browser.
 
@@ -32,13 +32,13 @@ Opponent logic is isolated in `dist/ai.js`. `AI_TUNING` is the central campaign 
 | --- | --- |
 | `early` / `late` | Reaction, speed, aim error, memory, decision interval, burst recovery, dodge chance and dodge delay. |
 | `progressionRounds` | Smooth progression length. Values stay capped afterward. |
-| `profiles` | Weapon preference, aggression, desired range, high-ground preference, flank tendency and caution. Each bot chooses only from its rolled pair. |
-| `weapons` | Damage, range, burst, spread, magazine, reload and wind-up. Damage and health do not inflate by round. |
+| `profiles` | Weapon preference, aggression, desired range, high-ground preference, flank tendency and caution. Each bot chooses from its persistent purchased arsenal. |
+| `weapons` | Tactical range preferences and burst pauses; native rival weapon stats come from the player catalog and fitted parts. Damage and health improve through purchases, rather than round multipliers. |
 | `senses` | Sight range, field of view, sensor interval and hearing range. |
 | `fairness` | Spawn grace, target commitment and a soft limit on bots selecting the player at once. |
 | `navigation` | Repath/recovery timing, retreat health and shared pickup respawn. |
 
-Bots perceive visible targets and remember last-seen locations briefly. Gunfire and nearby footsteps create search locations, not firing solutions. They turn and react before firing, lag their aim behind sudden movement, fire in bursts and reload. Rail shots and rockets have visible and audible wind-ups. Injured bots seek health or cover. They make delayed, imperfect projectile dodges. Shared pickups actually heal opponents and disappear until respawning. Cover blocks both hitscan and splash. Height-aware A* supports stairs, jump pads, low jumps and drops; recovery replans without teleporting. Weapon switches retain magazines and have an equip delay.
+Bots perceive visible targets and remember last-seen locations briefly. Gunfire and nearby footsteps create search locations, not firing solutions. They turn and react before firing, lag their aim behind sudden movement, fire in bursts and reload. Charged conversions have visible and audible wind-ups; stock guns follow the same firing modes as the player. Injured bots seek health or cover. They make delayed, imperfect projectile dodges. Shared pickups actually heal opponents and disappear until respawning. Cover blocks both hitscan and splash. Height-aware A* supports stairs, jump pads, low jumps and drops; recovery replans without teleporting. Weapon switches retain magazines and have an equip delay.
 
 ## Audio
 
@@ -70,7 +70,7 @@ Crash-test dummy references: [Euro NCAP](https://www.euroncap.com/want-to-meet-o
 
 ### Combat feel pass
 
-Weapon handling is tuned in `dist/feel.js`: six independent recoil/recovery profiles, smooth aim transitions, reload and equip poses, shotgun pump/pistol slide, restrained sway and sprint poses. Purchased attachments appear on the weapon. Simulation steps at a maximum 1/120 second; firing retains fractional cooldown so 30/60/144 Hz produce the same cadence. Shots read current mouse aim before recoil is applied. Ground acceleration/braking, retained air momentum, 120 ms jump buffering, 85 ms coyote time, and smoothed stair eye height preserve immediate controls. No global hitstop or aim-displacing camera shake.
+Weapon handling is tuned in `dist/feel.js`: six independent recoil/recovery profiles, smooth aim transitions, reload and equip poses, shotgun pump/pistol slide, restrained sway and stable sliding aim. Purchased attachments appear on the weapon. Simulation steps at a maximum 1/120 second; firing retains fractional cooldown so 30/60/144 Hz produce the same cadence. Shots read current mouse aim before recoil is applied. Ground acceleration/braking, retained air momentum, 120 ms jump buffering, 85 ms coyote time, and smoothed stair eye height preserve immediate controls. No global hitstop or aim-displacing camera shake.
 
 Damage resolution in `dist/combat.js` prevents repeated death scoring. Hits give one short marker/cue per resolved shot; grouped pellets, rail penetrations and splash kills produce one combined confirmation. Headshot kills score 150 instead of 100; match placement uses points, with frags separately reported. Corpse impacts can shatter limbs but never award points or hit confirmations. Live dummies flinch; death poses and shattered pieces follow shot direction.
 
@@ -89,7 +89,7 @@ The six-offer shop supplies two actions, two ammunition choices and two feed/han
 
 Practice → Pause → Weapon Workbench makes every part free to try without writing campaign progression. Arsenal previews also leave the run unchanged. Inspect Gun opens a rotatable, lit 3D component view with an action-cycling demonstration. Conversion hardware includes visible paired bores/rails/tubes, actual magazine/loading silhouettes, ammunition carriers and animated charging/feed mechanisms. Model buffers are disposed when replaced; the viewer reuses the game's WebGL renderer.
 
-[Approved catalog, composition and control rules](docs/attachment-redesign.md). `dist/loadout.js` owns the catalog/stat resolver, `dist/weapon-cycle.js` owns trigger/feed state, `dist/ballistics.js` groups direct and payload events, and `dist/attachment-models.js` builds/animates the physical conversion parts. New player rockets snapshot their configured payload and use swept contact; bot weapons, grenades and killstreak tuning retain their own paths.
+[Approved catalog, composition and control rules](docs/attachment-redesign.md). `dist/loadout.js` owns the catalog/stat resolver, `dist/weapon-cycle.js` owns trigger/feed state, `dist/ballistics.js` groups direct and payload events, and `dist/attachment-models.js` builds/animates the physical conversion parts. New player rockets snapshot their configured payload and use swept contact; rival weapons use the same trigger/feed, ballistic payload, and configured-rocket systems; grenades and killstreaks retain their own paths.
 
 `npm test` covers the catalog, purchasing/save migration, burst/semi/charge timing, native ammunition and payload effects, coupled/individual/holstered loading, Practice safety, all 720 model kits/140 paired configurations, actual ADS alignment, and existing map/combat/audio regressions.
 
@@ -156,11 +156,23 @@ Six weapon impact profiles give resolved shots distinct local body and limb resp
 
 ### Three original arenas
 
-All seven maps—**Test Works**, **Reservoir**, **Tidal Lock**, **Parallax**, **Foundry**, **Rust**, and **Shipment**—rotate automatically from a persistent shuffled bag, with no repeat until all five appear and no immediate repeat across bag boundaries. New runs keep the bag; continuing a saved match keeps its current map. Tidal Lock is a symmetric waterworks with layered crossings; Parallax uses paired tower/launch/drop cycles; Foundry interlocks asymmetric rooms and three floor levels. They use the current AI, shared native movement, water, lifts, pads and the exact5/25/one50 health economy. [Layouts, iteration and validation](MAPS.md#tidal-lock). Run `npm run test:maps` for geometry, sightlines, symmetry,402 controller routes and real player water/launch checks.
+All seven maps—**Test Works**, **Reservoir**, **Tidal Lock**, **Parallax**, **Foundry**, **Rust**, and **Shipment**—rotate automatically from a persistent shuffled bag, with no repeat until all seven appear and no immediate repeat across bag boundaries. New runs keep the bag; continuing a saved match keeps its current map. Tidal Lock is a symmetric waterworks with layered crossings; Parallax uses paired tower/launch/drop cycles; Foundry interlocks asymmetric rooms and three floor levels. They use the current AI, shared native movement, water, lifts, pads and the exact5/25/one50 health economy. [Layouts, iteration and validation](MAPS.md#tidal-lock). Run `npm run test:maps` for geometry, sightlines, symmetry,402 controller routes and real player water/launch checks.
 
 ### Test Works presentation
 
 Test Works is a public-works maintenance plant with five distinct material districts: ochre fabrication presses, a pale process tower, teal pump service, electrical switchgear and dispatch loading bays. Partial industrial roofs frame a quiet lo-fi sky. Original ground-level cover, routes and jump transfers are retained. Open `?practice=testworks` and select **Practice Test Works** to inspect it without changing your campaign or match rotation. See `docs/testworks-presentation.md` for construction and verification details.
+
+## Enemy progression
+
+Rivals now buy persistent builds with actual winnings and fire full-strength player weapons. Reactions, tracking, accuracy, and firing pressure scale through round 31 instead of stopping at round 11. Death recaps list the killing gun’s fitted parts and sight. [Economy, difficulty values, save behavior and validation](docs/enemy-progression.md).
+
+## Minimap
+
+A circular local map rotates with the player by default. Settings offers north lock, visibility, and an independent desktop size slider; mobile Edit HUD saves its position, size, opacity, and visibility. Resizing keeps the same 26 m world radius. Enemy shots briefly reveal red circles, with grouped directional edge indicators for enemies outside range. [Rendering, reveal timing, settings, and validation](docs/minimap.md).
+
+## Sliding, body damage, and mobile menus
+
+Sprinting has been replaced by a generous momentum crouch slide with forgiving uphill carry, better downhill carry, and tactical bot use that improves with difficulty. [Movement tuning and checks](docs/momentum-slide.md). Direct hits use head1.5×, torso/pelvis1×, and arms/legs0.75× for everyone. [Damage rules](docs/body-damage.md). The landscape mobile shop keeps the fitted build, six attachment offers, and other purchase categories on one board; settings and results also use the available width. [Mobile menu changes and validation](docs/mobile-menu-redesign.md).
 
 ### Industrial presentation and imported arenas
 
