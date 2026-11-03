@@ -8,7 +8,7 @@ import {launchTime,nearBlocks,blockSpan} from '../dist/geometry.js';
 import {ElevatorSystem} from '../dist/elevators.js';
 import {buildBrushMap} from '../dist/map-view.js';
 import {industrialDistricts} from '../dist/industrial.js';
-for(const map of SOURCE_ARENAS){
+for(const map of SOURCE_ARENAS.filter(m=>!process.argv.slice(2).length||process.argv.slice(2).includes(m.id))){
  await map.load();assert.ok(map.precompiled&&map.renderChunks.length>5,map.id+' prepared visual geometry');
  const {fingerprint}=await import('../dist/maps/'+map.id+'-nav.js');
  const digest=createHash('sha256').update(fs.readFileSync(new URL('../dist/maps/'+map.id+'-data.json.gz',import.meta.url))).update(JSON.stringify([map.elevators,map.pads,map.anchors,map.stepHeight,map.bounds,map.maxHeight,!!map.navigationGround,...(map.navigationGrid||map.navigationRefinement?[map.navigationGrid||1,map.navigationRefinement||null]:[])])).digest('hex');assert.equal(digest,fingerprint,map.id+' current source/traversal bake');

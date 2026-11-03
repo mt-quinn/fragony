@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.js';
 import {createGameHarness} from './harness.mjs';
 import {normalizeBuilds,previewBuild,WEAPON_SLOTS,weaponStats} from '../dist/loadout.js';
+import {distanceDamage} from '../dist/weapon-cycle.js';
 import {traceCartridges} from '../dist/ballistics.js';
 import {autoFirePadding,nearbyAutoTarget,AUTO_AIM_PADDING} from '../dist/mobile-targeting.js';
 import {AutoFire} from '../dist/mobile-core.js';
@@ -16,7 +17,7 @@ for(const [g,slot,key]of [[0,'ammunition','duplex'],[1,'action','twin'],[2,'acti
  for(const ads of [false,true])for(const distance of [10,30,60]){
   body.position.set(0,1.3,-distance);body.updateMatrixWorld(true);
   const shot=traceCartridges(w,origin,forward,[body],{ads,random:()=>.5});
-  assert.equal(shot.hits.get(body.userData.bot)?.damage,w.damage*w.pellets*w.volley,`${w.action} / ${w.ammunition}: both shots hit the crosshair at ${distance}m`);
+  assert.ok(Math.abs(shot.hits.get(body.userData.bot)?.damage-w.damage*w.pellets*w.volley*distanceDamage(w,distance-.2))<1e-7,`${w.action} / ${w.ammunition}: both shots hit the crosshair at ${distance}m`);
  }
 }
 // Every blast-producing ammo uses the final actual radius; other ammo stays precise.
@@ -54,7 +55,7 @@ const savedRandom=Math.random;Math.random=()=>.5;
 for(const [g,slot,key] of [[0,'ammunition','duplex'],[1,'action','twin'],[2,'action','duplex'],[3,'action','split'],[5,'action','double'],[4,'action','twin']]){
  const a=WEAPON_SLOTS[g][slot].find(a=>a.key===key);builds=previewBuild(normalizeBuilds(),g,slot,a.id);equipped=g;const w=playerWeapon();ammo=w.mag;reloading=shotTimer=0;aimSpring.reset();fireControl.reset();feedSystem.reset(owned,i=>playerWeapon(i));buildWeapon();scene.updateMatrixWorld(true);const before=victim.hp,loaded=ammo,projectiles=rockets.length;assert.ok(shoot());assert.equal(ammo,loaded-w.volley);
  if(g===4){assert.equal(rockets.length,projectiles+2);for(const r of rockets.slice(-2))assert.ok(r.vel.clone().normalize().distanceTo(new THREE.Vector3(0,0,-1))<1e-6,'both rockets travel along the crosshair');}
- else assert.ok(Math.abs(before-victim.hp-w.damage*w.pellets*w.volley)<1e-6,'native centered '+w.action+' / '+w.ammunition+' hits at 30m');
+ else assert.ok(Math.abs(before-victim.hp-w.damage*w.pellets*w.volley*distanceDamage(w,30))<1e-6,'native centered '+w.action+' / '+w.ammunition+' hits at 30m');
 }
 Math.random=savedRandom;
 `);

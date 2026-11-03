@@ -18,7 +18,8 @@ export class ElevatorSystem{
    for(const a of actors)for(const floor of [l.low,l.high])if(Math.abs(a.feet()-floor)<.35&&Math.hypot(a.x()-(floor===l.low?l.entryLow||l.entry:l.entryHigh||l.entry).x,a.z()-(floor===l.low?l.entryLow||l.entry:l.entryHigh||l.entry).z)<2.5)this.request(l,floor);
    if(Math.abs(l.target-l.y)<1e-6){
     l.wait=Math.max(0,l.wait-dt);l.idle+=dt;l.calls.delete(l.y);
-    if(l.wait<=0){const other=l.y===l.low?l.high:l.low;if(riders.length||l.calls.has(other)||l.y===l.high&&l.idle>2){l.target=other;l.calls.delete(other);l.idle=0}}
+    const boarded=!l.boardingRadius||riders.every(a=>Math.hypot(a.x()-l.x,a.z()-l.z)<=l.boardingRadius);
+    if(l.wait<=0&&boarded){const other=l.y===l.low?l.high:l.low;if(riders.length||l.calls.has(other)||l.y===l.high&&l.idle>2){l.target=other;l.calls.delete(other);l.idle=0}}
    }
    const dy=Math.sign(l.target-l.y)*Math.min(Math.abs(l.target-l.y),7*dt);
    if(dy){

@@ -11,7 +11,7 @@ All attachment slots have dedicated geometry. Six optics use a fixed bridge with
 
 Long/snub/heavy barrels retain the barrel axis. Crown, brake and slab compensator use real open muzzle geometry, with flash/tracer origins at the fitted muzzle. Larger magazines extend below the grip rather than becoming an unrelated drum; speed magazine and trigger options have their own shapes. Geometry/materials are cached and shared.
 
-Base combat balance is unchanged: 83 damage, 7 rounds, .53 second shot interval, 1.6 second reload. The remaining five weapons now share the approved industrial material language, with distinct construction and purpose-built attachments.
+Base combat balance: 45 body / 67.5 head damage (three body hits against 100 HP), 7 rounds, .53 second shot interval, 1.6 second reload. The remaining five weapons now share the approved industrial material language, with distinct construction and purpose-built attachments.
 
 
 ## Remaining arsenal

@@ -3,7 +3,7 @@ import {WEAPON_SLOTS,OPTICS,normalizeBuilds,previewBuild,weaponStats,fitAttachme
 import {FireControl,FeedSystem,distanceDamage} from '../dist/weapon-cycle.js';
 import {traceCartridges} from '../dist/ballistics.js';
 import * as THREE from '../dist/vendor/three.module.js';
-const bases=[{damage:24,interval:.13,mag:30,reload:1.35,spread:.008,pellets:1},{damage:83,interval:.53,mag:7,reload:1.6,spread:.004,pellets:1},{damage:13,interval:.055,mag:42,reload:1.05,spread:.033,pellets:1},{damage:155,interval:1.35,mag:4,reload:2,spread:0,pellets:1},{damage:110,interval:.85,mag:5,reload:1.8,spread:0,pellets:1},{damage:12,interval:.83,mag:8,reload:1.7,spread:.085,pellets:12}];
+const bases=[{damage:24,interval:.13,mag:30,reload:1.35,spread:.008,pellets:1},{damage:45,interval:.53,mag:7,reload:1.6,spread:.004,pellets:1},{damage:13,interval:.055,mag:42,reload:1.05,spread:.033,pellets:1},{damage:80,interval:1.35,mag:4,reload:2,spread:0,pellets:1},{damage:80,interval:.85,mag:5,reload:1.8,spread:0,pellets:1},{damage:9,interval:.83,mag:8,reload:1.7,spread:.085,pellets:12}];
 const build=(g,...ids)=>ids.reduce((b,id)=>{const a=Object.values(WEAPON_SLOTS[g]).flat().find(a=>a.key===id);assert.ok(a,id);return previewBuild(b,g,a.slot,a.id)},normalizeBuilds());
 const stats=(g,...ids)=>weaponStats(bases[g],g,build(g,...ids));
 assert.equal(WEAPON_SLOTS.flatMap(s=>Object.values(s).flat().filter(a=>a.slot!=='optic')).length,72);assert.ok(OPTICS.every(a=>a.price===0));
@@ -12,11 +12,11 @@ let b=normalizeBuilds();for(const slot of ['action','ammunition','feed'])assert.
 const fourth=WEAPON_SLOTS[0].handling[0];let r=fitAttachment(b,[0],10000,0,'handling',fourth.id);assert.ok(r.needsReplacement);assert.equal(b[0].owned.includes(fourth.id),false,'do not charge or own until replacement is chosen');r=fitAttachment(b,[0],10000,0,'handling',fourth.id,{replace:'feed'});assert.ok(r.ok);assert.equal(b[0].slots.feed,undefined);
 assert.ok(fitAttachment(b,[0],0,0,'optic','dot').ok,'sights fit free outside gameplay cap');
 b=build(4,'recovery');assert.equal(fitAttachment(b,[4],9999,4,'handling','4-handling-sling').ok,false);
-for(const [g,key]of [[0,'through'],[1,'penetrator'],[2,'needle']])assert.equal(stats(g,key).damage,bases[g].damage,'penetrators retain full first-target damage');assert.equal(stats(5,'flechette').damage*8,144);
-assert.equal(stats(5,'slamfire').damage*12,144,'slamfire retains shell damage');assert.equal(stats(5,'slamfire').interval,.415);
+for(const [g,key]of [[0,'through'],[1,'penetrator'],[2,'needle']])assert.equal(stats(g,key).damage,bases[g].damage,'penetrators retain full first-target damage');assert.equal(stats(5,'flechette').damage*8,108);
+assert.equal(stats(5,'slamfire').damage*12,108,'slamfire retains shell damage');assert.equal(stats(5,'slamfire').interval,.415);
 const cap=stats(1,'riveter','caps');assert.ok(Math.abs(cap.damage-23.1)<1e-8);assert.ok(Math.abs(cap.splash-9.9)<1e-8);
-const frag=stats(5,'double','frag');assert.equal(frag.pellets,6);assert.ok(Math.abs(frag.damage*6+frag.splash-70.08)<1e-7);
-assert.equal(stats(3,'rapid').damage*1.5,142.5);assert.equal(distanceDamage(stats(2,'frangible'),8),1.35);assert.ok(Math.abs(distanceDamage(stats(2,'frangible'),18)-.55)<1e-8);
+const frag=stats(5,'double','frag');assert.equal(frag.pellets,6);assert.ok(Math.abs(frag.damage*6+frag.splash-39.42)<1e-7);
+assert.equal(stats(3,'rapid').damage*1.5,105);assert.equal(distanceDamage(stats(2,'frangible'),8),1.35);assert.ok(Math.abs(distanceDamage(stats(2,'frangible'),18)-.55)<1e-8);
 const old={credits:100,owned:[0],builds:{0:{owned:['0-magazine-extended','0-barrel-pressure','dot'],slots:{magazine:'0-magazine-extended',barrel:'0-barrel-pressure',optic:'dot'}}},shopOffers:{version:1}};
 const migrated=migrateLoadoutSave(old);assert.equal(migrated.credits,410);assert.equal(migrated.builds[0].slots.feed,'0-feed-box');assert.equal(migrated.builds[0].slots.optic,'dot');assert.equal(migrateLoadoutSave(migrated).credits,410,'refund exactly once');
 const fc=new FireControl(),burst=stats(0,'ratchet');let events=[],cooldown=0;for(let i=0;i<80;i++){cooldown-=.01;const e=fc.tick(.01,burst,{down:true,repeat:true,cooldown});if(e.fire){events.push({t:i*.01,continuation:!!e.continuation});if(!e.continuation)cooldown=burst.interval;}}assert.equal(events.slice(0,3).length,3);assert.ok(events[1].t-events[0].t>=.05);assert.ok(events[3].t-events[0].t>=.47);
@@ -29,6 +29,6 @@ const gate=stats(5,'gate');fs.state(5,0);fs.start(5,gate);fs.step(5,gate,.35,{ac
 const recovery=stats(4,'recovery');fs.state(4,0);fs.step(4,recovery,.6,{active:true,trigger:true});assert.equal(fs.state(4).ammo,0);fs.step(4,recovery,.6,{active:true,trigger:false});assert.equal(fs.state(4).ammo,1);assert.equal(fs.start(4,recovery),false);
 const sling=stats(1,'sling');fs.state(1,0);fs.step(1,sling,.9);assert.equal(fs.state(1).reload,null);fs.step(1,sling,.1);fs.step(1,sling,sling.reload);assert.equal(fs.state(1).ammo,7);
 const make=(name,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(1,2,.4),new THREE.MeshBasicMaterial());m.position.set(0,0,z);m.userData.bot={name,hp:1000,dead:0};m.updateMatrixWorld(true);return m};
-const targets=[make('front',-4),make('back',-8)],origin=new THREE.Vector3(),forward=new THREE.Vector3(0,0,-1),penetrator=traceCartridges(stats(1,'penetrator'),origin,forward,targets,{random:()=>.5});assert.equal(penetrator.hits.get(targets[0].userData.bot).damage,83);assert.ok(Math.abs(penetrator.hits.get(targets[1].userData.bot).damage-49.8)<1e-8);
+const targets=[make('front',-4),make('back',-8)],origin=new THREE.Vector3(),forward=new THREE.Vector3(0,0,-1),penetrator=traceCartridges(stats(1,'penetrator'),origin,forward,targets,{random:()=>.5});assert.equal(penetrator.hits.get(targets[0].userData.bot).damage,45);assert.ok(Math.abs(penetrator.hits.get(targets[1].userData.bot).damage-27)<1e-8);
 const explosive=traceCartridges(stats(5,'frag'),origin,forward,targets,{random:()=>.5});assert.equal(explosive.blasts.length,1,'one explosion per shell, not one per pellet');const paired=traceCartridges(stats(1,'twin','caps'),origin,forward,targets,{random:()=>.5});assert.equal(paired.blasts.length,2,'paired rounds each pay for one explosion');
 console.log('Armory: 72 parts, three-part cap, free sights, compatibility, idempotent migration, normalized payloads, full penetrators, burst/semi/charge scheduling, 80ms slamfire recovery, feeds and per-cartridge blasts pass.');

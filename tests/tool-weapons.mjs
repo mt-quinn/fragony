@@ -22,7 +22,7 @@ for(const gun of guns){
  const world=new T.Group();createToolWorld(world,gun);let draws=0;world.traverseVisible(m=>{if(m.isMesh)draws++});assert.ok(draws<=14,'world draw budget');disposeToolModel(world);
 }
 const game=createGameHarness(81);game.setup();game.run(`{
- mode='play';respawnTime=0;worldMeshes=[];settings.motion=0;owned=[0,1,2,3,4,5];const expected=[[24,30,.13,1.35],[83,7,.53,1.6],[13,42,.055,1.05],[155,4,1.35,2],[150,5,.85,1.8],[12,8,.83,1.7]];
+ mode='play';respawnTime=0;worldMeshes=[];settings.motion=0;owned=[0,1,2,3,4,5];const expected=[[24,30,.13,1.35],[45,7,.53,1.6],[13,42,.055,1.05],[80,4,1.35,2],[80,5,.85,1.8],[9,8,.83,1.7]];
  for(const gun of [0,2,3,4,5]){equipped=gun;builds=normalizeBuilds();buildWeapon();const h=weaponGroup.userData.heroTool;assert.ok(h);assert.equal(playerWeapon().damage,expected[gun][0]);assert.equal(playerWeapon().mag,expected[gun][1]);assert.equal(playerWeapon().interval,expected[gun][2]);assert.equal(playerWeapon().reload,expected[gun][3]);assert.equal(flash.position.z,h.muzzleZ);assert.equal(flash.position.x,h.muzzleX||0);assert.equal(flash.position.y,h.muzzleY);health=35;tintPlayerArms();let skins=[];weaponGroup.traverse(m=>{if(m.userData.healthSkin)skins.push(m)});assert.ok(skins.length>=4);assert.ok(skins.every(m=>m.material.color.getHex()===healthColors[7]));
   ammo=playerWeapon().mag;reloading=0;weaponMotion.reset();aimSpring.reset();keys.clear();keys.add('MouseRight');nearWall=0;for(let i=0;i<120;i++)present(1/60);weaponGroup.updateMatrixWorld(true);const aimPoint=new THREE.Vector3(h.sightX,h.sightY,-.4).applyMatrix4(weaponGroup.matrixWorld).project(camera);assert.ok(Math.abs(aimPoint.x)<1e-4&&Math.abs(aimPoint.y)<1e-4,'actual sight axis '+gun);keys.clear();
  }

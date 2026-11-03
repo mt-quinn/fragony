@@ -1,3 +1,5 @@
+import {eliteforceDistricts,eliteforceDistrictIndex,eliteforceCuts} from './eliteforce-districts.js';
+import eliteforceFittings from './eliteforce-fittings.js';
 const area=(id,name,wall,floor,accent,type='concrete')=>({id,name,wall,floor,accent,type});
 export const sourceDistricts={
  killhouse:[area('west','WEST DRILL BAYS',0xb7c8bc,0x9ba99a,0x72948b,'coated'),area('east','EAST DRILL BAYS',0xcac0a8,0xb0a38b,0xae9667),area('tower','OBSERVATION',0xb5c7c2,0x94aaa2,0x658e8b,'coated'),area('briefing','BRIEFING APRON',0xc8ccb9,0xa8b19e,0x8e9b81),area('entry','RANGE ENTRY',0xc8c3b0,0xada58e,0xaa9c73)],
@@ -9,6 +11,7 @@ export const sourceDistricts={
  shoothouse:[area('scrap','RECOVERY YARD',0xc8bda7,0xaaa087,0xb19a6b),area('cargo','CARGO RANGE',0xb4c8c0,0x95aa9f,0x66958c,'coated'),area('office','RANGE CONTROL',0xb9cbc7,0x98ada6,0x729b94,'coated'),area('north','NORTH ENTRY',0xc6c9b8,0xa6b29e,0x8e9f83),area('south','SOUTH ENTRY',0xc9c1ab,0xafa38b,0xad986b),area('lane','MAIN FIRING LANE',0xc9ccbd,0xaeb59f,0x939e81)]
 };
 export function sourceDistrictIndex(id,x,y,z){
+ if(eliteforceDistricts[id])return eliteforceDistrictIndex(id,x,y,z);
  if(id==='killhouse')return z< -23?3:z>23?4:Math.abs(x)<6?2:x<0?0:1;
  if(id==='vacant')return x< -22?0:z< -18?1:x>20?2:z>16?3:4;
  if(id==='showdown')return z< -30?3:z>30?4:x< -18?1:x>18?2:0;
@@ -30,3 +33,6 @@ export const sourceFittings={
  summit:[['NORTH SWITCHYARD / 01',[8,9,-44],[0,0,-1]],['CONTROL HALL / 02',[13,9,-9],[-1,0,0]],['CABLE STATION / 03',[27,9,5],[1,0,0]],['WEST SERVICE / 04',[-16,9,-20],[-1,0,0]],['SOUTH GANTRY / 05',[11,13,58],[0,0,1]],['',[19,13,22],[1,0,0],'electrical'],['',[-22,11,34],[0,0,1],'pump']],
  shoothouse:[['NORTH ENTRY / 01',[0,3.6,-40],[0,0,-1]],['SOUTH ENTRY / 02',[-20,3.6,40],[0,0,1]],['RANGE CONTROL / 03',[7,7,-12],[0,0,-1]],['CARGO RANGE / 04',[24,3.6,15],[1,0,0]],['RECOVERY YARD / 05',[-18,3.6,20],[-1,0,0]],['MAIN FIRING LANE',[-3,3.6,-1],[0,0,1]],['',[-20,6.7,-15],[-1,0,0],'electrical']]
 };
+Object.assign(sourceDistricts,eliteforceDistricts);
+Object.assign(sourceDistrictCuts,eliteforceCuts);
+Object.assign(sourceFittings,eliteforceFittings);

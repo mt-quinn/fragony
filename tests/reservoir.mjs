@@ -13,7 +13,9 @@ const digest=createHash('sha256').update(fs.readFileSync(new URL('../dist/maps/r
 assert.equal(fingerprint,digest,'geometry/navigation changed: run node tools/bake-reservoir-nav.mjs');
 assert.equal(source.items.length,36);assert.equal(source.spawns.length,12);assert.ok(map.brushes.length>1100);assert.ok(Object.values(source.groups).reduce((n,g)=>n+g.p.length/9,0)>12000);
 for(const [i,p]of source.items.entries()){const q=map.pickups[i];assert.equal(q.x,p.position[0]);assert.equal(q.z,p.position[2]);assert.equal(q.amount,p.type.includes('medium')?25:5)}
-for(const m of MAPS){assert.equal(m.pickups.filter(p=>p.amount===50).length,1);assert.ok(m.pickups.filter(p=>p.amount===5).length>=12);assert.ok(m.pickups.filter(p=>p.amount===25).length>=4);assert.ok(!m.pickups.some(p=>p.kind==='armor'));}
+// EF keeps each source reward pattern; its exact per-entity sizes/counts are
+// checked by eliteforce-maps. The earlier eleven arenas retain one major.
+for(const m of MAPS){assert.ok(m.pickups.every(p=>p.kind==='health'&&[5,25,50].includes(p.amount)));if(m.sourceFamily==='eliteforce')continue;assert.equal(m.pickups.filter(p=>p.amount===50).length,1);assert.ok(m.pickups.filter(p=>p.amount===5).length>=12);assert.ok(m.pickups.filter(p=>p.amount===25).length>=4);assert.ok(!m.pickups.some(p=>p.kind==='armor'));}
 const small=healthPickup('s',0,0,0,5),standard=healthPickup('h',0,0,0,25),major=healthPickup('m',0,0,0,50);
 for(const max of [100,140]){assert.equal(healthAfterPickup(max,max,small),max+5);assert.equal(healthAfterPickup(max,max,major),max+50);assert.equal(healthAfterPickup(max,max,standard),max);assert.equal(healthAfterPickup(max-10,max,standard),max);assert.equal(healthAfterPickup(150,max,standard),150)}assert.equal(healthAfterPickup(198,100,small),200);assert.equal(healthAfterPickup(200,100,major),200);
 const navigation=restoreNavigation(map.navigation,map.elevators,map.anchors,map.bounds,map.brushes,map.stepHeight);
