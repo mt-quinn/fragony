@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import {AutoFire,TouchState,mobileSettings,presetLayout,normalizeLayout,controlRect,stickVector,touchLook,MOBILE_QUALITY} from '../dist/mobile-core.js';
+import {AutoFire,TouchState,mobileSettings,presetLayout,normalizeLayout,controlRect,stickVector,touchLook,MOBILE_QUALITY,AUTO_FIRE} from '../dist/mobile-core.js';
 import {nearbyAutoTarget} from '../dist/mobile-targeting.js';
 import * as THREE from '../dist/vendor/three.module.js';
 import {createGameHarness} from './harness.mjs';
 const auto=new AutoFire(),frame={target:'bot:1',weapon:'rifle',distance:8};
-for(let i=0;i<7;i++)assert.equal(auto.step(1/60,frame),false);
+for(let i=0;i<3;i++)assert.equal(auto.step(1/60,frame),false);
 assert.equal(auto.step(1/60,frame),true,'acquisition precedes automatic fire');
 assert.equal(auto.step(1/60,{...frame,target:'bot:2'}),false,'new targets reacquire');
 assert.equal(auto.step(.05,{...frame,blocked:true}),false);assert.equal(auto.progress,0);
@@ -15,10 +15,13 @@ auto.step(1/120,frame);assert.ok(auto.progress>retained,'same target resumes ret
 for(let i=0;i<4;i++)auto.step(.05,{...frame,target:null});assert.equal(auto.progress,0);assert.equal(auto.target,null,'full charge drains within 180 ms');
 for(let i=0;i<20;i++)auto.step(.05,{...frame,onTarget:false});assert.equal(auto.progress,1);auto.step(.02,{...frame,target:null});assert.ok(auto.progress<1,'holding a target never banks excess acquisition');
 assert.equal(auto.step(.02,{...frame,onTarget:false}),false,'padding charges without expanding real shot eligibility');assert.equal(auto.step(.05,frame),true,'actual crosshair can fire immediately from a precharged margin');
-assert.equal(auto.step(.05,{...frame,distance:40}),false,'default hip limiter');
-for(let i=0;i<4;i++)auto.step(.05,{...frame,distance:40,ads:true});assert.equal(auto.phase,'firing','ADS bypasses hip range');
+assert.equal(auto.step(.05,{...frame,distance:85,ads:false,limitHipRange:true}),true,'distant hip fire has no range gate, even with a legacy saved limiter');
+for(let i=0;i<4;i++)auto.step(.05,{...frame,distance:40,ads:true});assert.equal(auto.phase,'firing','ADS remains optional for distant auto-fire');
 assert.equal(auto.step(.05,{...frame,weapon:'rocket'}),false,'explosives require intentional manual fire');
 auto.reset();auto.step(2,frame);assert.ok(auto.progress<1,'tab stalls cannot skip acquisition');
+const oldAcquire={rifle:.12,pistol:.16,smg:.09,rail:.24,rocket:.2,shotgun:.15};
+for(const [weapon,prior]of Object.entries(oldAcquire)){assert.ok(AUTO_FIRE[weapon].acquire<=prior/2,weapon+' acquisition is at least halved');if(weapon==='rocket')continue;for(const ads of [false,true]){const tracker=new AutoFire(),target={target:'distant:1',weapon,ads,distance:85,limitHipRange:true},frames=Math.ceil(AUTO_FIRE[weapon].acquire/.001);for(let i=0;i<frames-1;i++)assert.equal(tracker.step(.001,target),false,weapon+' does not fire before acquisition');assert.equal(tracker.step(.001001,target),true,weapon+' fires at half its prior delay at long range');assert.equal(tracker.step(.001,{...target,blocked:true}),false,'cover still cancels fire');}}
+assert.equal(mobileSettings({limitHipRange:true}).limitHipRange,undefined,'retired saved range setting cannot re-enable the limit');
 const state=new TouchState();assert.ok(state.begin(1,'stick',80,220));assert.ok(state.begin(2,'look',500,180));assert.ok(state.begin(3,'ads',700,100));assert.equal(state.begin(4,'stick',100,240),false);
 state.moveContact(1,80,172);assert.equal(state.move.magnitude,1);assert.equal(state.moveContact(2,40,210).role,'look','crossing the joystick never changes ownership');
 state.end(2);assert.equal(state.move.magnitude,1);state.clear();assert.equal(state.contacts.size,0);assert.equal(state.move.magnitude,0);assert.equal(state.held.size,0);
@@ -36,6 +39,7 @@ const touchState=new TouchState(),triggerState=new AutoFire();
 mobile={enabled:true,active:true,state:touchState,settings:{aimAssist:false},crouch:false,auto:triggerState,trigger(dt,target,distance,blocked){return this.state.held.has('fire')||this.auto.step(dt,{target,distance,blocked,weapon:'rifle',ads:this.state.ads})}};
 const dummy={name:'target',lifeId:1,hp:100,dead:0},proxy=new THREE.Mesh(new THREE.BoxGeometry(2,3,1),new THREE.MeshBasicMaterial());proxy.position.set(0,1.7,-8);proxy.userData.bot=dummy;scene.add(proxy);worldMeshes.push(proxy);scene.updateMatrixWorld(true);
 for(let i=0;i<12;i++)syncTouchInputs(1/60);assert.equal(mouseDown,true,'native sensor acquires visible live actor');assert.ok(keys.has('MouseLeft'));
+proxy.position.z=-60;proxy.updateMatrixWorld(true);triggerState.reset();mobileTargetClock=0;for(let i=0;i<3;i++){syncTouchInputs(1/60);assert.equal(mouseDown,false);}syncTouchInputs(1/60);assert.equal(mouseDown,true,'real distant hip-fire sensor reaches the halved acquisition threshold without ADS');proxy.position.z=-8;proxy.updateMatrixWorld(true);mobileTargetClock=0;
 const wall=new THREE.Mesh(new THREE.BoxGeometry(3,4,.5),new THREE.MeshBasicMaterial());wall.position.set(0,1.7,-4);scene.add(wall);worldMeshes.push(wall);scene.updateMatrixWorld(true);mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,false,'cover cancels automatic fire');
 worldMeshes.pop();scene.remove(wall);dummy.dead=1;mobileTargetClock=0;syncTouchInputs(1/60);assert.equal(mouseDown,false,'corpses cannot acquire');dummy.dead=0;
 touchState.ads=true;syncTouchInputs(1/60);assert.ok(keys.has('MouseRight'));touchState.held.add('fire');syncTouchInputs(1/60);assert.equal(keys.has('MouseRight'),false,'manual button is hip fire');assert.equal(mouseDown,true);

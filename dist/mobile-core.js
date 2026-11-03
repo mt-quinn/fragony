@@ -1,9 +1,9 @@
 // Touch tuning is in CSS-pixel / screen-relative units, independent of render resolution.
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export const MOBILE_DEFAULTS={fireMode:'simple',holdSemi:true,limitHipRange:true,manualFire:true,adsMode:'toggle',adsDrag:true,stickMode:'floating',sensitivity:1,adsSensitivity:.7,scopeSensitivity:.45,vertical:1,aimAssist:true,invertY:false,gyro:'off',gyroSensitivity:1,quality:'balanced',fov:78,focusMode:'toggle',preset:'thumbs',controlScale:1,controlOpacity:.65};
+export const MOBILE_DEFAULTS={fireMode:'simple',holdSemi:true,manualFire:true,adsMode:'toggle',adsDrag:true,stickMode:'floating',sensitivity:1,adsSensitivity:.7,scopeSensitivity:.45,vertical:1,aimAssist:true,invertY:false,gyro:'off',gyroSensitivity:1,quality:'balanced',fov:78,focusMode:'toggle',preset:'thumbs',controlScale:1,controlOpacity:.65};
 export function mobileSettings(saved={}){
  const s={...MOBILE_DEFAULTS};
- for(const k of ['holdSemi','limitHipRange','manualFire','adsDrag','aimAssist','invertY'])if(typeof saved?.[k]==='boolean')s[k]=saved[k];
+ for(const k of ['holdSemi','manualFire','adsDrag','aimAssist','invertY'])if(typeof saved?.[k]==='boolean')s[k]=saved[k];
  for(const [k,choices]of Object.entries({fireMode:['simple','manual'],adsMode:['toggle','hold'],stickMode:['floating','fixed'],gyro:['off','ads','always'],quality:['battery','balanced','high'],focusMode:['toggle','hold'],preset:['thumbs','claw','left']}))if(choices.includes(saved?.[k]))s[k]=saved[k];
  for(const [k,min,max]of [['sensitivity',.3,2.5],['adsSensitivity',.2,1.5],['scopeSensitivity',.15,1.2],['vertical',.5,1.5],['gyroSensitivity',.2,2],['fov',65,95],['controlScale',.7,1.4],['controlOpacity',.2,1]])if(Number.isFinite(saved?.[k]))s[k]=clamp(saved[k],min,max);
  return s;
@@ -53,16 +53,17 @@ export class TouchState{
  end(id){const c=this.contacts.get(id);if(!c)return null;this.contacts.delete(id);if(![...this.contacts.values()].some(p=>p.role===c.role))this.held.delete(c.role);if(c.role==='stick'){this.move={x:0,y:0,magnitude:0};}return c;}
 }
 // Evidence-informed approximation, deliberately separate from weapon fire intervals.
-export const AUTO_FIRE={rifle:{acquire:.12,hipRange:23},pistol:{acquire:.16,hipRange:18},smg:{acquire:.09,hipRange:19},rail:{acquire:.24,hipRange:12},rocket:{manual:true,acquire:.2,hipRange:20},shotgun:{acquire:.15,hipRange:13}};
+// Mobile targeting delay only; mechanical fire/charge/reload timing is separate.
+export const AUTO_FIRE={rifle:{acquire:.06},pistol:{acquire:.08},smg:{acquire:.045},rail:{acquire:.12},rocket:{manual:true,acquire:.1},shotgun:{acquire:.075}};
 export const AUTO_FIRE_DRAIN=.18;
 export class AutoFire{
  constructor(){this.reset();}
  reset(){this.target=null;this.age=0;this.progress=0;this.phase='searching';this.reason='no-target';}
- step(dt,{target=null,weapon='rifle',ads=false,distance=Infinity,limitHipRange=true,blocked=false,manual=false,onTarget=true}={}){
+ step(dt,{target=null,weapon='rifle',blocked=false,manual=false,onTarget=true}={}){
   const profile=AUTO_FIRE[weapon]||AUTO_FIRE.rifle;
   if(blocked||profile.manual){this.reset();this.phase='unavailable';this.reason=blocked?'blocked':'manual-weapon';return false;}
-  if(!target||!ads&&limitHipRange&&distance>profile.hipRange){
-   this.age=Math.max(0,this.age-clamp(dt,0,.05)*profile.acquire/AUTO_FIRE_DRAIN);this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>0?'draining':'searching';this.reason=target?'range':'no-target';if(!this.age)this.target=null;return false;
+  if(!target){
+   this.age=Math.max(0,this.age-clamp(dt,0,.05)*profile.acquire/AUTO_FIRE_DRAIN);this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>0?'draining':'searching';this.reason='no-target';if(!this.age)this.target=null;return false;
   }
   if(target!==this.target){this.target=target;this.age=0;}
   this.age=Math.min(profile.acquire,this.age+clamp(dt,0,.05));this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>=1&&onTarget?'firing':'acquiring';this.reason='';
