@@ -47,3 +47,7 @@ The broader suite covers eleven-map bag persistence, save continuation, old reti
 6. Run `tools/bake-source-render.mjs` last; it marks successfully prepared specs. Reconfiguration/imports require preparing render archives again.
 7. Run `tools/chunk-source-archives.mjs` to split archives above 16 MiB into lossless transport parts, then refresh navigation fingerprints with validated collision graph reuse. The loader streams these parts in order without reducing geometry. `tests/source-archives.mjs` checks the exact original compressed-byte hashes and reconstructed data.
 8. Run the game test suite and inspect player-height views in `tools/industrial-review.html`.
+
+Production packaging runs `tools/build-static-release.mjs` and serves `build/`. It retains all runtime render/physics parts while excluding raw authoring archives for prepared maps. The full authoring source remains in `dist/` in the repository and in local previews. This keeps the deployment archive within Sites’ 256 MiB input limit without reducing geometry.
+
+The oversized inline Nuketown module is emitted as a compressed JSON payload with its original decoder retained verbatim. The release check compares the entire decoded geometry/collision/start data against the authoring module.
