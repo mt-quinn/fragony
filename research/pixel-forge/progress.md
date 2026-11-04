@@ -1,0 +1,2 @@
+Started production integration. Inspected shared graphics settings and FrameRenderer. Preserving separate experimental art lab.
+Completed integration, menu exclusion, final pass ordering, saved defaults and controls. Verified actual gameplay and menu screenshots; FXAA browser check confirmed final crisp dither and unchanged clean models. Restored standard 2× MSAA, enabled Pixel Forge at 100%, normal browser cache behavior. Tests and limitations recorded in task_plan.md.

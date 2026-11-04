@@ -4,6 +4,7 @@ import {MenuStage,MENU_STAGE} from '../dist/menu-stage.js';
 import {createGameHarness} from './harness.mjs';
 const h=createGameHarness();h.setup();h.run(`changeArena(MENU_STAGE.mapId);previewRig=createDummy();previewDummy=previewRig.group;menuStage=new MenuStage(scene,previewRig);`);
 const stage=h.run('menuStage'),camera=h.run('camera'),scene=h.run('scene');
+assert.equal(stage.rig.group.userData.pixelForgeClean,true,'menu character and attached weapon stay outside Pixel Forge');
 assert.equal(stage.group.parent,scene);assert.equal(stage.rig.group.parent,stage.group);
 assert.equal(h.run('floorAt(MENU_STAGE.position[0],MENU_STAGE.position[2],MENU_STAGE.position[1]+.1)'),MENU_STAGE.position[1]);
 for(const [width,height]of [[1280,720],[1256,1358],[844,390],[932,430]]){

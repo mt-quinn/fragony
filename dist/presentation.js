@@ -1,3 +1,4 @@
+import {PixelForgeMask,PIXEL_FORGE_SIZE,pixelForgeGLSL} from './pixel-forge.js';
 import {createWaterState,updateWaterState} from './water.js';
 import * as THREE from './vendor/three.module.js';
 import {antialiasOptions,supportedSamples,TemporalAA,SpatialAA} from './antialias.js';
@@ -31,18 +32,44 @@ const read=`uniform sampler2D worldTex;uniform sampler2D gunTex;varying vec2 vUv
 const prefilter=read+`void main(){vec3 c=colorAt(vUv);float b=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*max(0.,b-1.8)/max(b,.001),1.);}`;
 const blur=`uniform sampler2D image;uniform vec2 direction;varying vec2 vUv;void main(){vec3 c=texture2D(image,vUv).rgb*.227027;c+=texture2D(image,vUv+direction*1.384615).rgb*.316216;c+=texture2D(image,vUv-direction*1.384615).rgb*.316216;c+=texture2D(image,vUv+direction*3.230769).rgb*.070270;c+=texture2D(image,vUv-direction*3.230769).rgb*.070270;gl_FragColor=vec4(c,1.);}`;
 const final=read+`uniform float antialias;uniform float untonemappedExposure;uniform float vignetteAmount;uniform float grainAmount;uniform float gradeAmount;uniform float underwater;uniform float bloomAmount;uniform float aoAmount;uniform sampler2D ambientTex;uniform sampler2D bloomTex;uniform vec2 texel;uniform float slow;
-void main(){
- vec3 w=texture2D(worldTex,vUv).rgb;float contact=mix(1.,texture2D(ambientTex,vUv).r,aoAmount);w*=contact;w=w*(1.+underwater*.10)+vec3(.008,.018,.02)*underwater;
- vec4 g=texture2D(gunTex,vUv);vec3 c=mix(w,g.rgb,g.a);
+uniform float displayToneMap;
+#include <tonemapping_pars_fragment>
+vec3 linearAt(vec2 uv){
+ vec3 w=texture2D(worldTex,uv).rgb;float contact=mix(1.,texture2D(ambientTex,uv).r,aoAmount);w*=contact;w=w*(1.+underwater*.10)+vec3(.008,.018,.02)*underwater;
+ vec4 g=texture2D(gunTex,uv);vec3 c=mix(w,g.rgb,g.a);
  float l=dot(c,vec3(.299,.587,.114));
- c+=texture2D(bloomTex,vUv).rgb*(.105+slow*.045)*bloomAmount;
+ c+=texture2D(bloomTex,uv).rgb*(.105+slow*.045)*bloomAmount;
  // Restrained high-speed photographic grade, preserving the health-color range.
  c*=mix(vec3(1.),vec3(1.025,1.025,1.),gradeAmount);c=mix(c,c*vec3(.94,1.015,1.045),slow*.22*gradeAmount);c*=1.+slow*.065*gradeAmount;
  float printPattern=mod(gl_FragCoord.x+mod(gl_FragCoord.y,2.)*2.,4.)/4.-.375;c+=printPattern*.006*grainAmount*(1.-smoothstep(.1,.6,l));
- vec2 p=vUv-.5;float vignette=1.-dot(p,p)*.14*vignetteAmount;c*=vignette;
- gl_FragColor=vec4(max(c,vec3(0.))*untonemappedExposure,1.);
- #include <tonemapping_fragment>
- #include <colorspace_fragment>
+ vec2 p=uv-.5;float vignette=1.-dot(p,p)*.14*vignetteAmount;c*=vignette;
+ return max(c,vec3(0.))*untonemappedExposure;
+}
+vec3 displayAt(vec2 uv){
+ vec3 c=linearAt(clamp(uv,texel*.5,vec2(1.)-texel*.5));
+ if(displayToneMap>1.5)c=NeutralToneMapping(c);
+ else if(displayToneMap>.5)c=ACESFilmicToneMapping(c);
+ return sRGBTransferOETF(vec4(c,1.)).rgb;
+}
+void main(){gl_FragColor=vec4(displayAt(vUv),1.);}`;
+// The image is already antialiased, tone mapped, and display encoded here.
+const forgeFinal=`varying vec2 vUv;uniform sampler2D image;uniform sampler2D gunTex;uniform vec2 texel;
+${pixelForgeGLSL}
+vec3 forgeRead(vec2 uv){return texture2D(image,clamp(uv,texel*.5,vec2(1.)-texel*.5)).rgb;}
+void main(){
+ vec3 original=forgeRead(vUv),c=original;
+ float protectedAmount=max(texture2D(cleanActorTex,vUv).r,texture2D(gunTex,vUv).a);
+ float strength=pixelForgeAmount*(1.-protectedAmount);
+ if(strength>.001){
+  float block=${PIXEL_FORGE_SIZE.toFixed(2)};
+  vec2 grid=floor(vUv/texel/block),q=(grid+.5)*block*texel,d=texel*block;
+  c=forgePalette(forgeRead(q)+vec3(forgeDither(grid)*.085));
+  vec3 dx=forgeRead(q+vec2(d.x,0.))-forgeRead(q-vec2(d.x,0.));
+  vec3 dy=forgeRead(q+vec2(0.,d.y))-forgeRead(q-vec2(0.,d.y));
+  float rim=clamp((length(dx)+length(dy))*.85,0.,1.);
+  c*=1.-smoothstep(.35,.8,rim)*.22;
+ }
+ gl_FragColor=vec4(mix(original,c,strength),1.);
 }`;
 // Keep magnified targets independent of the first-person optic housing.
 export function renderWeaponView(renderer,scene,camera){
@@ -60,6 +87,7 @@ export class FrameRenderer{
   this.temporal=this.aa.antialias&&this.aa.taa?new TemporalAA(options.type):null;
   if(this.temporal)this.world.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
   this.spatial=this.aa.antialias&&this.aa.aaFilter!=='none'?new SpatialAA(this.aa.aaFilter,options.type):null;
+  this.cleanActors=new PixelForgeMask(this.world.samples);this.pixelForgeIntensity=quality.pixelForge===false?0:(quality.pixelForgeIntensity??1);
   this.gun=new THREE.WebGLRenderTarget(1,1,options);this.gun.samples=this.world.samples;
   this.ambientTarget=new THREE.WebGLRenderTarget(1,1,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,depthBuffer:false});
   const aoPreset={low:{ratio:.35,samples:8},medium:{ratio:.45,samples:12},high:{ratio:.6,samples:16}}[quality.aoQuality]||{ratio:.45,samples:12};this.aoRatio=aoPreset.ratio;
@@ -73,10 +101,12 @@ export class FrameRenderer{
   const common={worldTex:{value:this.world.texture},gunTex:{value:this.gun.texture}};
   this.prefilter=new THREE.ShaderMaterial({uniforms:common,vertexShader:vertex,fragmentShader:prefilter,depthTest:false,depthWrite:false,toneMapped:false});
   this.blur=new THREE.ShaderMaterial({uniforms:{image:{value:null},direction:{value:new THREE.Vector2()}},vertexShader:vertex,fragmentShader:blur,depthTest:false,depthWrite:false,toneMapped:false});
-  this.output=new THREE.ShaderMaterial({uniforms:{...common,untonemappedExposure:{value:quality.toneMap==='none'?(quality.exposure??1):1},vignetteAmount:{value:quality.vignette??1},grainAmount:{value:quality.grain===false?0:1},gradeAmount:{value:quality.colorGrade===false?0:1},antialias:{value:quality.antialias===false?0:1},underwater:{value:0},bloomAmount:{value:this.bloomEnabled?(quality.bloomStrength??1):0},aoAmount:{value:this.gtao ? (quality.aoStrength??.65) : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false});
+  this.output=new THREE.ShaderMaterial({uniforms:{...common,cleanActorTex:{value:this.cleanActors.target.texture},pixelForgeAmount:{value:this.pixelForgeIntensity},displayToneMap:{value:1},toneMappingExposure:{value:1},untonemappedExposure:{value:quality.toneMap==='none'?(quality.exposure??1):1},vignetteAmount:{value:quality.vignette??1},grainAmount:{value:quality.grain===false?0:1},gradeAmount:{value:quality.colorGrade===false?0:1},antialias:{value:quality.antialias===false?0:1},underwater:{value:0},bloomAmount:{value:this.bloomEnabled?(quality.bloomStrength??1):0},aoAmount:{value:this.gtao ? (quality.aoStrength??.65) : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false,toneMapped:false});
+  this.styledInput=new THREE.WebGLRenderTarget(1,1,{depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+  this.forge=new THREE.ShaderMaterial({uniforms:{image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
   this.resize();
  }
- resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*this.aoRatio)),ah=Math.max(1,Math.floor(size.y*this.aoRatio));this.world.setSize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y);this.temporal?.resize(size.x,size.y);this.spatial?.resize(size.x,size.y)}
+ resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*this.aoRatio)),ah=Math.max(1,Math.floor(size.y*this.aoRatio));this.world.setSize(size.x,size.y);this.styledInput.setSize(size.x,size.y);this.cleanActors.resize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y);this.temporal?.resize(size.x,size.y);this.spatial?.resize(size.x,size.y)}
  pass(material,target){this.quad.material=material;this.renderer.setRenderTarget(target);this.renderer.render(this.scene,this.camera)}
  render(scene,camera,dt,slow=false,waterVolumes=[]){
   const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate;
@@ -90,6 +120,8 @@ export class FrameRenderer{
   camera.layers.set(0);
   if(this.gtao)this.gtao.render(r,this.ambientTarget,this.world);else{r.setRenderTarget(this.ambientTarget);r.setClearColor(0xffffff,1);r.clear()}
   }finally{this.temporal?.restore(camera);}
+  this.output.uniforms.pixelForgeAmount.value=this.pixelForgeIntensity;
+  if(this.pixelForgeIntensity>0)this.cleanActors.render(r,scene,camera);
   const worldTexture=this.temporal?this.temporal.resolve(camera,this.world,(m,t)=>this.pass(m,t)):this.world.texture;this.output.uniforms.worldTex.value=worldTexture;
   scene.fog=airFog;camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
   this.finish();
@@ -100,14 +132,14 @@ export class FrameRenderer{
   r.setRenderTarget(this.ambientTarget);r.setClearColor(0xffffff,1);r.clear();
   camera.layers.set(1);scene.background=null;r.shadowMap.autoUpdate=false;
   try{r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();r.render(scene,camera);}finally{camera.layers.mask=mask;scene.background=background;r.shadowMap.autoUpdate=autoShadow;}
-  this.output.uniforms.underwater.value=0;this.output.uniforms.slow.value=0;this.resetHistory();this.finish();
+  this.output.uniforms.underwater.value=0;this.output.uniforms.slow.value=0;this.resetHistory();this.output.uniforms.pixelForgeAmount.value=0;this.finish();
  }
- finish(){const r=this.renderer;
-  if(this.bloomEnabled){this.pass(this.prefilter,this.bloomA);this.blur.uniforms.image.value=this.bloomA.texture;this.blur.uniforms.direction.value.set(1/this.bloomA.width,0);this.pass(this.blur,this.bloomB);this.blur.uniforms.image.value=this.bloomB.texture;this.blur.uniforms.direction.value.set(0,1/this.bloomB.height);this.pass(this.blur,this.bloomA);}else{r.setRenderTarget(this.bloomA);r.setClearColor(0,1);r.clear();}this.pass(this.output,this.spatial?.input||null);this.spatial?.render(r,(m,t)=>this.pass(m,t));r.setClearColor(0x182127,1);
+ finish(){const r=this.renderer;this.output.uniforms.displayToneMap.value=r.toneMapping===THREE.NeutralToneMapping?2:r.toneMapping===THREE.NoToneMapping?0:1;this.output.uniforms.toneMappingExposure.value=r.toneMappingExposure;
+  if(this.bloomEnabled){this.pass(this.prefilter,this.bloomA);this.blur.uniforms.image.value=this.bloomA.texture;this.blur.uniforms.direction.value.set(1/this.bloomA.width,0);this.pass(this.blur,this.bloomB);this.blur.uniforms.image.value=this.bloomB.texture;this.blur.uniforms.direction.value.set(0,1/this.bloomB.height);this.pass(this.blur,this.bloomA);}else{r.setRenderTarget(this.bloomA);r.setClearColor(0,1);r.clear();}const styled=this.output.uniforms.pixelForgeAmount.value>0;this.pass(this.output,this.spatial?.input||(styled?this.styledInput:null));this.spatial?.render(r,(m,t)=>this.pass(m,t),true,styled?this.styledInput:null);if(styled)this.pass(this.forge,null);r.setClearColor(0x182127,1);
  }
  resetHistory(){this.temporal?.reset()}
  aaSummary(){const parts=[];if(this.aa.antialias){if(this.world.samples)parts.push(this.world.samples+'× MSAA');if(this.temporal)parts.push('TAA (experimental)');if(this.spatial)parts.push(this.aa.aaFilter.toUpperCase());}return (parts.join(' + ')||'AA off')+' · '+this.world.width+' × '+this.world.height;}
- dispose(){this.temporal?.dispose();this.spatial?.dispose();this.world.depthTexture?.dispose();for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
+ dispose(){this.styledInput.dispose();this.forge.dispose();this.cleanActors.dispose();this.temporal?.dispose();this.spatial?.dispose();this.world.depthTexture?.dispose();for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
 }
 
 let contactTexture;

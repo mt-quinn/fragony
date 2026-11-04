@@ -185,3 +185,9 @@ Sprinting has been replaced by a generous momentum crouch slide with forgiving u
 ### Industrial presentation and imported arenas
 
 All twenty active maps now use industrial and construction finishes across 100 distinct physical districts: brick workshops, blue/green enamel plant rooms, ochre loading areas, timber partitions, concrete, tiled utilities and aggregate yards. Shared physical textures add grain, seams, relief and roughness. See [the current material pass](docs/industrial-materials.md). Rust retains its supplied refinery layout and four deliberate jump routes. Stock Shipment replaces the previous Shipment2 variant; Nuketown is added from Stendby’s editable Nuked adaptation. Both Radiant imports preserve source architecture, interiors and cover, use cached bot navigation, and remove exterior scenery. Practice offers a map chooser and keeps your selected weapon/conversion when switching maps. [Design, source fidelity and validation](docs/industrial-presentation.md).
+
+### Pixel Forge
+
+Graphics settings include Pixel Forge, enabled at 100% by default, with a persistent on/off toggle and 0–100% intensity slider on desktop and mobile. Its detail scale is fixed to the approved 0.5× art-lab setting (1.75 render pixels); it has no size control. The arena and main-menu environment use the limited palette and ordered dither, while character rigs, their weapons, first-person guns, and HUD retain their original shading. A depth-tested actor mask respects walls and cover. Pixel Forge runs last after MSAA/TAA, display finishing and optional FXAA/SMAA, so antialiasing cannot blur its pattern. Turning it off or setting intensity to zero skips the mask and final styling pass. Weapon inspection stays clean.
+
+`tests/pixel-forge.mjs` covers defaults/migration, live saved controls, mask restoration/lifecycle and final pass ordering; AA lifecycle and menu-stage checks also cover the new resources and menu character exclusion.

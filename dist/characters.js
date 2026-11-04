@@ -24,6 +24,7 @@ function joint(parent,mat,x,y,z,r){return mesh(parent,geo.joint,mat,x,y,z,r,r,r)
 function pivot(parent,x=0,y=0,z=0){const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);return g}
 export function createDummyRig({mat,target,weapon='rifle'}){
  const group=new THREE.Group(),parts={},joints={},markers={},shellMat=mat(0xd9ef45),black=mat(0x182127),metal=mat(0x606c6d);
+ group.userData.pixelForgeClean=true;
  const part=(name,x,y,z)=>{const p=pivot(group,x,y,z);p.name=name;p.userData.part=name;parts[name]=p;return p};
  const mark=(name,parent,x=0,y=0,z=0)=>{const m=pivot(parent,x,y,z);markers[name]=m;return m};
  const shell=(parent,g,x=0,y=0,z=0,sx=1,sy=1,sz=1)=>mesh(parent,g,shellMat,x,y,z,sx,sy,sz,true);

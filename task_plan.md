@@ -21,7 +21,7 @@ Completed: full graphics controls; independent resolution/effects/AA; six native
 
 1. Inspect reticle labels, touch controls, collision movement, gear/shop/save paths — complete.
 2. Add sustained-obstruction auto-jump and held water exit; remove permanent reticle labels/throwables; universal mobile auto-fire and vocabulary — complete.
-3. Test movement edge cases and saved-run/shop migration, review browser UI and full gameplay, build and publish existing Site — verification complete; publishing in progress.
+3. Test movement edge cases and saved-run/shop migration, review browser UI and full gameplay, build and publish existing Site — complete.
 
 Preserve desktop jump/crouch and gun-fired rockets/explosive ammunition. Mobile auto-jump uses the full existing jump impulse. Remove grenade mechanics from benchmark too.
 

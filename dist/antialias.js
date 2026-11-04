@@ -76,6 +76,7 @@ export class SpatialAA{
  constructor(filter,type){
   this.filter=filter;this.input=new THREE.WebGLRenderTarget(1,1,{type,depthBuffer:false});
   this.output=new OutputPass();
+  this.displayCopy=new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:'varying vec2 vUv;uniform sampler2D image;void main(){gl_FragColor=texture2D(image,vUv);}',uniforms:{image:{value:null}},depthTest:false,depthWrite:false,toneMapped:false});
   if(filter==='smaa'){
    this.smaa=new SMAAPass();
    // Match the existing byte fallback on devices without HDR render targets.
@@ -87,9 +88,16 @@ export class SpatialAA{
   }
  }
  resize(w,h){this.input.setSize(w,h);this.filtered.setSize(w,h);this.smaa?.setSize(w,h);this.fxaa?.uniforms.resolution.value.set(1/w,1/h);}
- render(renderer,pass){
+ render(renderer,pass,displayReferred=false,target=null){
+  if(displayReferred){
+   // FrameRenderer has already applied its tone map, palette and sRGB transfer.
+   // Applying OutputPass here would tone-map the palette a second time.
+   if(this.smaa){this.smaa.render(renderer,this.filtered,this.input);this.displayCopy.uniforms.image.value=this.filtered.texture;pass(this.displayCopy,target);}
+   else{this.fxaa.uniforms.tDiffuse.value=this.input.texture;pass(this.fxaa,target);}
+   return;
+  }
   if(this.smaa){this.smaa.render(renderer,this.filtered,this.input);this.output.render(renderer,null,this.filtered);}
   else{this.output.render(renderer,this.filtered,this.input);this.fxaa.uniforms.tDiffuse.value=this.filtered.texture;pass(this.fxaa,null);}
  }
- dispose(){this.input.dispose();this.filtered.dispose();this.output.dispose();this.smaa?.dispose();this.fxaa?.dispose();}
+ dispose(){this.input.dispose();this.filtered.dispose();this.output.dispose();this.displayCopy.dispose();this.smaa?.dispose();this.fxaa?.dispose();}
 }

@@ -1,7 +1,7 @@
 import fs from 'node:fs';import path from 'node:path';import specs from '../dist/maps/source-arena-specs.js';import {fileURLToPath} from 'node:url';import {gzipSync} from 'node:zlib';
 // Preserve authoring archives in source; ship the prepared render/physics used
 // by the active browser build. Local authoring and previews still use dist.
-const root=new URL('../',import.meta.url),source=new URL('dist/',root),output=new URL('build/',root),excluded=new Set();
+const root=new URL('../',import.meta.url),source=new URL('dist/',root),output=new URL('build/',root),excluded=new Set(['art-lab.html','art-lab.css','art-lab.js','art-lab-shaders.js']);
 for(const spec of specs){
  if(!spec.precompiled)continue;
  for(const family of ['render','physics'])if(!fs.existsSync(new URL('maps/'+spec.id+'-'+family+'.json.gz',source)))throw Error('Missing prepared '+family+' for '+spec.id);
