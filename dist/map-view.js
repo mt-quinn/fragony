@@ -7,7 +7,7 @@ export function buildBrushMap(arena,map,blocks,worldMeshes){
  blocks.push(...map.brushes.map(b=>({...b})));
  if(map.brushes.triangleCollision)blocks.triangleCollision=map.brushes.triangleCollision;
  const industrial=industrialDistricts(map.id).length>0;
- if(industrial){for(const {family,geometry,material}of industrialGroups(map)){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=!['glass','light','fence'].includes(family.split('~')[0]);mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh,true);worldMeshes.push(mesh);}}
+ if(industrial){for(const {family,geometry,material}of industrialGroups(map)){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=!['glass','light','fence'].includes(family.split('~')[0].split('@')[0]);mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh,true);worldMeshes.push(mesh);}}
  else{
  for(const [kind,g] of Object.entries(map.groups)){
   if(kind==='water')continue;

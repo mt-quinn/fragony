@@ -3,6 +3,7 @@ import * as THREE from './vendor/three.module.js';
 import {industrialResources} from './testworks.js';
 import {applyIndustrialFinishes} from './industrial-palettes.js';
 import {industrialSurface} from './industrial-surfaces.js';
+import {shootHouseSurface,styleShootHouseMaterial,SHOOTHOUSE_AREAS,SHOOTHOUSE_COLORS} from './shoothouse-art.js';
 import {sourceDistricts,sourceDistrictIndex,sourceDistrictCuts,sourceFittings} from './maps/source-districts.js';
 const area=(id,name,wall,floor,accent,type='concrete')=>({id,name,wall,floor,accent,type});
 const districts={
@@ -60,6 +61,7 @@ districts.reservoir[0].wallType='coated';districts.reservoir[0].wall=0xa6beb0;
 districts.reservoir[1].wallType='coated';districts.reservoir[3].wallType='paint';
 Object.assign(districts,sourceDistricts);
 applyIndustrialFinishes(districts);
+for(const a of districts.shoothouse){const art=SHOOTHOUSE_AREAS[a.id];a.wall=SHOOTHOUSE_COLORS[art.primary];a.floor=SHOOTHOUSE_COLORS.slate;a.accent=SHOOTHOUSE_COLORS[art.accent];a.type='asphalt';a.wallType='paint';}
 export function industrialDistricts(id){return districts[id]||[];}
 export function industrialDistrict(id,x,y,z){const a=districts[id];if(!a)return null;
  if(sourceDistricts[id])return a[sourceDistrictIndex(id,x,y,z)];
@@ -75,20 +77,22 @@ const materialCache=new Map();let fenceTexture;
 function chainlink(){if(fenceTexture)return fenceTexture;const size=64,data=new Uint8Array(size*size*4);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const edge=((x+y)%16<1.6)||((x-y+128)%16<1.6),i=(y*size+x)*4;data[i]=data[i+1]=data[i+2]=edge?255:0;data[i+3]=255;}fenceTexture=new THREE.DataTexture(data,size,size);fenceTexture.wrapS=fenceTexture.wrapT=THREE.RepeatWrapping;fenceTexture.magFilter=THREE.LinearFilter;fenceTexture.minFilter=THREE.LinearMipmapLinearFilter;fenceTexture.generateMipmaps=true;fenceTexture.needsUpdate=true;return fenceTexture;}
 function fenceAlpha(uv){const x=((uv.x%1)+1)%1*64,y=((uv.y%1)+1)%1*64;return((x+y)%16<1.6)||(((x-y+128)%16)<1.6);}
 
-function material(family){
- if(materialCache.has(family))return materialCache.get(family);
- const cacheKey=family,front=family.endsWith('~front');family=family.split('~')[0];
+function material(family,art=false){
+ const cacheKey=(art?'shoothouse:':'')+family;if(materialCache.has(cacheKey))return materialCache.get(cacheKey);
+ const front=family.endsWith('~front');family=family.split('~')[0];const recipe=family.split('@')[1];family=family.split('@')[0];
  const metal=family==='steel',glass=family==='glass',textured=!['glass','light','fence','rubber'].includes(family);
  const m=new THREE.MeshStandardMaterial({name:'industrial-'+family,color:0xffffff,vertexColors:true,roughness:glass?.3:1,metalness:metal?.42:family==='paint'?.08:0,side:front?THREE.FrontSide:THREE.DoubleSide,...(textured?industrialSurface(family):{})});
  if(family==='fence'){m.alphaMap=chainlink();m.alphaTest=.5;m.roughness=.83;m.userData.alphaAt=fenceAlpha;}
  if(family==='light'){m.emissive.setHex(0xffe1a0);m.emissiveIntensity=.65;}
  if(glass){m.transparent=true;m.opacity=.26;m.depthWrite=false;}
+ if(art||recipe)styleShootHouseMaterial(m,recipe||'');
+ if(art&&family==='asphalt'){m.map=null;m.bumpMap=null;}
  materialCache.set(cacheKey,m);return m;
 }
 // Exact source triangles, recolored by their physical district and material role.
 // Only visual attributes change; no simplification or shifted original geometry.
 export function industrialGroups(map){
- if(map.renderChunks)return map.renderChunks.map(chunk=>{const geometry=new THREE.BufferGeometry();for(const [name,a]of Object.entries(chunk.attributes))geometry.setAttribute(name,new THREE.BufferAttribute(a.array,a.size,a.normalized));if(chunk.index)geometry.setIndex(new THREE.BufferAttribute(chunk.index.array,1));geometry.computeBoundingSphere();geometry.userData.sourceBVH=chunk.bvh;return{family:chunk.family,geometry,material:material(chunk.family)}});
+ if(map.renderChunks)return map.renderChunks.map(chunk=>{const geometry=new THREE.BufferGeometry();for(const [name,a]of Object.entries(chunk.attributes))geometry.setAttribute(name,new THREE.BufferAttribute(a.array,a.size,a.normalized));if(chunk.index)geometry.setIndex(new THREE.BufferAttribute(chunk.index.array,1));geometry.computeBoundingSphere();geometry.userData.sourceBVH=chunk.bvh;return{family:chunk.family,geometry,material:material(chunk.family,map.id==='shoothouse')}});
  const buckets=new Map(),color=new THREE.Color(),chunked=!!sourceDistricts[map.id];
  for(const [kind,g]of Object.entries(map.groups)){
   if(kind==='water')continue;
@@ -97,17 +101,18 @@ export function industrialGroups(map){
    // its authored normals so DoubleSide does not light its outside as an inside.
    const u=tri[1].p.map((v,k)=>v-tri[0].p[k]),v=tri[2].p.map((v,k)=>v-tri[0].p[k]),cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],dot=cross.reduce((sum,value,k)=>sum+value*(tri[0].n[k]+tri[1].n[k]+tri[2].n[k]),0);if(dot<0)[tri[1],tri[2]]=[tri[2],tri[1]];
    const p=tri.flatMap(v=>v.p),n=tri.flatMap(v=>v.n),x=(p[0]+p[3]+p[6])/3,y=(p[1]+p[4]+p[7])/3,z=(p[2]+p[5]+p[8])/3,nx=(n[0]+n[3]+n[6])/3,ny=(n[1]+n[4]+n[7])/3,a=industrialDistrict(map.id,x,y,z);if(!a)continue;
-   const equipment=/^prop_/.test(kind)&&!/pallet|wood|board|stone|concrete|column|rock|brick|cinder|sandbag/.test(kind),wood=/pallet|wood|board/.test(kind)||(map.id==='killhouse'&&kind==='concrete'&&Math.abs(ny)<.5&&y<7&&Math.abs(x)<18&&Math.abs(z)<38),floor=ny>.65,ceiling=ny<-.65,fence=/fence|grate|chainlink/.test(kind),metal=/^(steel|ink|trim)$|metal|pipe|rail|structural/.test(kind),container=/container|cargo/.test(kind),paint=equipment||container||['blue','warm','accent','paint','equipment','model-cover'].includes(kind),light=kind==='light'||/lightpanel|worklight/.test(kind),family=kind==='landscape'?'asphalt':kind==='rubber'?'rubber':wood?'wood':fence?'fence':kind==='glass'?'glass':light?'light':metal?'steel':paint?'paint':floor?a.type:ceiling?'concrete':(a.wallType||'concrete');
+   const equipment=/^prop_/.test(kind)&&!/pallet|wood|board|stone|concrete|column|rock|brick|cinder|sandbag/.test(kind),wood=/pallet|wood|board/.test(kind)||(map.id==='killhouse'&&kind==='concrete'&&Math.abs(ny)<.5&&y<7&&Math.abs(x)<18&&Math.abs(z)<38),floor=ny>.65,ceiling=ny<-.65,fence=/fence|grate|chainlink/.test(kind),metal=/^(steel|ink|trim)$|metal|pipe|rail|structural/.test(kind),container=/container|cargo/.test(kind),paint=equipment||container||['blue','warm','accent','paint','equipment','model-cover'].includes(kind),light=kind==='light'||/lightpanel|worklight/.test(kind),baseFamily=kind==='landscape'?'asphalt':kind==='rubber'?'rubber':wood?'wood':fence?'fence':kind==='glass'?'glass':light?'light':metal?'steel':paint?'paint':floor?a.type:ceiling?'concrete':(a.wallType||'concrete');
    const containerColor=/blue/.test(kind)?0x527f96:/green|teal/.test(kind)?0x527c65:/white/.test(kind)?0xbfb9a2:/red|rust/.test(kind)?0xa56043:a.accent;
-   const hex=kind==='snow'?0xd4ded2:kind==='rubber'?0x46534c:/prop_t5_veh_schoolbus/.test(kind)?0xbba06a:/prop_t5_veh_movingtruck/.test(kind)?0x779b94:kind==='landscape'?(floor?0xa69775:0x8c826b):wood?(map.id==='nuketown'?a.wall:0xae8c5b):fence?0x788a7b:light?0xe3e7ce:ceiling?0xbcb9ab:metal?floor?0x7c8584:/^(ink|trim)$|rail|pipe/.test(kind)?0x596963:a.wall:container?containerColor:paint?a.accent:floor?a.floor:a.wall;
-   color.setHex(hex);color.multiplyScalar(.96+.04*Math.max(0,ny)+nx*.025);
-   const key=chunked?family+':'+Math.floor(x/24)+','+Math.floor(z/24):family;let b=buckets.get(key);if(!b){b={family,p:new FloatBuilder(),n:new FloatBuilder(),c:new FloatBuilder(),uv:new FloatBuilder()};buckets.set(key,b);}
+   let hex=kind==='snow'?0xd4ded2:kind==='rubber'?0x46534c:/prop_t5_veh_schoolbus/.test(kind)?0xbba06a:/prop_t5_veh_movingtruck/.test(kind)?0x779b94:kind==='landscape'?(floor?0xa69775:0x8c826b):wood?(map.id==='nuketown'?a.wall:0xae8c5b):fence?0x788a7b:light?0xe3e7ce:ceiling?0xbcb9ab:metal?floor?0x7c8584:/^(ink|trim)$|rail|pipe/.test(kind)?0x596963:a.wall:container?containerColor:paint?a.accent:floor?a.floor:a.wall;
+   let family=baseFamily;
+   if(map.id==='shoothouse'&&map.surfaceObjects){const objectIndex=map.surfaceObjects.groups[kind][source/9]-1,o=map.surfaceObjects.objects[objectIndex],paint=shootHouseSurface(kind,o,p,n);family=paint.family;hex=paint.hex;color.setHex(hex).multiplyScalar(paint.shade);}else{color.setHex(hex);color.multiplyScalar(.96+.04*Math.max(0,ny)+nx*.025);}
+   const tile=map.id==='shoothouse'?48:24,key=chunked?family+':'+Math.floor(x/tile)+','+Math.floor(z/tile):family;let b=buckets.get(key);if(!b){b={family,p:new FloatBuilder(),n:new FloatBuilder(),c:new FloatBuilder(),uv:new FloatBuilder()};buckets.set(key,b);}
    for(let j=0;j<9;j+=3){b.p.push(p[j],p[j+1],p[j+2]);b.n.push(n[j],n[j+1],n[j+2]);b.c.push(color.r,color.g,color.b);const xx=p[j],yy=p[j+1],zz=p[j+2],ax=Math.abs(n[j]),ay=Math.abs(n[j+1]);b.uv.push((ay>.5?xx:ax>.5?zz:xx)*.45,(ay>.5?zz:yy)*.45);}
 
   }
  }
  const raw=[...buckets.values()].map(b=>{const geometry=new THREE.BufferGeometry();for(const [name,key,size]of[['position','p',3],['normal','n',3],['color','c',3],['uv','uv',2]])geometry.setAttribute(name,new THREE.BufferAttribute(b[key].finish(),size));return{family:b.family,geometry};});
- return cleanCoplanarSurfaces(raw).map(({family,geometry})=>{indexSourceGeometry(geometry);geometry.computeBoundingSphere();return{family,geometry,material:material(family)};});
+ return cleanCoplanarSurfaces(raw).map(({family,geometry})=>{indexSourceGeometry(geometry);geometry.computeBoundingSphere();return{family,geometry,material:material(family,map.id==='shoothouse')};});
 }
 
 function indexSourceGeometry(geometry){
@@ -131,7 +136,7 @@ const districtCuts={
 };
 function districtTriangles(id,g,offset){
  let polygons=[Array.from({length:3},(_,j)=>({p:Array.from(g.p.slice(offset+j*3,offset+j*3+3)),n:Array.from(g.n.slice(offset+j*3,offset+j*3+3))}))];
- for(const [axis,value]of districtCuts[id]||[]){const next=[];for(const polygon of polygons){const min=Math.min(...polygon.map(v=>v.p[axis])),max=Math.max(...polygon.map(v=>v.p[axis]));if(min>=value-1e-5||max<=value+1e-5){next.push(polygon);continue;}for(const sign of [-1,1]){const out=[];for(let j=0;j<polygon.length;j++){const a=polygon[j],b=polygon[(j+1)%polygon.length],da=(a.p[axis]-value)*sign,db=(b.p[axis]-value)*sign;if(da>=-1e-6)out.push(a);if(da*db< -1e-10){const t=da/(da-db);out.push({p:a.p.map((v,k)=>v+(b.p[k]-v)*t),n:a.n.map((v,k)=>v+(b.n[k]-v)*t)});}}if(out.length>=3)next.push(out);}}polygons=next;}
+ for(const [axis,value]of (id==='shoothouse'?[]:districtCuts[id]||[])){const next=[];for(const polygon of polygons){const min=Math.min(...polygon.map(v=>v.p[axis])),max=Math.max(...polygon.map(v=>v.p[axis]));if(min>=value-1e-5||max<=value+1e-5){next.push(polygon);continue;}for(const sign of [-1,1]){const out=[];for(let j=0;j<polygon.length;j++){const a=polygon[j],b=polygon[(j+1)%polygon.length],da=(a.p[axis]-value)*sign,db=(b.p[axis]-value)*sign;if(da>=-1e-6)out.push(a);if(da*db< -1e-10){const t=da/(da-db);out.push({p:a.p.map((v,k)=>v+(b.p[k]-v)*t),n:a.n.map((v,k)=>v+(b.n[k]-v)*t)});}}if(out.length>=3)next.push(out);}}polygons=next;}
  const triangles=[];for(const p of polygons)for(let i=1;i<p.length-1;i++)triangles.push([p[0],p[i],p[i+1]]);return triangles;
 }
 
@@ -219,7 +224,7 @@ export function dressIndustrialArena(arena,map,worldMeshes){
  for(const [text,p,d,panel=false]of sourceFittings[map.id]||[])anchored(text,p,d,panel?2.2:3.4,panel?1.3:.58,panel);
  function sign(text,x,y,z,w,h,yaw=0,quaternion=null,panel=false){
   if(typeof document==='undefined')return;
-  const cv=document.createElement('canvas');cv.width=1024;cv.height=256;const c=cv.getContext('2d');if(!c?.fillRect)return;c.fillStyle=panel?'#91a79c':'#a9b7a6';c.fillRect(0,0,1024,256);c.fillStyle='#344c40';
+  const cv=document.createElement('canvas');cv.width=1024;cv.height=256;const c=cv.getContext('2d');if(!c?.fillRect)return;const art=map.id==='shoothouse'?industrialDistrict(map.id,x,y,z):null;c.fillStyle=art?'#'+art.accent.toString(16).padStart(6,'0'):panel?'#91a79c':'#a9b7a6';c.fillRect(0,0,1024,256);c.fillStyle=art?'#24343d':'#344c40';
   if(panel){c.fillRect(27,20,3,218);c.fillRect(505,20,3,218);for(const xx of [440,920])c.fillRect(xx,105,9,52);for(const yy of [185,201,217])c.fillRect(50,yy,890,3);}else{c.font='700 92px Arial';c.textBaseline='middle';c.fillText(text,32,131,960);}
   const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=4;const mat=new THREE.MeshStandardMaterial({map:tx,roughness:.84,polygonOffset:true,polygonOffsetFactor:-2});mat.userData.arenaOwnedMaterial=true;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);mesh.position.set(x,y,z);if(quaternion)mesh.quaternion.copy(quaternion);else mesh.rotation.y=yaw;mesh.layers.set(2);mesh.name='industrial-'+(text||'service-panel');arena.add(mesh);
  }

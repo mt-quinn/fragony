@@ -45,7 +45,17 @@ export class PixelForgeMask{
   this.black=new THREE.MeshBasicMaterial({color:0x000000,side:THREE.DoubleSide,fog:false,toneMapped:false});
   this.white=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,fog:false,toneMapped:false});
   this.clearColor=new THREE.Color();
-  this.meshes=[];this.materials=[];this.hidden=[];
+  this.meshes=[];this.materials=[];this.hidden=[];this.cutouts=new WeakMap();this.cutoutMaterials=new Set();
+ }
+ maskMaterial(source,clean){
+  const base=clean?this.white:this.black;
+  if(!source?.alphaTest||(!source.alphaMap&&!source.map))return base;
+  let pair=this.cutouts.get(source);if(!pair){pair={};this.cutouts.set(source,pair);}
+  const key=clean?'white':'black';if(!pair[key]){
+   const material=base.clone();material.alphaTest=source.alphaTest;material.alphaMap=source.alphaMap;material.map=source.map;material.side=source.side;
+   pair[key]=material;this.cutoutMaterials.add(material);
+  }
+  return pair[key];
  }
  resize(w,h){this.target.setSize(w,h);}
  render(renderer,scene,camera){
@@ -57,7 +67,7 @@ export class PixelForgeMask{
     const m=o.material,transparent=Array.isArray(m)?m.every(x=>x.transparent&&!x.depthWrite):m?.transparent&&!m.depthWrite;
     // Smoke, tracers and water must not hide the clean actor beneath them.
     if(transparent){this.hidden.push(o);o.visible=false;return;}
-    this.meshes.push(o);this.materials.push(m);o.material=clean?this.white:this.black;
+    this.meshes.push(o);this.materials.push(m);o.material=Array.isArray(m)?m.map(source=>this.maskMaterial(source,clean)):this.maskMaterial(m,clean);
    }
    for(const child of o.children)visit(child,clean);
   };
@@ -73,5 +83,5 @@ export class PixelForgeMask{
    renderer.setRenderTarget(target);renderer.setClearColor(clearColor,clearAlpha);
   }
  }
- dispose(){this.target.depthTexture.dispose();this.target.dispose();this.black.dispose();this.white.dispose();}
+ dispose(){for(const m of this.cutoutMaterials)m.dispose();this.cutoutMaterials.clear();this.target.depthTexture.dispose();this.target.dispose();this.black.dispose();this.white.dispose();}
 }

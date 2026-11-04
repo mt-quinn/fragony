@@ -10,7 +10,7 @@ export function cleanCoplanarSurfaces(groups){
  for(const [bucket,{family,geometry:g}]of groups.entries()){
   const pos=g.attributes.position,count=g.index?g.index.count:pos.count,read=i=>{const j=g.index?g.index.array[i]:i;return['position','normal','color','uv'].flatMap(k=>Array.from({length:g.attributes[k].itemSize},(_,n)=>g.attributes[k].getComponent(j,n)));};
   for(let i=0;i<count;i+=3){const v=[read(i),read(i+1),read(i+2)],u=sub(v[1],v[0]),w=sub(v[2],v[0]),n=[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]],len=Math.hypot(...n);if(len<1e-12)continue;originalArea+=len/2;for(let k=0;k<3;k++)n[k]/=len;
-   const axis=n.map(x=>Math.round(Math.abs(x)*10000)).indexOf(Math.max(...n.map(x=>Math.round(Math.abs(x)*10000)))),axes=[0,1,2].filter(k=>k!==axis),sign=n[[0,1,2].find(k=>!axes.includes(k))]>0?1:-1,d=n.reduce((s,x,k)=>s+x*v[0][k],0),flat=!['glass','fence'].includes(family)&&v.every(a=>Math.abs(a[3]*n[0]+a[4]*n[1]+a[5]*n[2])>.9999&&[3,4,5,6,7,8].every(k=>Math.abs(a[k]-v[0][k])<1e-6));
+   const axis=n.map(x=>Math.round(Math.abs(x)*10000)).indexOf(Math.max(...n.map(x=>Math.round(Math.abs(x)*10000)))),axes=[0,1,2].filter(k=>k!==axis),sign=n[[0,1,2].find(k=>!axes.includes(k))]>0?1:-1,d=n.reduce((s,x,k)=>s+x*v[0][k],0),flat=!['glass','fence'].includes(family.split('@')[0])&&v.every(a=>Math.abs(a[3]*n[0]+a[4]*n[1]+a[5]*n[2])>.9999&&[3,4,5,6,7,8].every(k=>Math.abs(a[k]-v[0][k])<1e-6));
    if(!flat){pass.push({bucket,family,v,area:len/2});continue;}
    const planeKey=n.map(x=>Math.round(x*sign*1000000)).join(',')+':'+Math.round(d*sign/EPS),plane=planes.get(planeKey)||new Map();if(!planes.has(planeKey))planes.set(planeKey,plane);
    const key=bucket+':'+sign+':'+v[0].slice(3,6).map(x=>Math.round(x*100000)).join(',')+':'+v[0].slice(6,9).map(x=>Math.round(x*255)).join(','),s=plane.get(key)||{bucket,family,sign,axes,ref:v,refArea:len/2,triangles:[],area:0};if(!plane.has(key))plane.set(key,s);s.area+=len/2;if(len/2>s.refArea){s.ref=v;s.refArea=len/2;}s.triangles.push([v.map(a=>axes.map(k=>Math.round(a[k]*Q)/Q))]);
@@ -19,7 +19,7 @@ export function cleanCoplanarSurfaces(groups){
  const priority={light:9,paint:8,wood:7,tile:6,brick:5,coated:4,steel:3,rubber:2,concrete:1,asphalt:0};
  for(const sets of planes.values()){
   if(sets.size===1){const s=sets.values().next().value;if(s.triangles.length===1){write(s.bucket+":"+s.family,s.family,s.ref);outputArea+=s.area;continue;}}
-  const list=[...sets.values()].sort((a,b)=>(priority[b.family]??1)-(priority[a.family]??1)||a.area-b.area),coverage={1:[],[-1]:[]},visible=[];
+  const list=[...sets.values()].sort((a,b)=>(priority[b.family.split('@')[0]]??1)-(priority[a.family.split('@')[0]]??1)||a.area-b.area),coverage={1:[],[-1]:[]},visible=[];
   for(const s of list){try{const shape=operation('union',s.triangles),previous=coverage[s.sign],result=previous.length?operation('difference',shape,previous):shape;if(result.length)visible.push({s,shape:result});coverage[s.sign]=previous.length?operation('union',previous,shape):shape;if(s.triangles.length>shape.length)overlaps++;}catch(error){throw Error('Could not resolve source surface coverage: '+error.message);}}
   for(const {s,shape}of visible){const opposite=coverage[-s.sign];if(opposite.length){emit(s,operation('difference',shape,opposite),false);emit(s,operation('intersection',shape,opposite),true);}else emit(s,shape,false);}
  }

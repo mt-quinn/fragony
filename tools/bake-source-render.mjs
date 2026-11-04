@@ -1,11 +1,17 @@
-import fs from 'node:fs';import {gzipSync} from 'node:zlib';import {createHash} from 'node:crypto';
+import fs from 'node:fs';import {gzipSync,gunzipSync} from 'node:zlib';import {createHash} from 'node:crypto';
 import * as THREE from '../dist/vendor/three.module.js';import {MeshBVH,CENTER} from '../dist/vendor/three-mesh-bvh.module.js';
 import {readSourceData,readCompressedJSON} from '../dist/maps/source-data.js';import {industrialGroups} from '../dist/industrial.js';
+import {prepareShootHouseObjects} from '../dist/shoothouse-art.js';
 const root=new URL('../',import.meta.url),specPath=new URL('dist/maps/source-arena-specs.js',root),readSpecs=()=>JSON.parse(fs.readFileSync(specPath,'utf8').split('export default ')[1].trim().replace(/;$/,''));
 const blob=a=>Buffer.from(a instanceof ArrayBuffer?a:a.buffer,a.byteOffset||0,a.byteLength).toString('base64');
 function write(path,data){const temporary=new URL(path.href+'.tmp');fs.writeFileSync(temporary,gzipSync(JSON.stringify(data),{level:6,mtime:0}));fs.renameSync(temporary,path);}
 for(const id of process.argv.slice(2)){
- const began=performance.now(),spec=readSpecs().find(s=>s.id===id),sourcePath=new URL('dist/maps/'+id+'-data.'+(spec?'json.gz':'js'),root),data=spec?await readSourceData(sourcePath):null,map=spec?{...spec,groups:data.groups,source:data.source}:{...(await import('../dist/map.js')).MAPS.find(m=>m.id===id),renderChunks:null};console.log('Preparing',id);
+ const began=performance.now(),spec=readSpecs().find(s=>s.id===id),sourcePath=new URL('dist/maps/'+id+'-data.'+(spec?'json.gz':'js'),root),data=spec?await readSourceData(sourcePath):null,map=spec?{...spec,groups:data.groups,source:data.source}:{...(await import('../dist/map.js')).MAPS.find(m=>m.id===id),renderChunks:null};if(id==='shoothouse'){
+  const art=JSON.parse(gunzipSync(fs.readFileSync(new URL('tools/art/shoothouse-objects.json.gz',root))));
+  if(art.sourceArchiveSHA256!==createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex'))throw Error('Shoot House source changed; recover source object ownership before baking.');
+  map.surfaceObjects=prepareShootHouseObjects(art);
+  for(const [kind,g]of Object.entries(map.groups))if(map.surfaceObjects.groups[kind]?.length!==g.p.length/9)throw Error('Shoot House object coverage mismatch: '+kind);
+ }console.log('Preparing',id);
  const chunks=[];let vertices=0,triangles=0,surfaceCleanup=null;
  for(const {family,geometry}of industrialGroups(map)){
   surfaceCleanup??=geometry.userData.surfaceCleanup;

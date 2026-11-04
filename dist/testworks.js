@@ -232,8 +232,9 @@ function industrialSky(){
  skyTexture=new THREE.DataTexture(data,w,h);skyTexture.colorSpace=THREE.SRGBColorSpace;skyTexture.mapping=THREE.EquirectangularReflectionMapping;skyTexture.magFilter=skyTexture.minFilter=THREE.LinearFilter;skyTexture.needsUpdate=true;return skyTexture;
 }
 export function setArenaAtmosphere(scene,map){
- const industrial=!!map.source||['testworks','reservoir','tidal-lock','parallax','foundry','rust','shipment','nuketown'].includes(map.id);scene.traverse(o=>{if(o.isHemisphereLight)o.intensity=industrial?1.35:1;if(o.isDirectionalLight&&o.castShadow){o.shadow.bias=industrial?-.0003:-.003;o.shadow.normalBias=industrial?.02:.08;o.shadow.radius=industrial?2:1;}});
- scene.background=industrial?industrialSky():new THREE.Color(0x182127);if(scene.fog){scene.fog.color.setHex(industrial?0xc1cbbb:0x182127);scene.fog.near=industrial?62:38;scene.fog.far=industrial?155:120;}
+ const art=map.id==='shoothouse';scene.userData.shootHouseArt=art;scene.environmentIntensity=art?.5:.34;
+ const industrial=!!map.source||['testworks','reservoir','tidal-lock','parallax','foundry','rust','shipment','nuketown'].includes(map.id);scene.traverse(o=>{if(o.isHemisphereLight)o.intensity=art?2.3:industrial?1.35:1;if(o.isDirectionalLight&&o.castShadow){o.shadow.bias=industrial?-.0003:-.003;o.shadow.normalBias=industrial?.02:.08;o.shadow.radius=industrial?2:1;}});
+ scene.background=industrial?industrialSky():new THREE.Color(0x182127);if(scene.fog){scene.fog.color.setHex(art?0x99b9d1:industrial?0xc1cbbb:0x182127);scene.fog.near=industrial?62:38;scene.fog.far=industrial?155:120;}
 }
 
 // A 35mm chamfer catches light on cover edges without changing their gameplay

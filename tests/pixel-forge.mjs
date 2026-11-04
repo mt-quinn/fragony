@@ -69,3 +69,8 @@ settings.pixelForgeIntensity=0;applyGraphicsRendererSettings();assert.equal(grai
 settings.pixelForge=false;settings.pixelForgeIntensity=1;applyGraphicsRendererSettings();assert.equal(grainHidden,false);renderer=null;
 `);
 console.log('Surface texture: unjittered world reconstruction with TAA, mask depth reuse, and removal of screen-fixed grain while styling is active pass.');
+
+// Fences must occlude only their wires, preserving clean health colors through holes.
+const cutoutMask=new PixelForgeMask(),alphaMap=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1),fenceMaterial=new THREE.MeshStandardMaterial({alphaMap,alphaTest:.5,side:THREE.DoubleSide});
+const fenceBlack=cutoutMask.maskMaterial(fenceMaterial,false),fenceWhite=cutoutMask.maskMaterial(fenceMaterial,true);assert.notEqual(fenceBlack,cutoutMask.black);assert.equal(fenceBlack.alphaMap,alphaMap);assert.equal(fenceBlack.alphaTest,.5);assert.equal(fenceBlack.color.getHex(),0);assert.equal(fenceWhite.color.getHex(),0xffffff);assert.equal(cutoutMask.maskMaterial(fenceMaterial,false),fenceBlack);
+let cutoutsDisposed=0;for(const m of [fenceBlack,fenceWhite])m.addEventListener('dispose',()=>cutoutsDisposed++);cutoutMask.dispose();assert.equal(cutoutsDisposed,2);fenceMaterial.dispose();alphaMap.dispose();console.log('Actor masks preserve fence cutouts and dispose cached materials without owning their shared textures.');
