@@ -1,0 +1,5 @@
+import {createGameHarness}from'./harness.mjs';
+const h=createGameHarness(759,{legacyFixtures:false});h.setup();await h.run(`(async()=>{
+for(const id of['rust','shipment','nuketown','rust']){const entry=MAPS.find(m=>m.id===id);if(id!==MAP.id){entry.unload();entry.groups={};}await beginPractice(id);assert.equal(MAP.id,id);assert.ok(worldMeshes.filter(m=>m.geometry.boundsTree).length>3,id+' cold practice uses prepared surfaces even with no raw groups');assert.ok(worldMeshes.reduce((n,m)=>n+(m.geometry.index?.count||0),0)>20000);}
+practiceMode=false;saveRun();changeArena('reservoir');MAPS.find(m=>m.id==='rust').unload();arenaCache.delete('rust');mainMenu();await $('continue').onclick();assert.equal(MAP.id,'rust');assert.ok(worldMeshes.filter(m=>m.geometry.boundsTree).length>3,'cold saved-run continuation uses prepared surfaces');
+})()`,{timeout:180000});console.log('Prepared original maps: cold practice, cache eviction/re-entry and saved-run continuation render full arenas with raw visual groups absent.');

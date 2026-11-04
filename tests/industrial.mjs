@@ -5,11 +5,11 @@ import {industrialGroups,industrialDistricts} from '../dist/industrial.js';
 import {buildBrushMap} from '../dist/map-view.js';
 const triangleArea=(p,i)=>{const ax=p[i+3]-p[i],ay=p[i+4]-p[i+1],az=p[i+5]-p[i+2],bx=p[i+6]-p[i],by=p[i+7]-p[i+1],bz=p[i+8]-p[i+2];return Math.hypot(ay*bz-az*by,az*bx-ax*bz,ax*by-ay*bx)/2;};
 for(const map of MAPS.filter(m=>m.groups)){
- const meshes=industrialGroups(map);assert.ok(meshes.length<=12,map.id+' bounded world material draws');assert.ok(industrialDistricts(map.id).length>=4);
+ const meshes=industrialGroups(map);assert.ok(meshes.length<=24,map.id+' bounded world material draws');assert.ok(industrialDistricts(map.id).length>=4);
  let source=0,result=0;
  for(const [kind,g]of Object.entries(map.groups))if(kind!=='water')for(let i=0;i<g.p.length;i+=9)source+=triangleArea(g.p,i);
- for(const {geometry}of meshes){for(const a of Object.values(geometry.attributes))assert.ok(a.array.every(Number.isFinite),map.id+' finite buffers');const p=geometry.attributes.position.array,n=geometry.attributes.normal.array;for(let i=0;i<p.length;i+=9){result+=triangleArea(p,i);const a=[p[i+3]-p[i],p[i+4]-p[i+1],p[i+5]-p[i+2]],b=[p[i+6]-p[i],p[i+7]-p[i+1],p[i+8]-p[i+2]],cross=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],dot=cross.reduce((s,v,k)=>s+v*(n[i+k]+n[i+k+3]+n[i+k+6]),0);assert.ok(dot>=-1e-5,map.id+' winding agrees with authored normals');}geometry.dispose();}
- assert.ok(Math.abs(source-result)<Math.max(1e-3,source*1e-5),map.id+' district cuts retain the complete source surface');
+ for(const {geometry}of meshes){for(const a of Object.values(geometry.attributes))assert.ok(a.array.every(Number.isFinite),map.id+' finite buffers');const positions=geometry.attributes.position,normals=geometry.attributes.normal,indices=geometry.index?.array||Array.from({length:positions.count},(_,i)=>i),p=new Float64Array(9),n=new Float64Array(9);for(let j=0;j<indices.length;j+=3){for(let v=0;v<3;v++)for(let k=0;k<3;k++){p[v*3+k]=positions.getComponent(indices[j+v],k);n[v*3+k]=normals.getComponent(indices[j+v],k);}const i=0;result+=triangleArea(p,i);const a=[p[i+3]-p[i],p[i+4]-p[i+1],p[i+5]-p[i+2]],b=[p[i+6]-p[i],p[i+7]-p[i+1],p[i+8]-p[i+2]],cross=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],dot=cross.reduce((s,v,k)=>s+v*(n[i+k]+n[i+k+3]+n[i+k+6]),0);assert.ok(dot>=-1e-5,map.id+' winding agrees with authored normals');}geometry.dispose();}
+ const removed=meshes[0]?.geometry.userData.surfaceCleanup?.removedArea||0;assert.ok(Math.abs(source-result-removed)<Math.max(1e-3,source*1e-5),map.id+' retained visible coverage plus proven redundant coverage accounts for every source surface');
 }
 // A real ray must travel through the same chainlink holes that the shader shows.
 const plane=new THREE.PlaneGeometry(2,2).toNonIndexed(),g={p:plane.attributes.position.array,n:plane.attributes.normal.array,c:new Float32Array(plane.attributes.position.count*3)},arena=new THREE.Group(),world=[];

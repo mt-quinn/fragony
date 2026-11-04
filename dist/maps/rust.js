@@ -1,3 +1,4 @@
+import {withPreparedRender} from './prepared-render.js';
 import navigation from './rust-nav.js';
 import data from './rust-data.js';
 import {healthPickup} from '../pickups.js';
@@ -15,5 +16,7 @@ const pickups=[];
 for(const [id,x,y,z,amount]of[['major',1,14.375,-8.5,50],['west',-24,1,1,25],['east',25,1,8,25],['north',10,1,-25,25],['south',6,1,25,25]]){const p=supported(x,y,z);pickups.push(healthPickup('rust-'+id,p[0],p[1],p[2],amount));}
 for(const [i,pad]of pads.entries())for(let j=0;j<3;j++){const p=supported(pad.x+(j-1)*.7,pad.y,pad.z+1.5);pickups.push(healthPickup('rust-trail-'+i+'-'+j,p[0],p[1],p[2],5));}
 const spawns=data.spawns.map(grounded);
-export const RUST={navigation,id:'rust',name:'RUST',description:'Original supplied Rust layout: refinery service yard, process tower and container perimeter.',bounds:{x:39,z:38},floor:{w:80,d:80},maxHeight:40,stepHeight:.57,brushes:data.brushes,groups:data.groups,water:[],stairs:[],solids:[],elevators:[],pads,pickups,spawns,spawnYaws:data.spawns.map(s=>(s.angle-90)*Math.PI/180),areas:[],anchors:[...spawns,...pads.flatMap(p=>[[p.x,p.y,p.z],[p.landing.x,p.landing.y,p.landing.z]]),...pickups.map(p=>[p.x,p.y,p.z])],camera:{position:[51,47,49],target:[2,8,0]}};
+export const RUST={navigation,id:'rust',name:'RUST',description:'Original supplied Rust layout: refinery service yard, process tower and container perimeter.',bounds:{x:39,z:38},floor:{w:80,d:80},maxHeight:40,stepHeight:.6,brushes:data.brushes,groups:data.groups,water:[],stairs:[],solids:[],elevators:[],pads,pickups,spawns,spawnYaws:data.spawns.map(s=>(s.angle-90)*Math.PI/180),areas:[],anchors:[...spawns,...pads.flatMap(p=>[[p.x,p.y,p.z],[p.landing.x,p.landing.y,p.landing.z]]),...pickups.map(p=>[p.x,p.y,p.z])],camera:{position:[51,47,49],target:[2,8,0]}};
 export {data as RUST_SOURCE};
+
+withPreparedRender(RUST);

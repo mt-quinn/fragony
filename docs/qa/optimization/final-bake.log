@@ -1,0 +1,19 @@
+Preparing reservoir
+{"id":"reservoir","chunks":7,"vertices":14358,"triangles":9345,"renderBytes":199607,"physicsBytes":0,"seconds":3}
+Preparing rust
+{"id":"rust","chunks":10,"vertices":79610,"triangles":49076,"renderBytes":1204219,"physicsBytes":0,"seconds":6}
+Preparing shipment
+{"id":"shipment","chunks":13,"vertices":369718,"triangles":177925,"renderBytes":4409044,"physicsBytes":0,"seconds":7}
+Preparing nuketown
+{"id":"nuketown","chunks":18,"vertices":798406,"triangles":362810,"renderBytes":10939249,"physicsBytes":0,"seconds":27}
+Preparing killhouse
+{"id":"killhouse","chunks":84,"vertices":310037,"triangles":152175,"renderBytes":4122483,"physicsBytes":1583120,"seconds":11}
+Preparing vacant
+{"id":"vacant","chunks":253,"vertices":1563562,"triangles":671758,"renderBytes":19332447,"physicsBytes":2463076,"seconds":45}
+Preparing showdown
+{"id":"showdown","chunks":193,"vertices":832848,"triangles":377062,"renderBytes":10331351,"physicsBytes":3504450,"seconds":66}
+Preparing firingrange
+{"id":"firingrange","chunks":228,"vertices":2000423,"triangles":797448,"renderBytes":26706550,"physicsBytes":3204522,"seconds":59}
+Preparing hijacked
+{"id":"hijacked","chunks":129,"vertices":744205,"triangles":295131,"renderBytes":9519302,"physicsBytes":1643069,"seconds":20}
+Preparing summit

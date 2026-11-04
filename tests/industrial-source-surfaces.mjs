@@ -12,6 +12,6 @@ else{
  let before=0,after=0;const p=[[],[],[]];
  for(const[k,g]of Object.entries(source.groups))if(k!=='water')for(let i=0;i<g.p.length;i+=9){for(let j=0;j<3;j++)for(let n=0;n<3;n++)p[j][n]=g.p[i+j*3+n];before+=area(...p);}
  for(const c of chunks){assert.ok(c.attributes.color.array.length);for(let i=0;i<c.index.array.length;i+=3){for(let j=0;j<3;j++)for(let n=0;n<3;n++)p[j][n]=c.attributes.position.array[c.index.array[i+j]*3+n];after+=area(...p);}}
- assert.ok(Math.abs(before-after)/before<.00003,id+' complete surface area after district cuts/quantization');
- console.log(id+': source surface area retained ('+(Math.abs(before-after)/before*100).toFixed(6)+'% quantization difference), '+chunks.length+' spatial chunks.');
+ const removed=chunks.surfaceCleanup?.removedArea||0;assert.ok(Math.abs(before-after-removed)/before<.00003,id+' complete surface area after district cuts/quantization');
+ console.log(id+': source surface area retained ('+(Math.abs(before-after-removed)/before*100).toFixed(6)+'% quantization difference), '+chunks.length+' spatial chunks.');
 }

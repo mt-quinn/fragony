@@ -1,0 +1,1 @@
+Surface cleanup: partial coplanar overlaps, exact duplicates, nested patches, opposite finishes, separate planes and finite interpolated attributes pass.

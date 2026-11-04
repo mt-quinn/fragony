@@ -1,0 +1,3 @@
+Surface cleanup: partial coplanar overlaps, exact duplicates, nested patches, opposite finishes, separate planes and finite interpolated attributes pass.
+Native touching contours:1005 overlapping triangles preserve complete union coverage without pathological polygon splitting.
+Plane grouping: nearby normals cannot erase distinct offset architecture.

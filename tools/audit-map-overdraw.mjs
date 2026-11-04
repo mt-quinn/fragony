@@ -1,0 +1,5 @@
+import fs from 'node:fs';import{MAPS}from'../dist/map.js';
+const map=MAPS.find(m=>m.id===(process.argv[2]||'shipment'));if(map.load)await map.load({raw:true,navigation:false});
+const seen=new Map(),pairs=new Map();let total=0,duplicates=0,opposite=0;const examples=[];
+for(const[k,g]of Object.entries(map.groups)){if(k==='water')continue;for(let i=0;i<g.p.length;i+=9){total++;const key=[0,3,6].map(j=>[0,1,2].map(n=>Math.round(g.p[i+j+n]*4096)).join(',')).sort().join(';'),old=seen.get(key);if(old){duplicates++;const dot=[0,1,2].reduce((s,j)=>s+g.n[i+j]*old.n[j],0);if(dot<-.8)opposite++;const pair=[old.k,k].sort().join('/');pairs.set(pair,(pairs.get(pair)||0)+1);if(examples.length<12)examples.push({kind:k,previous:old.k,p:Array.from(g.p.slice(i,i+9)),normals:[Array.from(g.n.slice(i,i+3)),old.n]});}else seen.set(key,{k,n:Array.from(g.n.slice(i,i+3))});}}
+const out={map:map.id,total,duplicates,opposite,pairs:[...pairs].sort((a,b)=>b[1]-a[1]).slice(0,20),examples};console.log(JSON.stringify(out));fs.writeFileSync(new URL('../docs/qa/optimization/'+map.id+'-overdraw.json',import.meta.url),JSON.stringify(out,null,2));

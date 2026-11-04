@@ -18,8 +18,8 @@ for(const id of ['rust','shipment','nuketown']){
   const c=text[end];if(quoted){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')quoted=false;continue;}
   if(c==='"')quoted=true;else if(c==='{')depth++;else if(c==='}'&&!--depth){end++;break;}
  }
- const json=text.slice(begin,end);JSON.parse(json);
- fs.writeFileSync(new URL('maps/'+id+'-source.json.gz',output),gzipSync(json,{level:9,mtime:0}));
+ const json=text.slice(begin,end),groupKey=json.indexOf('"groups":'),groupStart=json.indexOf('{',groupKey);if(groupKey<0||groupStart<0)throw Error('Missing source groups: '+id);let groupEnd=groupStart,groupDepth=0,inString=false,escape=false;for(;groupEnd<json.length;groupEnd++){const c=json[groupEnd];if(inString){if(escape)escape=false;else if(c==='\\')escape=true;else if(c==='"')inString=false;continue;}if(c==='"')inString=true;else if(c==='{')groupDepth++;else if(c==='}'&&!--groupDepth){groupEnd++;break;}}const payload=json.slice(0,groupStart)+'{}'+json.slice(groupEnd);
+ fs.writeFileSync(new URL('maps/'+id+'-source.json.gz',output),gzipSync(payload,{level:9,mtime:0}));
  fs.writeFileSync(new URL('maps/'+id+'-data.js',output),text.slice(0,start)+"import {readCompressedJSON} from './source-data.js';\nconst data=await readCompressedJSON(new URL('./"+id+"-source.json.gz',import.meta.url))"+text.slice(end));
 }
 // Navigation stays byte-for-byte identical after decoding. Store packed graph

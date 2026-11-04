@@ -1,0 +1,14 @@
+{"map":"rust","counts":{"full-height wall/rail/clip across sampled line":4},"unknown":[]}
+{"map":"shipment","counts":{"full-height wall/rail/clip across sampled line":3},"unknown":[]}
+{"map":"killhouse","counts":{"full-height wall/rail/clip across sampled line":5},"unknown":[]}
+{"map":"vacant","counts":{"full-height wall/rail/clip across sampled line":14},"unknown":[]}
+{"map":"showdown","counts":{"full-height wall/rail/clip across sampled line":10},"unknown":[]}
+{"map":"firingrange","counts":{"full-height wall/rail/clip across sampled line":9,"different support surface at endpoint":7,"investigate":2},"unknown":[{"c":{"a":[-16,2.733,6],"b":[-17,3.054,6],"maxRise":0.18021190588284464,"levels":20,"before":{"ok":false,"position":[-16.501111593707627,2.96875,6.001241383838661]},"raised":{"ok":false,"position":[-16.501111593707627,2.96875,6.001241383838661]},"down":{"ok":true,"frames":19}},"top":3.0624528717586132,"hits":[{"id":"native-182:2","top":3.0624528717586132,"bottom":3.0201512236240164},{"id":"native-182:9","top":3.0369567911440316,"bottom":2.6288699598650456}]},{"c":{"a":[14,0.438,24],"b":[13,0.594,24],"maxRise":0.11279018480605923,"levels":21,"before":{"ok":false,"position":[13.43581447076967,0.59375,24.000006769614956]},"raised":{"ok":false,"position":[13.43581447076967,0.59375,24.000006769614956]},"down":{"ok":true,"frames":19}},"top":0.6029353553820401,"hits":[{"id":"firingrange-surface-203","top":0.5981655536686689,"bottom":0.4991116694308821},{"id":"firingrange-surface-780","top":0.6029353553820401,"bottom":0.5820866227149963}]}]}
+{"map":"hijacked","counts":{"full-height wall/rail/clip across sampled line":23},"unknown":[]}
+{"map":"summit","counts":{"full-height wall/rail/clip across sampled line":5},"unknown":[]}
+{"map":"siege","counts":{"full-height wall/rail/clip across sampled line":1},"unknown":[]}
+{"map":"mutiny","counts":{"full-height wall/rail/clip across sampled line":1},"unknown":[]}
+{"map":"delta-station","counts":{"full-height wall/rail/clip across sampled line":8},"unknown":[]}
+{"map":"beta-station","counts":{"full-height wall/rail/clip across sampled line":8},"unknown":[]}
+{"map":"forge2","counts":{"full-height wall/rail/clip across sampled line":10},"unknown":[]}
+{"map":"forge1","counts":{"blocked body/head clearance":2},"unknown":[]}

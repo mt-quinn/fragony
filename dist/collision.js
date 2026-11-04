@@ -15,6 +15,7 @@ function footprint(b,x,z,r){
 }
 export function bodyContacts(blocks,p){
  const out=[];for(const b of nearBlocks(blocks,p.x,p.z,p.radius,p.feet,p.feet+p.height)){
+  if(b.top<=p.feet+COLLISION.skin*.1||b.bottom>=p.feet+p.height-COLLISION.skin*.1)continue;
   const span=blockSpan(b,p.x,p.z,p.radius);if(!span||span.top<=p.feet+COLLISION.skin*.1||span.bottom>=p.feet+p.height-COLLISION.skin*.1)continue;
   let hit;
   if(b.planes){let depth=Infinity,nx=0,nz=0,clear=false;for(const [x,y,z,d] of b.planes){const h=Math.hypot(x,z),q=x*p.x+y*(p.feet+p.height/2)+z*p.z-d-p.radius*h-Math.abs(y)*p.height/2;if(q>=-1e-7){clear=true;break}if(h>1e-6&&-q/h<depth){depth=-q/h;nx=x/h;nz=z/h}}if(!clear&&Number.isFinite(depth))hit={nx,nz,depth}}
@@ -63,7 +64,9 @@ export function moveCharacter(blocks,body,delta,{grounded=false,bounds=null,step
   else{const floor=support(blocks,p,old,next);if(Number.isFinite(floor)){next=floor;landed=true}}
   p.feet=Math.max(0,next);grounded=false;
   const floor=support(blocks,p,p.feet+COLLISION.skin*2,p.feet-(onGround&&dy<=0?stepHeight:COLLISION.skin*2));
-  if(dy<=0&&Number.isFinite(floor)&&p.feet>=floor-COLLISION.skin){p.feet=floor;grounded=true;landed=true}
+  // Match the support query's two-skin upper reach plus its internal skin.
+  // Otherwise adjacent sloped treads can report a landing but lose grounding.
+  if(dy<=0&&Number.isFinite(floor)&&p.feet>=floor-COLLISION.skin*3){p.feet=floor;grounded=true;landed=true}
   // This should only catch numerical seams; recovery uses the same collision shape.
   if(!canOccupy(blocks,p))p=recoverBody(blocks,p,bounds);
  }

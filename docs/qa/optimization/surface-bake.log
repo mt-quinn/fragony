@@ -1,0 +1,29 @@
+Preparing reservoir
+{"id":"reservoir","chunks":7,"vertices":12520,"triangles":7308,"renderBytes":165241,"physicsBytes":0,"seconds":2}
+Preparing rust
+{"id":"rust","chunks":10,"vertices":69351,"triangles":30956,"renderBytes":923143,"physicsBytes":0,"seconds":1}
+Preparing shipment
+{"id":"shipment","chunks":13,"vertices":354631,"triangles":151097,"renderBytes":3973890,"physicsBytes":0,"seconds":5}
+Preparing nuketown
+{"id":"nuketown","chunks":18,"vertices":768540,"triangles":312756,"renderBytes":10080974,"physicsBytes":0,"seconds":9}
+Preparing siege
+{"id":"siege","chunks":89,"vertices":57639,"triangles":34293,"renderBytes":764765,"physicsBytes":115582,"seconds":2}
+Preparing mutiny
+{"id":"mutiny","chunks":147,"vertices":206502,"triangles":102681,"renderBytes":2638956,"physicsBytes":925383,"seconds":7}
+Preparing bravery
+{"id":"bravery","chunks":89,"vertices":86143,"triangles":40092,"renderBytes":1048812,"physicsBytes":648480,"seconds":3}
+Preparing ef-showdown
+{"id":"ef-showdown","chunks":76,"vertices":23998,"triangles":14177,"renderBytes":321638,"physicsBytes":197475,"seconds":1}
+Preparing delta-station
+{"id":"delta-station","chunks":202,"vertices":43307,"triangles":26528,"renderBytes":563114,"physicsBytes":69033,"seconds":2}
+Preparing beta-station
+file:///Users/quinn/Documents/ChatGPT/Web%20Shooter/dead-heat/dist/surface-cleanup.js:22
+  for(const s of list){try{const shape=operation('union',s.triangles),previous=coverage[s.sign],result=previous.length?operation('difference',shape,previous):shape;if(result.length)visible.push({s,shape:result});coverage[s.sign]=previous.length?operation('union',previous,shape):shape;if(s.triangles.length>shape.length)overlaps++;}catch(error){throw Error('Could not resolve source surface coverage: '+error.message);}}
+                                                                                                                                                                                                                                                                                                                                                               ^
+
+Error: Could not resolve source surface coverage: Unable to complete output ring starting at [41.5, 6]. Last matching segment found ends at [47.59375, 9.125].
+    at cleanCoplanarSurfaces (file:///Users/quinn/Documents/ChatGPT/Web%20Shooter/dead-heat/dist/surface-cleanup.js:22:352)
+    at industrialGroups (file:///Users/quinn/Documents/ChatGPT/Web%20Shooter/dead-heat/dist/industrial.js:110:9)
+    at file:///Users/quinn/Documents/ChatGPT/Web%20Shooter/dead-heat/tools/bake-source-render.mjs:10:32
+
+Node.js v22.18.0

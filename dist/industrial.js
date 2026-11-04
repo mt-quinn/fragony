@@ -1,3 +1,4 @@
+import {cleanCoplanarSurfaces} from './surface-cleanup.js';
 import * as THREE from './vendor/three.module.js';
 import {industrialResources} from './testworks.js';
 import {applyIndustrialFinishes} from './industrial-palettes.js';
@@ -76,12 +77,13 @@ function fenceAlpha(uv){const x=((uv.x%1)+1)%1*64,y=((uv.y%1)+1)%1*64;return((x+
 
 function material(family){
  if(materialCache.has(family))return materialCache.get(family);
+ const cacheKey=family,front=family.endsWith('~front');family=family.split('~')[0];
  const metal=family==='steel',glass=family==='glass',textured=!['glass','light','fence','rubber'].includes(family);
- const m=new THREE.MeshStandardMaterial({name:'industrial-'+family,color:0xffffff,vertexColors:true,roughness:glass?.3:1,metalness:metal?.42:family==='paint'?.08:0,side:THREE.DoubleSide,...(textured?industrialSurface(family):{})});
+ const m=new THREE.MeshStandardMaterial({name:'industrial-'+family,color:0xffffff,vertexColors:true,roughness:glass?.3:1,metalness:metal?.42:family==='paint'?.08:0,side:front?THREE.FrontSide:THREE.DoubleSide,...(textured?industrialSurface(family):{})});
  if(family==='fence'){m.alphaMap=chainlink();m.alphaTest=.5;m.roughness=.83;m.userData.alphaAt=fenceAlpha;}
  if(family==='light'){m.emissive.setHex(0xffe1a0);m.emissiveIntensity=.65;}
  if(glass){m.transparent=true;m.opacity=.26;m.depthWrite=false;}
- materialCache.set(family,m);return m;
+ materialCache.set(cacheKey,m);return m;
 }
 // Exact source triangles, recolored by their physical district and material role.
 // Only visual attributes change; no simplification or shifted original geometry.
@@ -104,7 +106,8 @@ export function industrialGroups(map){
 
   }
  }
- return [...buckets.values()].map(b=>{const family=b.family,geometry=new THREE.BufferGeometry();for(const [name,key,size]of[['position','p',3],['normal','n',3],['color','c',3],['uv','uv',2]])geometry.setAttribute(name,new THREE.BufferAttribute(b[key].finish(),size));if(chunked)indexSourceGeometry(geometry);geometry.computeBoundingSphere();return{family,geometry,material:material(family)};});
+ const raw=[...buckets.values()].map(b=>{const geometry=new THREE.BufferGeometry();for(const [name,key,size]of[['position','p',3],['normal','n',3],['color','c',3],['uv','uv',2]])geometry.setAttribute(name,new THREE.BufferAttribute(b[key].finish(),size));return{family:b.family,geometry};});
+ return cleanCoplanarSurfaces(raw).map(({family,geometry})=>{indexSourceGeometry(geometry);geometry.computeBoundingSphere();return{family,geometry,material:material(family)};});
 }
 
 function indexSourceGeometry(geometry){

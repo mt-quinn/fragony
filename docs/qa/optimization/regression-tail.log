@@ -1,0 +1,2 @@
+Water: clean convex surfaces, AO isolation, fog restoration, momentum-preserving entry, stable float depth, swim drag/exit at 30/60/144Hz and sealed lift pits pass.
+Player water entry, immersed float, released movement drag and held-jump exit pass through updateStep.

@@ -1,0 +1,18 @@
+Preparing siege
+{"id":"siege","chunks":89,"vertices":57614,"triangles":34242,"renderBytes":766564,"physicsBytes":115582,"seconds":3}
+Preparing mutiny
+{"id":"mutiny","chunks":147,"vertices":206769,"triangles":102628,"renderBytes":2644425,"physicsBytes":925383,"seconds":12}
+Preparing bravery
+{"id":"bravery","chunks":89,"vertices":86138,"triangles":40072,"renderBytes":1047170,"physicsBytes":648480,"seconds":6}
+Preparing ef-showdown
+{"id":"ef-showdown","chunks":76,"vertices":23995,"triangles":14165,"renderBytes":322148,"physicsBytes":197475,"seconds":11}
+Preparing delta-station
+{"id":"delta-station","chunks":202,"vertices":43339,"triangles":26555,"renderBytes":562841,"physicsBytes":69033,"seconds":2}
+Preparing beta-station
+{"id":"beta-station","chunks":311,"vertices":51514,"triangles":31383,"renderBytes":651722,"physicsBytes":93518,"seconds":3}
+Preparing forge2
+{"id":"forge2","chunks":177,"vertices":93135,"triangles":56749,"renderBytes":1315591,"physicsBytes":220533,"seconds":7}
+Preparing forge1
+{"id":"forge1","chunks":259,"vertices":243420,"triangles":110555,"renderBytes":3151408,"physicsBytes":915250,"seconds":13}
+Preparing blast-radius
+{"id":"blast-radius","chunks":139,"vertices":35926,"triangles":21087,"renderBytes":465855,"physicsBytes":92832,"seconds":4}

@@ -24,12 +24,12 @@ for(const map of [SHIPMENT,NUKETOWN]){
  console.log(map.name+': source starts/real support, health economy, all '+map.spawns.length**2+' directed routes, crop and cache fingerprint pass.');
 }
 const h=createGameHarness(941);h.setup();
-h.run(`
-const saved=localStorage.getItem('dh-run');for(const id of ['shipment','nuketown']){beginPractice(id);assert.equal(MAP.id,id);assert.ok(navNodes.length>1000);assert.equal(practiceMaps().length,MAPS.length);}assert.equal(localStorage.getItem('dh-run'),saved,'practice keeps saved campaign');
+await h.run(`(async()=>{
+const saved=localStorage.getItem('dh-run');for(const id of ['shipment','nuketown']){await beginPractice(id);assert.equal(MAP.id,id);assert.ok(navNodes.length>1000);assert.equal(practiceMaps().length,MAPS.length);}assert.equal(localStorage.getItem('dh-run'),saved,'practice keeps saved campaign');
 for(const [from,to]of [[2,28],[28,4],[9,29],[29,10],[0,6]]){
  changeArena('nuketown');makeBots();mode='play';respawnTime=0;playerPos.set(0,40,0);const bot=bots[0];bots=[bot];const s=MAP.spawns[from],target=MAP.spawns[to];bot.pos.set(...s);bot.vy=0;const brain=opponentAI.reset(bot,0);brain.goal={type:'rotate',x:target[0],y:target[1],z:target[2]};brain.detourIn=Infinity;let reached=false,maxRecovery=0;
  for(let i=0;i<14400;i++){opponentAI.clock+=1/120;opponentAI.navigate(bot,brain,1/120);opponentAI.world.physics(bot,brain,1/120);if(Math.hypot(bot.pos.x-target[0],bot.pos.z-target[2])<1.2&&Math.abs(bot.pos.y-target[1])<.35){reached=true;break;}}
  assert.ok(reached,'native bot physically completes Nuketown route '+from+' → '+to+'; final '+bot.pos.toArray());
 }
 console.log('Native practice switches between both maps; both upstairs houses and cross-map garden route physically completed.');
-`,{timeout:240000});
+})()`,{timeout:240000});

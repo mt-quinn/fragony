@@ -1,0 +1,98 @@
+
+> fragony@0.1.0 test
+> node tests/map.mjs && node tests/map-rotation.mjs && node tests/active-roster.mjs && node tests/map-loading.mjs && node tests/ai.mjs && node tests/rivals.mjs && node tests/minimap.mjs && node tests/slide.mjs && node tests/body-damage.mjs && node tests/mobile-menus.mjs && node tests/dynamic-combat.mjs && node tests/mobile.mjs && node tests/controls.mjs && node tests/audio.mjs && node tests/audio-lifecycle.mjs && node tests/music.mjs && node tests/reload.mjs && node tests/explosions.mjs && node tests/integration.mjs && node tests/feel.mjs && node tests/armory.mjs && node tests/balance.mjs && node tests/damage-breakpoints.mjs && node tests/armory-integration.mjs && node tests/attachment-models.mjs && node tests/loadout.mjs && node tests/shop.mjs && node tests/assists.mjs && node tests/hurt.mjs && node tests/recap.mjs && node tests/bindings.mjs && node tests/collision.mjs && node tests/triangle-collision.mjs && node tests/elevator-pits.mjs && node tests/characters.mjs && node tests/menu-stage.mjs && node tests/settings.mjs && node tests/presentation.mjs && node tests/testworks.mjs && node tests/industrial.mjs && node tests/industrial-materials.mjs && node tests/imported-maps.mjs && node tests/radiant-maps.mjs && node tests/source-archives.mjs && node --experimental-vm-modules tests/source-archive-stream.mjs && node tests/source-arenas.mjs && node tests/eliteforce-maps.mjs && node tests/eliteforce-lifts.mjs && node tests/eliteforce-falls.mjs && node tests/hijacked-lifts.mjs && node tests/source-combat.mjs && node tests/imported-combat.mjs && node tests/reservoir.mjs && node tests/nailer.mjs && node tests/tool-weapons.mjs && node tests/water.mjs
+
+Test Works: 5454 nodes; 14 supported spawns, 20 accessible resources, three tiers, real underpasses, rotated collision and alternate routes after three independent portal closures.
+Spawn-to-core travel: 3.8, 2.5, 5.6, 6.2, 5.1, 5.6, 7.9, 6.4, 5.2, 4.4, 5.5, 3.6, 2.5, 4.6 s; maximum spawns visible from an anchor: 5/14.
+Map bag: all twenty before repeats, boundary protection, persistence across new runs, active/shop continue, one next-round draw, malformed state and legacy save migration pass.
+Production roster: twenty active maps, distinct CoD/Elite Force Showdown identities, retired maps absent from chooser/bag/imports and safe fallback.
+Map loading: cancelled or failed downloads keep the current map and rotation, expose a usable return to menu, and never enter an incomplete arena.
+All strategic positions connect across ground, gantries and upper control.
+Actual movement completes four pads, four staircases, and both tested drops.
+No knowledge of unseen targets; sounds cause searches, and low health causes a health-pickup route.
+Reaction delay, visible rail wind-up and line-of-sight firing checks hold.
+Player focus stays capped; magazines, reload openings and expiring target memory work.
+Projectile dodges respect reaction delay and ignore the shooter’s own rockets.
+Bots select only their two rolled weapons, switch by range, and preserve partial magazines.
+Difficulty curves cap at configured late-run values; no runaway speed, damage or perfect aim.
+Rivals: stable identity, all 72 shared attachment stats, armor/recovery, wallet, save round-trip, shared shop limits, finite credit, repeated-round settlement and 25-round purchases pass.
+Native rival fire: full player damage, cover, kill credits, hostile payload ownership and swept player rocket collision pass.
+Native rival scheduling: round-17 sustained fire, reaction floor, full damage, shared reload perk and lost-sight cancellation pass.
+Difficulty: {"round1":{"slideSkill":0.15,"speed":4.8,"reaction":1.05,"aimError":0.13,"memory":1.8,"think":1.15,"rest":1.8,"aggression":0.5,"dodgeChance":0.08000000000000002,"dodgeReaction":0.65},"round17":{"slideSkill":0.648437187226853,"speed":5.996249249344447,"reaction":0.2039480396907712,"aimError":0.017752100431598708,"memory":3.5943738740166706,"think":0.36112522519666584,"rest":0.4151670336538259,"aggression":1.1652080414117294,"dodgeChance":0.6155206039663588,"dodgeReaction":0.18708341673950588},"round31":{"slideSkill":0.9,"speed":6.6,"reaction":0.105,"aimError":0.004,"memory":4.5,"think":0.18,"rest":0.12,"aggression":1.4,"dodgeChance":0.8,"dodgeReaction":0.12}}
+Minimap: heading/north transforms, frozen 1s+fade reveals, dense/seam rim grouping, 307 elevation slices across all maps, rotated/convex geometry, fixed range at all scales, mobile layout bounds and native settings/fire integration pass.
+Slide: generous momentum, mild boost, forgiving uphill/better downhill, actual convex slope traversal, frame-rate stability, steering/air/buffer/anti-chain, sprint removal, native crouch/shoot/respawn and difficulty-scaled tactical bot choice pass.
+Native bots: shared crouched collision, real momentum displacement, lowered animated rig, tactical reason/cooldown and no repeated slide entry pass.
+Body damage: all seven regions, shared player/bot traces, mixed shotgun packets, independent splash, unknown-region fallback and native incoming hit/recap totals pass (head1.5, core1, limbs.75).
+Mobile menus: single-board shop, six visible offers, retained categories, one starting-gun action, unique reset/gear controls, real purchases and run-safe catalog routing pass.
+Dynamic combat: pressure, commitment, pursuit, range switches, bounded stagger/reload continuity, useful detours, local impact symmetry, grouped pellets, respawn and independent body/weapon orientation pass.
+Mobile: acquisition, loss, cover, corpses, range, weapon exceptions, manual hip fire, ADS, multi-pointer ownership, cancellation, layout bounds, tuning and native input integration pass.
+Controller: simultaneous movement/look/ADS/fire, fixed finger ownership, grenade cancellation and interrupted gesture cleanup pass.
+Practice: saved progression, invulnerability and unlimited round time pass.
+Acquisition margin: near misses, distance cutoff, rotated/scaled hitboxes, cover/corpses and native precharge/real-hit/drain integration pass.
+Controls: mouse movement works in fallback without clicking; capture recovery, retry and unsupported capture cases pass.
+Audio: finite click-free mono effects, monotonic falloff and hard culling, HRTF direction, no rear-volume cone, single attenuation pass, wall filtering, camera listener, priority limits and mute cleanup pass.
+Audio lifecycle: ambient mixing before acquisition, one shared context, repeated gesture unlock, interruptions/rejected/pending resumes, foreground/mute, closed-context/music recovery and async playlist disposal pass.
+Music: bundled tracks, shared loading, four-second crossfades, repeated alternation, source cleanup, load retry, independent volume and mute pass.
+All six weapons: three complete empty/reload/fire/manual-reload cycles pass with uneven frame times. Interrupted reloads preserve empty magazines.
+Explosions: Reservoir floor splash at all 12 spawns, both swept rocket paths, and solid-wall protection pass.
+Player rolls two weapons per run; bots retain their persistent starting weapons; respawns retain each pair.
+Switching preserves partial and empty magazines; empty weapons still require reloads.
+All 182 spawn-to-spawn routes connect.
+Living limbs remain intact; lethal limb and post-mortem limb shatter; respawn restores all parts; no duplicate kills.
+Rifle consumes one round and applies one torso hit.
+Rail body shot pierces without killing; follow-up awards exactly two kills.
+Shotgun mean damage (3m / 22m / 55m): 102 / 26 / 13.
+Rocket splash causes self-damage and upward rocket-jump impulse.
+Solid cover protects opponents from rocket splash.
+Shop purchase deducts credits, persists weapon, and carries loadout into the next round.
+Full 90-second match completes; opponents fight, score, and respawn.
+Top-three finish saves progression; bottom-three finish ends the run.
+Feel: 30/60/144 FPS cadence, fresh aim, headshot scoring, corpse suppression, effect budgets, responsive jumping, braking, air momentum, comfort setting, and spring recovery pass.
+Armory: 72 parts, three-part cap, free sights, compatibility, idempotent migration, normalized payloads, full penetrators, burst/semi/charge scheduling, 80ms slamfire recovery, feeds and per-cartridge blasts pass.
+Balance: centered dual projectiles at 10/30/60m, every blast ammo radius, native mobile blast firing/direct-hit restoration, cover and diagonal limits, slower/inaccurate opening bots on legacy/native paths, unchanged round13+ tuning pass.
+Damage breakpoints: 96 action/ammo combinations, real shotgun packets and native incoming Nailer/Lancer pass.
+Native armory: full penetrator hits, HE/arc damage, burst/charge/paired scheduling, slamfire cadence/release, real feed interruption, banked immutable rockets, migration and run-safe practice workbench pass.
+Attachment models: 720 individual/mixed hero builds, 140 paired configurations, six lower-detail world kits; clear sights, finite animated transforms, idempotent application and owned-buffer disposal pass. Max hero 64 draws / 30622 vertices.
+Loadout: 72 purchasable conversions/free sights, transactions/free swaps, compatibility, native stats/reload/ADS/models, preview isolation, saved progression and immutable projectiles pass.
+Shop: 6 balanced offers, starter price once, pinned carryover, enforced stock, deferred fourth-part replacement, free refits, save/continue, preview isolation and exhausted categories pass.
+Assists: proportional points, full kill/headshot rewards, healing/respawn resets, overhealth, corpse guards and health colors pass.
+Damage feedback: front/right/turning bearings, simultaneous attackers, expiry, health scaling, healing/death/respawn cleanup and real-time heartbeat cadence pass.
+Incoming fire: per-shooter overlap layers, refresh/upgrade priority, all camera quadrants, actual near-miss bullet segments and blocked-shot suppression pass.
+Death recap: actual limb/hit totals, multiple attackers, frozen return damage and killer health, stationary tracking camera, through-wall highlight and unchanged 2.2s respawn cleanup pass.
+Killer loadout: killing weapon rather than switched gun, all fitted parts and free optic, frozen snapshot, stock/self fallback and escaped names pass.
+Controls: two binds/action, persistence, explicit conflicts, secondary mouse/keyboard actions, crouch hold/toggle and safe headroom pass.
+Collision: wall/corner sliding and escape, local seam recovery, headroom-safe steps/uncrouch, thin surfaces at high speed, rotated walls, all real staircases and 16800 full-map trajectory steps pass.
+Native collision BVH: exact wall contact, source floor landing, clearance, range rejection and bounded caches pass.
+Instanced convex source cover: nonuniform transforms, solid interiors, exact bounds and native upper-face landing pass.
+Reservoir exposed pits: 676 floor rays and 132 native falls pass across all four shafts with platforms raised.
+Characters: 960 idle/walk/run/crouch samples, articulated lengths, floor clearance, recoil, falling/settling, attached joints, raised platforms and rotated thin-wall contacts pass.
+Menu: grounded world pose, unobstructed framing at four sizes, hidden pickups/actors, centered gameplay/inspection, practice map memory and saved campaign/rotation preserved.
+Settings: visible categories, live values/accessible units, saved volume/motion/HUD scale, 50–200% limits and logical HUD viewport pass.
+Presentation: rifle geometry/layers, magazine withdrawal/replacement, bolt operation, hand recovery, empty reload and physical light fixtures pass.
+Testworks: unchanged cover bounds, all jump arcs clear, real roof/cover shot collision, five material districts, finite geometry, 28 static draws / 20192 triangles, and map-specific sky/lighting restoration pass.
+Testworks practice link leaves campaign/rotation untouched; cached map switches restore the correct sky.
+Industrial presentation: all source-map surfaces conserved, finite/bounded materials, correct outward lighting, true fence holes, and all imported-map signs fully backed by real walls pass.
+Industrial materials: 20 maps / 100 physical districts, separated colors and wall/floor finishes, eight shared mipmapped physical texture sets pass.
+RUST: exact 35 source spawns, all 1225 routes, four genuine-footprint pads, 36 off-center analytic/native arrivals, resource access and navigation fingerprint pass.
+Imported maps: exact AI pad trajectory, cached native practice-map switching and campaign isolation pass.
+Native AI completes both Rust entries through the summit stages.
+SHIPMENT: source starts/real support, health economy, all 64 directed routes, crop and cache fingerprint pass.
+NUKETOWN: source starts/real support, health economy, all 900 directed routes, crop and cache fingerprint pass.
+Native practice switches between both maps; both upstairs houses and cross-map garden route physically completed.
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: firingrange-render.json.gz bounded transport file
+    at file:///Users/quinn/Documents/ChatGPT/Web%20Shooter/dead-heat/tests/source-archives.mjs:3:138
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:647:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '=='
+}
+
+Node.js v22.18.0

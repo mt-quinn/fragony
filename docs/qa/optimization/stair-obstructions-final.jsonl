@@ -1,0 +1,14 @@
+{"map":"rust","counts":{"full-height wall/rail/clip across sampled line":4},"unknown":[]}
+{"map":"shipment","counts":{"full-height wall/rail/clip across sampled line":3},"unknown":[]}
+{"map":"killhouse","counts":{"full-height wall/rail/clip across sampled line":5},"unknown":[]}
+{"map":"vacant","counts":{"full-height wall/rail/clip across sampled line":14},"unknown":[]}
+{"map":"showdown","counts":{"full-height wall/rail/clip across sampled line":10},"unknown":[]}
+{"map":"firingrange","counts":{"full-height wall/rail/clip across sampled line":9,"different support surface at endpoint":6},"unknown":[]}
+{"map":"hijacked","counts":{"full-height wall/rail/clip across sampled line":23},"unknown":[]}
+{"map":"summit","counts":{"full-height wall/rail/clip across sampled line":5},"unknown":[]}
+{"map":"siege","counts":{"full-height wall/rail/clip across sampled line":1},"unknown":[]}
+{"map":"mutiny","counts":{"full-height wall/rail/clip across sampled line":1},"unknown":[]}
+{"map":"delta-station","counts":{"full-height wall/rail/clip across sampled line":8},"unknown":[]}
+{"map":"beta-station","counts":{"full-height wall/rail/clip across sampled line":8},"unknown":[]}
+{"map":"forge2","counts":{"full-height wall/rail/clip across sampled line":10},"unknown":[]}
+{"map":"forge1","counts":{"blocked body/head clearance":2},"unknown":[]}

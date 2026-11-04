@@ -1,0 +1,7 @@
+import fs from'node:fs';import{gzipSync}from'node:zlib';import{createHash}from'node:crypto';import{readCompressedJSON,decodeSourceBuffer}from'../dist/maps/source-data.js';
+// Lossless delta coding of triangle indices; every decoded index stays exact.
+for(const id of process.argv.slice(2)){
+ const path=new URL('../dist/maps/'+id+'-render.json.gz',import.meta.url),data=await readCompressedJSON(path),before=gzipSync(JSON.stringify(data),{level:9,mtime:0}),types={Uint16Array,Uint32Array};let indices=0;const hashes=[];
+ for(const chunk of data.chunks){const a=chunk.index;if(a.delta)continue;const source=decodeSourceBuffer(a.blob,types[a.type]),delta=new Int32Array(source.length);let previous=0;for(let i=0;i<source.length;i++){delta[i]=source[i]-previous;previous=source[i];}const recovered=new types[a.type](delta.length);previous=0;for(let i=0;i<delta.length;i++)recovered[i]=previous+=delta[i];const hash=a=>createHash('sha256').update(new Uint8Array(a.buffer,a.byteOffset,a.byteLength)).digest('hex');if(hash(source)!==hash(recovered))throw Error('Index packing changed geometry');hashes.push(hash(source));a.delta=true;a.blob=Buffer.from(delta.buffer).toString('base64');indices+=source.length;}
+ const after=gzipSync(JSON.stringify(data),{level:9,mtime:0});if(after.length<before.length)fs.writeFileSync(path,after);console.log(JSON.stringify({id,indices,before:before.length,after:after.length,saved:Math.max(0,before.length-after.length),verifiedIndexHashes:hashes}));
+}

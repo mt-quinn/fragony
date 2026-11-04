@@ -1,0 +1,8 @@
+Preparing reservoir
+{"id":"reservoir","chunks":7,"vertices":21924,"triangles":7308,"renderBytes":206475,"physicsBytes":0,"seconds":2}
+Preparing rust
+{"id":"rust","chunks":10,"vertices":94032,"triangles":31344,"renderBytes":1046377,"physicsBytes":0,"seconds":1}
+Preparing shipment
+{"id":"shipment","chunks":13,"vertices":453534,"triangles":151178,"renderBytes":4349858,"physicsBytes":0,"seconds":4}
+Preparing nuketown
+{"id":"nuketown","chunks":18,"vertices":939372,"triangles":313124,"renderBytes":10925172,"physicsBytes":0,"seconds":8}

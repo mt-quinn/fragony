@@ -5,7 +5,7 @@ const expected=[['siege','hm_cam'],['mutiny','hm_for1'],['bravery','hm_kln1'],['
 assert.equal(MAPS.length,20);assert.notEqual(MAPS.find(m=>m.id==='showdown').name,MAPS.find(m=>m.id==='ef-showdown').name);
 let starts=0,items=0;
 for(const[id,engine]of expected){const map=await SOURCE_ARENAS.find(m=>m.id===id).load(),source=JSON.parse(fs.readFileSync(new URL(id+'/source-entities.json',ref))),bytes=fs.readFileSync(new URL('maps/'+engine+'.map',ref));
- assert.equal(map.sourceEngine,engine);assert.equal(map.source.sha256,createHash('sha256').update(bytes).digest('hex'));assert.equal(map.source.scale,1/32);assert.equal(map.stepHeight,.57);assert.ok(map.killBelow<Math.min(...map.spawns.map(p=>p[1])));
+ assert.equal(map.sourceEngine,engine);assert.equal(map.source.sha256,createHash('sha256').update(bytes).digest('hex'));assert.equal(map.source.scale,1/32);assert.equal(map.stepHeight,.6);assert.ok(map.killBelow<Math.min(...map.spawns.map(p=>p[1])));
  assert.equal(map.spawns.length,source.starts.length);assert.equal(map.pickups.length,source.items.length);assert.equal(map.resources.length,source.items.length);starts+=map.spawns.length;items+=map.pickups.length;
  const original=new Map(source.items.map(p=>[p.id,p]));for(const p of map.resources){const old=original.get(p.id);assert.ok(old);assert.equal(p.sourceClass,old.sourceClass);assert.equal(p.amount,old.amount);if(!p.adaptation)assert.ok(Math.hypot(p.x-old.position[0],p.z-old.position[2])<=3.001,id+' source pickup pattern');}
  assert.ok(map.pickups.every(p=>p.kind==='health'&&[5,25,50].includes(p.amount)));assert.ok(map.precompiled&&map.renderChunks.length>5);

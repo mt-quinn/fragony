@@ -320,7 +320,7 @@ export class ArenaAI{
       if(horizontal(bot.pos,pad)<(pad.triggerRadius||1.45)&&Math.abs(bot.pos.y-pad.y)<.35){const power=pad.power,flightTime=launchTime(power,target.y-bot.pos.y);b.flight={vx:(target.x-bot.pos.x)/flightTime,vz:(target.z-bot.pos.z)/flightTime,age:0};bot.vy=power;this.stats.pads++;return;}
       destination={x:pad.x,y:pad.y,z:pad.z,action:'walk',fine:true};
     }
-    if(destination.action==='jump'&&destination.y>bot.pos.y+.3&&Math.abs(bot.vy)<.01)bot.vy=8.5;
+    if(destination.action==='jump'&&destination.y>bot.pos.y+(this.navigation.stepHeight??.3)&&Math.abs(bot.vy)<.01)bot.vy=8.5;
     const d=horizontal(bot.pos,destination);if(d<.05)return;
     const speed=this.difficulty.speed*(bot.rival?.perks.speed?1.2:1)*(b.weapon.native?.move||1)*(b.goal.type==='retreat'||b.goal.type==='heal'?1.08:1)*(b.reload>0?.8:1)*(b.recover>0?.28:1),step=Math.min(d,speed*dt),blend=1-Math.exp(-this.tuning.combat.acceleration*dt);
     if(!b.slide?.active){b.moveX+=((destination.x-bot.pos.x)/d*speed-b.moveX)*blend;b.moveZ+=((destination.z-bot.pos.z)/d*speed-b.moveZ)*blend;}

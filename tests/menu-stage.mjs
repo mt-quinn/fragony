@@ -20,9 +20,9 @@ for(const [width,height]of [[1280,720],[1256,1358],[844,390],[932,430]]){
 }
 await h.run(`(async()=>{
 menuReturnMapId='rust';prepareMenuStage();assert.ok(pickups.filter(p=>p.kind!=='pad').every(p=>!p.mesh.visible));
-const beforeBag=localStorage.getItem('dh-map-rotation');beginPractice();assert.equal(MAP.id,'rust');assert.equal(localStorage.getItem('dh-map-rotation'),beforeBag);mainMenu();assert.equal(MAP.id,'reservoir');assert.equal(menuReturnMapId,'rust');
-showShop(true);inspectWeapon();assert.equal(camera.view.enabled,false);closeInspection();mainMenu();assert.equal(menuReturnMapId,'rust');beginPractice();assert.equal(MAP.id,'rust');
-changeArena('reservoir');mainMenu();assert.equal(menuReturnMapId,'reservoir');beginPractice();assert.equal(MAP.id,'reservoir');mainMenu();assert.ok(bots.every(b=>!b.group.visible));
+const beforeBag=localStorage.getItem('dh-map-rotation');await beginPractice();assert.equal(MAP.id,'rust');assert.equal(localStorage.getItem('dh-map-rotation'),beforeBag);mainMenu();assert.equal(MAP.id,'reservoir');assert.equal(menuReturnMapId,'rust');
+showShop(true);inspectWeapon();assert.equal(camera.view.enabled,false);closeInspection();mainMenu();assert.equal(menuReturnMapId,'rust');await beginPractice();assert.equal(MAP.id,'rust');
+changeArena('reservoir');mainMenu();assert.equal(menuReturnMapId,'reservoir');await beginPractice();assert.equal(MAP.id,'reservoir');mainMenu();assert.ok(bots.every(b=>!b.group.visible));
 practiceMode=false;await startRandomMatch();const activeMap=MAP.id,bag=localStorage.getItem('dh-map-rotation'),saved=localStorage.getItem('dh-run');mainMenu();assert.equal(MAP.id,'reservoir');assert.equal(localStorage.getItem('dh-run'),saved);assert.equal(localStorage.getItem('dh-map-rotation'),bag);await $('continue').onclick();assert.equal(MAP.id,activeMap);assert.equal(camera.view.enabled,false);assert.equal(menuStage.group.visible,false);assert.ok(pickups.every(p=>p.mesh.visible));
 })()`,{timeout:180000});
 console.log('Menu: grounded world pose, unobstructed framing at four sizes, hidden pickups/actors, centered gameplay/inspection, practice map memory and saved campaign/rotation preserved.');
