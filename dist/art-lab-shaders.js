@@ -1,6 +1,6 @@
 // Independently authored color-space post-process studies. No external shader code.
 export const looks=[
- {name:'Pixel Forge',tag:'DIGITAL ARCHAEOLOGY',short:'Palette + ordered dither',description:'An industrial shooter remembered by a 1994 workstation. Chunky pixels, oil-green shadows and a restricted mineral palette.',note:'Strongest candidate for a complete identity. Test moving silhouettes at distance; this is palette-mapped pixelation, not hand-authored pixel art.',cost:'1 pass · quantization + palette search · no history'},
+ {name:'Pixel Forge',tag:'DIGITAL ARCHAEOLOGY',short:'Palette + ordered dither',description:'An industrial shooter remembered by a 1994 workstation. Chunky pixels, oil-green shadows and a restricted mineral palette.',note:'Surface study: the original palette, pixel size and edge treatment are unchanged. Only the screen-locked dither is replaced by fine texture anchored to surfaces. Drag to look, or compare against the previous Pixel Forge.',cost:'1 pass · quantization + palette search · no history'},
  {name:'Lost Broadcast',tag:'ANALOG HORROR',short:'Tape drift + chroma bleed',description:'Recovered security footage from a plant that should have closed years ago. Soft chroma, bent scanlines, tracking noise and a rolling dropout.',note:'Best as a restrained atmosphere or replay treatment. Turn animation off to inspect the distortion without tape movement.',cost:'1 pass · 4 texture samples · continuous signal drift'},
  {name:'Buffer Rot',tag:'CORRUPTED MEMORY',short:'Blocks + RGB displacement',description:'The simulation is losing its grip. Rectangular packet loss, displaced color channels and brief horizontal data scars fracture the scene.',note:'A hit/death/teleport accent, or an unstable-world mode. Full-time distortion makes target tracking harder.',cost:'1 pass · 4 texture samples · intermittent block failure'},
  {name:'Chalk Range',tag:'DRAWN / ERASED',short:'Contour + chalk dust',description:'The arena sketched on a classroom slate. Pale broken contours, colored chalk deposits, dragged hatching and a dusty green-black ground.',note:'A distinctive alternative to the usual toon look. Color-gradient contours miss edges between similarly colored surfaces; depth/normal contours would help.',cost:'1 pass · 5 texture samples · procedural grain & hatching'},
@@ -12,18 +12,35 @@ export const looks=[
 export const vertex=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
 export const fragment=`
 precision highp float;
-uniform sampler2D image;uniform sampler2D protectedTex;uniform float protect;uniform vec2 resolution;uniform float time,amount,scale,split,clean;uniform int mode;
+uniform sampler2D image;uniform sampler2D gunImage;uniform sampler2D worldDepth;uniform mat4 inverseProjection,cameraWorld;uniform float grounded;uniform sampler2D protectedTex;uniform float protect;uniform vec2 resolution;uniform float time,amount,scale,split,clean;uniform int mode;
 varying vec2 vUv;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
 float luma(vec3 c){return dot(c,vec3(.299,.587,.114));}
 vec3 aces(vec3 c){return clamp((c*(2.51*c+.03))/(c*(2.43*c+.59)+.14),0.,1.);}
-vec3 read(vec2 p){return pow(aces(texture2D(image,clamp(p,vec2(.001),vec2(.999))).rgb),vec3(1./2.2));}
+vec3 read(vec2 p){vec2 q=clamp(p,vec2(.001),vec2(.999));vec4 g=texture2D(gunImage,q);vec3 linear=mix(texture2D(image,q).rgb,g.rgb,g.a);return pow(aces(linear),vec3(1./2.2));}
 float edge(vec2 p,float radius){vec2 d=radius/resolution;vec3 x=read(p+vec2(d.x,0.))-read(p-vec2(d.x,0.));vec3 y=read(p+vec2(0.,d.y))-read(p-vec2(0.,d.y));return clamp((length(x)+length(y))*.85,0.,1.);}
 float bayer(vec2 p){vec2 a=mod(floor(p),4.);float v=0.;if(a.y<1.){if(a.x<1.)v=0.;else if(a.x<2.)v=8.;else if(a.x<3.)v=2.;else v=10.;}else if(a.y<2.){if(a.x<1.)v=12.;else if(a.x<2.)v=4.;else if(a.x<3.)v=14.;else v=6.;}else if(a.y<3.){if(a.x<1.)v=3.;else if(a.x<2.)v=11.;else if(a.x<3.)v=1.;else v=9.;}else{if(a.x<1.)v=15.;else if(a.x<2.)v=7.;else if(a.x<3.)v=13.;else v=5.;}return(v+.5)/16.-.5;}
 vec3 palette(vec3 c){vec3 best=vec3(.075,.12,.13);float dst=100.;for(int i=0;i<12;i++){vec3 p=vec3(.075,.12,.13);if(i==1)p=vec3(.17,.24,.24);if(i==2)p=vec3(.29,.36,.32);if(i==3)p=vec3(.46,.51,.4);if(i==4)p=vec3(.67,.69,.51);if(i==5)p=vec3(.87,.86,.68);if(i==6)p=vec3(.94,.94,.83);if(i==7)p=vec3(.58,.32,.22);if(i==8)p=vec3(.79,.46,.28);if(i==9)p=vec3(.8,.77,.27);if(i==10)p=vec3(.32,.55,.54);if(i==11)p=vec3(.65,.8,.36);float d=dot((c-p)*vec3(.9,1.1,.8),c-p);if(d<dst){dst=d;best=p;}}return best;}
+// Surface grain is evaluated at the real surface under this fragment, not
+// at the snapped color-sampling UV. Thus it follows the world while panning.
+vec3 surfacePosition(vec2 uv){
+ float depth=texture2D(worldDepth,uv).r;
+ vec4 view=inverseProjection*vec4(uv*2.-1.,depth*2.-1.,1.);
+ return (cameraWorld*vec4(view.xyz/view.w,1.)).xyz;
+}
+float surfaceGrain(vec2 uv){
+ vec3 p=surfacePosition(uv)*18.;
+ vec3 n=abs(cross(dFdx(p),dFdy(p)));n=pow(n,vec3(4.));n/=max(dot(n,vec3(1.)),.00001);
+ float yz=hash(floor(p.yz)+vec2(17.,31.));
+ float xz=hash(floor(p.xz)+vec2(47.,13.));
+ float xy=hash(floor(p.xy)+vec2(71.,59.));
+ // Fade subpixel texture instead of letting it shimmer in the distance.
+ float footprint=max(length(dFdx(p)),length(dFdy(p)));
+ return (dot(vec3(yz,xz,xy),n)-.5)*(1.-smoothstep(.75,2.,footprint));
+}
 vec3 thermal(float t){vec3 a=vec3(.04,.045,.12),b=vec3(.34,.08,.43),c=vec3(.88,.2,.19),d=vec3(1.,.65,.22),e=vec3(1.,.98,.79);return t<.25?mix(a,b,t*4.):t<.5?mix(b,c,(t-.25)*4.):t<.75?mix(c,d,(t-.5)*4.):mix(d,e,(t-.75)*4.);}
 void main(){vec2 uv=vUv;vec2 px=uv*resolution;vec3 original=read(uv),c=original;float y=luma(c),e=0.;
-if(mode==0){float block=3.5*scale;vec2 grid=floor(px/block);c=read((grid+.5)*block/resolution);c=palette(c+vec3(bayer(grid)*.085));float rim=edge((grid+.5)*block/resolution,block);c*=1.-smoothstep(.35,.8,rim)*.22;}
+if(mode==0){float block=3.5*scale;vec2 grid=floor(px/block);c=read((grid+.5)*block/resolution);float textureValue=bayer(grid);bool useSurface=grounded>.5 && !(split>.5 && uv.x<.5);if(useSurface)textureValue=texture2D(worldDepth,uv).r<.99999?surfaceGrain(uv):0.;c=palette(c+vec3(textureValue*.085));float rim=edge((grid+.5)*block/resolution,block);c*=1.-smoothstep(.35,.8,rim)*.22;}
 else if(mode==1){vec2 q=uv;float track=exp(-pow((uv.y-fract(time*.055))/.028,2.));q.x+=(sin(uv.y*150.+time*2.)*.0012+sin(uv.y*9.+time)*.003+track*.017)*scale;float bleed=.004*scale;c=read(q)*vec3(0.,1.,0.);c.r=read(q+vec2(bleed,0.)).r;c.b=read(q-vec2(bleed*.6,0.)).b;float lum=luma(c);c=mix(c,vec3(lum*.80,lum*.93,lum*.74),.62);c=pow(c,vec3(1.14));float lines=.94+.06*sin(px.y*3.14159/scale);float grain=hash(vec2(floor(px.x),floor(px.y)+floor(time*24.)))-.5;c=c*lines+grain*.085+track*grain*.45;c*=1.-.32*length((uv-.5)*1.1);}
 else if(mode==2){float tick=floor(time*3.);vec2 cell=floor(uv*vec2(18.,30.)/scale);float fail=step(.88,hash(cell+tick));float band=step(.968,hash(vec2(floor(uv.y*65./scale),tick)));vec2 q=uv+vec2((hash(cell+17.)-.5)*.15*fail+band*.055,0.);float shift=(.002+fail*.014+band*.01)*scale;c=vec3(read(q+vec2(shift,0.)).r,read(q).g,read(q-vec2(shift,0.)).b);c=mix(c,vec3(c.b,.9-c.r,c.g),fail*.7);c+=band*vec3(.08,.06,.11);c*=.97+.03*step(.5,fract(px.y/3.));}
 else if(mode==3){vec2 q=uv+(vec2(hash(floor(px/3.)),hash(floor(px/3.)+9.))-.5)*1.4/resolution*scale;e=edge(q,1.3*scale);vec3 src=read(q);float lum=luma(src);float grain=hash(floor(px));float hatch=smoothstep(.78,.98,sin((px.x+px.y)*1.2/scale));float marks=e*(.65+grain*.7)+pow(lum,2.)*.19+lum*hatch*.065;vec3 slate=vec3(.045,.10,.088);vec3 chalk=mix(vec3(.82,.85,.69),normalize(src+.08),.3);c=slate+chalk*marks;c+=(grain-.5)*.035;}
@@ -31,5 +48,5 @@ else if(mode==4){e=edge(uv,scale);vec3 src=read(uv);float lum=luma(src);vec2 p=p
 else if(mode==5){e=edge(uv,1.25*scale);vec3 src=read(uv);float lum=luma(src);c=floor(src*5.+.5)/5.;c=mix(c,vec3(.94,.85,.67),.24);float hatch=step(.86,sin((px.x+px.y)*.8/scale))*(1.-smoothstep(.2,.53,lum));float cross=step(.92,sin((px.x-px.y)*.9/scale))*(1.-smoothstep(.1,.30,lum));c=mix(c,vec3(.14,.21,.22),clamp(e*1.65+hatch*.25+cross*.22,0.,.94));c+=(hash(floor(px))-.5)*.024;}
 else if(mode==6){vec2 p=(uv-.5)*2.;vec2 q=.5+p*(1.+dot(p,p)*.033*scale)*.5;vec2 d=vec2(1.4*scale,0.)/resolution;c=read(q)*.65+(read(q+d)+read(q-d))*.175;vec3 glow=(read(q+d*4.)+read(q-d*4.))*.5;c+=max(glow-.6,0.)*.3;float col=mod(floor(px.x/scale),3.);vec3 mask=col<1.?vec3(1.,.76,.76):col<2.?vec3(.76,1.,.76):vec3(.76,.76,1.);c*=mask*(.90+.10*sin(px.y*3.14159/scale));c*=1.-pow(length(p)*.48,2.);c*=vec3(1.08,1.04,.94);if(q.x<0.||q.y<0.||q.x>1.||q.y>1.)c=vec3(.025);}
 else if(mode==7){e=edge(uv,scale);float lum=pow(y,.85);float bands=pow(.5+.5*sin(lum*65./scale),20.)*.18;c=thermal(lum)*(1.-bands);c+=vec3(.2,.12,.1)*e;c+=(hash(floor(px))-.5)*.025;}
-float strength=amount;if(protect>.5 && texture2D(protectedTex,uv).r>.5)strength=0.;if(clean>.5||(split>.5&&uv.x<.5))strength=0.;gl_FragColor=vec4(clamp(mix(original,c,strength),0.,1.),1.);
+float strength=amount;if(protect>.5 && texture2D(protectedTex,uv).r>.5)strength=0.;if(clean>.5||(mode!=0&&split>.5&&uv.x<.5))strength=0.;gl_FragColor=vec4(clamp(mix(original,c,strength),0.,1.),1.);
 }`;

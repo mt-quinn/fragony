@@ -135,7 +135,7 @@ function applyGraphicsRendererSettings(){
  if(!renderer)return;renderer.shadowMap.enabled=settings.shadowQuality!=='off';const filter={hard:THREE.BasicShadowMap,pcf:THREE.PCFShadowMap,soft:THREE.PCFSoftShadowMap}[settings.shadowFilter];
  const changed=renderer.shadowMap.type!==filter;renderer.shadowMap.type=filter;renderer.toneMapping={cinematic:THREE.ACESFilmicToneMapping,neutral:THREE.NeutralToneMapping,none:THREE.NoToneMapping}[settings.toneMap];renderer.toneMappingExposure=settings.exposure;
  if(renderSun&&(changed||renderSun.shadow.mapSize.x!==shadowSize())){renderSun.shadow.mapSize.set(shadowSize(),shadowSize());renderSun.shadow.map?.dispose();renderSun.shadow.map=null;renderer.shadowMap.needsUpdate=true;}
- document.body.classList.toggle('graphics-no-grain',!settings.grain);
+ document.body.classList.toggle('graphics-no-grain',!settings.grain||(settings.pixelForge&&settings.pixelForgeIntensity>0));
 }
 function rebuildGraphics(){applyGraphicsRendererSettings();if(!renderer)return;sizeRenderer();frameRenderer?.dispose();frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());}
 function setupMobile(){

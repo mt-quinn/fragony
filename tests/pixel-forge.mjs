@@ -23,12 +23,12 @@ const wall=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial())
 const smoke=new THREE.Mesh(new THREE.PlaneGeometry(),new THREE.MeshBasicMaterial({transparent:true,depthWrite:false}));scene.add(smoke);
 const hidden=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());hidden.visible=false;scene.add(hidden);
 const originals=new Map();scene.traverse(o=>{if(o.isMesh)originals.set(o,o.material);});
-const mask=new PixelForgeMask(2);mask.resize(800,450);assert.equal(mask.target.width,800);assert.equal(mask.target.samples,2);
+const mask=new PixelForgeMask(2);mask.resize(800,450);assert.equal(mask.target.width,800);assert.equal(mask.target.samples,2);assert.ok(mask.target.depthTexture?.isDepthTexture);
 const background=scene.background,layers=camera.layers.mask,target={};let current=target,color=new THREE.Color(.1,.2,.3),alpha=.4,rendered=0;
 const renderer={shadowMap:{autoUpdate:true},getRenderTarget:()=>current,setRenderTarget:v=>current=v,getClearColor:c=>c.copy(color),getClearAlpha:()=>alpha,setClearColor:(c,a)=>{color.set(c);alpha=a;},clear(){},render(){rendered++;assert.equal(wall.material,mask.black);assert.equal(attachedGun.material,mask.white);assert.equal(smoke.visible,false);assert.equal(hidden.visible,false);assert.equal(camera.layers.mask,1);assert.equal(this.shadowMap.autoUpdate,false);}};
 mask.render(renderer,scene,camera);assert.equal(rendered,1);assert.equal(current,target);assert.equal(alpha,.4);assert.equal(scene.background,background);assert.equal(camera.layers.mask,layers);assert.equal(smoke.visible,true);for(const [o,m]of originals)assert.equal(o.material,m);
 renderer.render=()=>{throw Error('render failure');};assert.throws(()=>mask.render(renderer,scene,camera),/render failure/);assert.equal(renderer.shadowMap.autoUpdate,true);assert.equal(camera.layers.mask,layers);assert.equal(current,target);for(const [o,m]of originals)assert.equal(o.material,m);
-let disposed=0;for(const resource of [mask.target,mask.black,mask.white])resource.addEventListener('dispose',()=>disposed++);mask.dispose();assert.equal(disposed,3);
+let disposed=0;for(const resource of [mask.target.depthTexture,mask.target,mask.black,mask.white])resource.addEventListener('dispose',()=>disposed++);mask.dispose();assert.equal(disposed,4);
 
 // Exercise the real shared settings binding: slider persists and updates live,
 // toggle preserves its intensity, and re-enabling retains the saved amount.
@@ -53,3 +53,19 @@ order=[];frame.finish();assert.deepEqual(order,['display','aa','forge']);
 frame.output.uniforms.pixelForgeAmount.value=0;frame.spatial.render=(r,pass,display,target)=>{assert.equal(target,null);order.push('aa');};order=[];frame.finish();assert.deepEqual(order,['display','aa']);frame.dispose();
 const spatial=new SpatialAA('fxaa',THREE.UnsignedByteType),destination={};let lastTarget;spatial.render(renderStub,(material,target)=>{assert.equal(material,spatial.fxaa);lastTarget=target;},true,destination);assert.equal(lastTarget,destination);spatial.dispose();
 console.log('Pixel Forge ordering: final after display conversion and all spatial AA; disabled path bypasses styling.');
+
+// The surface coordinates use the unjittered camera, including when TAA is on.
+const surfaceRenderer={...renderStub,capabilities:{maxSamples:4},shadowMap:{autoUpdate:true},getRenderTarget:()=>null,getClearColor:c=>c.set(0),getClearAlpha:()=>1,render(){}};
+const surfaceCamera=new THREE.PerspectiveCamera(85,16/9,.07,160);surfaceCamera.position.set(8,3,-5);surfaceCamera.lookAt(1,2,4);surfaceCamera.updateMatrixWorld();
+const surfaceFrame=new FrameRenderer(surfaceRenderer,new THREE.Scene(),surfaceCamera,{ao:false,bloom:false,taa:true});
+const inverse=surfaceCamera.projectionMatrixInverse.clone(),world=surfaceCamera.matrixWorld.clone();surfaceFrame.render(new THREE.Scene(),surfaceCamera,1/60);
+assert.deepEqual(surfaceFrame.forge.uniforms.inverseProjection.value.elements,inverse.elements);
+assert.deepEqual(surfaceFrame.forge.uniforms.cameraWorld.value.elements,world.elements);
+assert.equal(surfaceFrame.forge.uniforms.worldDepth.value,surfaceFrame.cleanActors.target.depthTexture);surfaceFrame.dispose();
+h.run(`
+let grainHidden;document.body.classList.toggle=(name,value)=>{if(name==='graphics-no-grain')grainHidden=value;};
+renderer={shadowMap:{type:THREE.PCFSoftShadowMap}};Object.assign(settings,{grain:true,pixelForge:true,pixelForgeIntensity:1});applyGraphicsRendererSettings();assert.equal(grainHidden,true);
+settings.pixelForgeIntensity=0;applyGraphicsRendererSettings();assert.equal(grainHidden,false);
+settings.pixelForge=false;settings.pixelForgeIntensity=1;applyGraphicsRendererSettings();assert.equal(grainHidden,false);renderer=null;
+`);
+console.log('Surface texture: unjittered world reconstruction with TAA, mask depth reuse, and removal of screen-fixed grain while styling is active pass.');

@@ -32,7 +32,7 @@ const read=`uniform sampler2D worldTex;uniform sampler2D gunTex;varying vec2 vUv
 const prefilter=read+`void main(){vec3 c=colorAt(vUv);float b=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*max(0.,b-1.8)/max(b,.001),1.);}`;
 const blur=`uniform sampler2D image;uniform vec2 direction;varying vec2 vUv;void main(){vec3 c=texture2D(image,vUv).rgb*.227027;c+=texture2D(image,vUv+direction*1.384615).rgb*.316216;c+=texture2D(image,vUv-direction*1.384615).rgb*.316216;c+=texture2D(image,vUv+direction*3.230769).rgb*.070270;c+=texture2D(image,vUv-direction*3.230769).rgb*.070270;gl_FragColor=vec4(c,1.);}`;
 const final=read+`uniform float antialias;uniform float untonemappedExposure;uniform float vignetteAmount;uniform float grainAmount;uniform float gradeAmount;uniform float underwater;uniform float bloomAmount;uniform float aoAmount;uniform sampler2D ambientTex;uniform sampler2D bloomTex;uniform vec2 texel;uniform float slow;
-uniform float displayToneMap;
+uniform float displayToneMap;uniform float pixelForgeAmount;
 #include <tonemapping_pars_fragment>
 vec3 linearAt(vec2 uv){
  vec3 w=texture2D(worldTex,uv).rgb;float contact=mix(1.,texture2D(ambientTex,uv).r,aoAmount);w*=contact;w=w*(1.+underwater*.10)+vec3(.008,.018,.02)*underwater;
@@ -41,7 +41,7 @@ vec3 linearAt(vec2 uv){
  c+=texture2D(bloomTex,uv).rgb*(.105+slow*.045)*bloomAmount;
  // Restrained high-speed photographic grade, preserving the health-color range.
  c*=mix(vec3(1.),vec3(1.025,1.025,1.),gradeAmount);c=mix(c,c*vec3(.94,1.015,1.045),slow*.22*gradeAmount);c*=1.+slow*.065*gradeAmount;
- float printPattern=mod(gl_FragCoord.x+mod(gl_FragCoord.y,2.)*2.,4.)/4.-.375;c+=printPattern*.006*grainAmount*(1.-smoothstep(.1,.6,l));
+ float printPattern=mod(gl_FragCoord.x+mod(gl_FragCoord.y,2.)*2.,4.)/4.-.375;c+=printPattern*.006*grainAmount*(1.-pixelForgeAmount)*(1.-smoothstep(.1,.6,l));
  vec2 p=uv-.5;float vignette=1.-dot(p,p)*.14*vignetteAmount;c*=vignette;
  return max(c,vec3(0.))*untonemappedExposure;
 }
@@ -58,12 +58,15 @@ ${pixelForgeGLSL}
 vec3 forgeRead(vec2 uv){return texture2D(image,clamp(uv,texel*.5,vec2(1.)-texel*.5)).rgb;}
 void main(){
  vec3 original=forgeRead(vUv),c=original;
+ // Evaluate before the silhouette branch so screen derivatives remain valid.
+ float surfaceValue=forgeSurfaceGrain(vUv);
+ if(texture2D(worldDepth,vUv).r>=.99999)surfaceValue=0.;
  float protectedAmount=max(texture2D(cleanActorTex,vUv).r,texture2D(gunTex,vUv).a);
  float strength=pixelForgeAmount*(1.-protectedAmount);
  if(strength>.001){
   float block=${PIXEL_FORGE_SIZE.toFixed(2)};
   vec2 grid=floor(vUv/texel/block),q=(grid+.5)*block*texel,d=texel*block;
-  c=forgePalette(forgeRead(q)+vec3(forgeDither(grid)*.085));
+  c=forgePalette(forgeRead(q)+vec3(surfaceValue*.085));
   vec3 dx=forgeRead(q+vec2(d.x,0.))-forgeRead(q-vec2(d.x,0.));
   vec3 dy=forgeRead(q+vec2(0.,d.y))-forgeRead(q-vec2(0.,d.y));
   float rim=clamp((length(dx)+length(dy))*.85,0.,1.);
@@ -103,7 +106,7 @@ export class FrameRenderer{
   this.blur=new THREE.ShaderMaterial({uniforms:{image:{value:null},direction:{value:new THREE.Vector2()}},vertexShader:vertex,fragmentShader:blur,depthTest:false,depthWrite:false,toneMapped:false});
   this.output=new THREE.ShaderMaterial({uniforms:{...common,cleanActorTex:{value:this.cleanActors.target.texture},pixelForgeAmount:{value:this.pixelForgeIntensity},displayToneMap:{value:1},toneMappingExposure:{value:1},untonemappedExposure:{value:quality.toneMap==='none'?(quality.exposure??1):1},vignetteAmount:{value:quality.vignette??1},grainAmount:{value:quality.grain===false?0:1},gradeAmount:{value:quality.colorGrade===false?0:1},antialias:{value:quality.antialias===false?0:1},underwater:{value:0},bloomAmount:{value:this.bloomEnabled?(quality.bloomStrength??1):0},aoAmount:{value:this.gtao ? (quality.aoStrength??.65) : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false,toneMapped:false});
   this.styledInput=new THREE.WebGLRenderTarget(1,1,{depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
-  this.forge=new THREE.ShaderMaterial({uniforms:{image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
+  this.forge=new THREE.ShaderMaterial({uniforms:{worldDepth:{value:this.cleanActors.target.depthTexture},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
   this.resize();
  }
  resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*this.aoRatio)),ah=Math.max(1,Math.floor(size.y*this.aoRatio));this.world.setSize(size.x,size.y);this.styledInput.setSize(size.x,size.y);this.cleanActors.resize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y);this.temporal?.resize(size.x,size.y);this.spatial?.resize(size.x,size.y)}
@@ -121,7 +124,13 @@ export class FrameRenderer{
   if(this.gtao)this.gtao.render(r,this.ambientTarget,this.world);else{r.setRenderTarget(this.ambientTarget);r.setClearColor(0xffffff,1);r.clear()}
   }finally{this.temporal?.restore(camera);}
   this.output.uniforms.pixelForgeAmount.value=this.pixelForgeIntensity;
-  if(this.pixelForgeIntensity>0)this.cleanActors.render(r,scene,camera);
+  if(this.pixelForgeIntensity>0){
+   // This mask/depth pass uses the restored, unjittered camera. Surface grain
+   // therefore stays attached to geometry even with temporal AA enabled.
+   this.cleanActors.render(r,scene,camera);
+   this.forge.uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);
+   this.forge.uniforms.cameraWorld.value.copy(camera.matrixWorld);
+  }
   const worldTexture=this.temporal?this.temporal.resolve(camera,this.world,(m,t)=>this.pass(m,t)):this.world.texture;this.output.uniforms.worldTex.value=worldTexture;
   scene.fog=airFog;camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
   this.finish();

@@ -5,13 +5,22 @@ export const PIXEL_FORGE_SIZE=1.75;
 export const pixelForgeGLSL=`
 uniform sampler2D cleanActorTex;
 uniform float pixelForgeAmount;
-float forgeDither(vec2 p){
- vec2 a=mod(floor(p),4.);float v=0.;
- if(a.y<1.){if(a.x<1.)v=0.;else if(a.x<2.)v=8.;else if(a.x<3.)v=2.;else v=10.;}
- else if(a.y<2.){if(a.x<1.)v=12.;else if(a.x<2.)v=4.;else if(a.x<3.)v=14.;else v=6.;}
- else if(a.y<3.){if(a.x<1.)v=3.;else if(a.x<2.)v=11.;else if(a.x<3.)v=1.;else v=9.;}
- else{if(a.x<1.)v=15.;else if(a.x<2.)v=7.;else if(a.x<3.)v=13.;else v=5.;}
- return (v+.5)/16.-.5;
+uniform sampler2D worldDepth;
+uniform mat4 inverseProjection,cameraWorld;
+float forgeHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+vec3 forgeSurfacePosition(vec2 uv){
+ float depth=texture2D(worldDepth,uv).r;
+ vec4 view=inverseProjection*vec4(uv*2.-1.,depth*2.-1.,1.);
+ return (cameraWorld*vec4(view.xyz/view.w,1.)).xyz;
+}
+float forgeSurfaceGrain(vec2 uv){
+ vec3 p=forgeSurfacePosition(uv)*18.;
+ vec3 n=abs(cross(dFdx(p),dFdy(p)));n=pow(n,vec3(4.));n/=max(dot(n,vec3(1.)),.00001);
+ float yz=forgeHash(floor(p.yz)+vec2(17.,31.));
+ float xz=forgeHash(floor(p.xz)+vec2(47.,13.));
+ float xy=forgeHash(floor(p.xy)+vec2(71.,59.));
+ float footprint=max(length(dFdx(p)),length(dFdy(p)));
+ return (dot(vec3(yz,xz,xy),n)-.5)*(1.-smoothstep(.75,2.,footprint));
 }
 vec3 forgePalette(vec3 c){
  vec3 best=vec3(.075,.12,.13);float dst=100.;
@@ -32,6 +41,7 @@ vec3 forgePalette(vec3 c){
 export class PixelForgeMask{
  constructor(samples=0){
   this.target=new THREE.WebGLRenderTarget(1,1,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter});this.target.samples=samples;
+  this.target.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
   this.black=new THREE.MeshBasicMaterial({color:0x000000,side:THREE.DoubleSide,fog:false,toneMapped:false});
   this.white=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,fog:false,toneMapped:false});
   this.clearColor=new THREE.Color();
@@ -63,5 +73,5 @@ export class PixelForgeMask{
    renderer.setRenderTarget(target);renderer.setClearColor(clearColor,clearAlpha);
   }
  }
- dispose(){this.target.dispose();this.black.dispose();this.white.dispose();}
+ dispose(){this.target.depthTexture.dispose();this.target.dispose();this.black.dispose();this.white.dispose();}
 }
