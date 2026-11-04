@@ -212,12 +212,21 @@ function mergeGeometries(geometries){
 let skyTexture;
 function industrialSky(){
  if(skyTexture)return skyTexture;
- const w=1024,h=512,data=new Uint8Array(w*h*4),top=new THREE.Color(0x91afb8),horizon=new THREE.Color(0xd0d3c3),cloud=new THREE.Color(0xdce0d2),c=new THREE.Color();
- const clouds=[[70,.66,96,.025],[165,.69,80,.032],[310,.64,120,.026],[465,.72,110,.035],[565,.68,90,.025],[740,.65,155,.03],[875,.73,100,.036],[990,.68,90,.025]];
+ // Compose in broad values that remain distinct after the limited palette.
+ const w=1024,h=512,data=new Uint8Array(w*h*4),top=new THREE.Color(0x345663),horizon=new THREE.Color(0xbfb58c),cloud=new THREE.Color(0xc9cbb2),shade=new THREE.Color(0x6d8c89),warm=new THREE.Color(0xd4b778),c=new THREE.Color();
+ const banks=[[.08,.67,.14,.055],[.19,.70,.16,.064],[.33,.68,.13,.043],[.51,.61,.19,.042],[.65,.64,.16,.050],[.82,.77,.13,.065],[.94,.74,.15,.052]];
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-  const v=y/(h-1),t=THREE.MathUtils.smoothstep(v,.48,.95);c.copy(horizon).lerp(top,t);
-  // Broad, stepped cloud banks: deliberately low-detail and fixed in the sky.
-  for(const [cx,cy,rx,ry]of clouds){let dx=Math.abs(x-cx);dx=Math.min(dx,w-dx);const cap=ry*(.65+.35*Math.cos(Math.floor((x-cx)/24)*.7)),dy=Math.abs(v-cy);if(dx<rx&&dy<cap*(1-(dx/rx)**4)){c.lerp(cloud,.29);break;}}
+  const u=x/(w-1),v=y/(h-1),angle=u*Math.PI*2,t=THREE.MathUtils.smoothstep(v,.49,.80);c.copy(horizon).lerp(top,t);
+  const glow=Math.exp(-(((v-.52)/.075)**2))*(.5+.5*Math.cos(angle-1.1))**6;c.lerp(warm,glow*.28);
+  let field=0,lit=0;
+  for(const [cx,cy,rx,ry]of banks){
+   let dx=Math.abs(u-cx);dx=Math.min(dx,1-dx);
+   const warp=Math.sin(angle*11+cy*8)*.0035+Math.cos(angle*19)*.002;
+   const dy=(v-cy+warp)/ry,r=Math.sqrt((dx/rx)**2+dy*dy),density=1-THREE.MathUtils.smoothstep(r,.58,1.);
+   if(density>field){field=density;lit=THREE.MathUtils.smoothstep(dy,-.55,.6);}
+  }
+  // Layered bases and lit caps, rather than tiny noise or a single empty wash.
+  if(field>.12){const coverage=THREE.MathUtils.smoothstep(field,.12,.6);c.lerp(shade,coverage*.85);c.lerp(cloud,coverage*(.28+.64*lit));}
   c.convertLinearToSRGB();const i=(y*w+x)*4;data[i]=Math.round(c.r*255);data[i+1]=Math.round(c.g*255);data[i+2]=Math.round(c.b*255);data[i+3]=255;
  }
  skyTexture=new THREE.DataTexture(data,w,h);skyTexture.colorSpace=THREE.SRGBColorSpace;skyTexture.mapping=THREE.EquirectangularReflectionMapping;skyTexture.magFilter=skyTexture.minFilter=THREE.LinearFilter;skyTexture.needsUpdate=true;return skyTexture;

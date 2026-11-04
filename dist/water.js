@@ -33,7 +33,7 @@ export function createWaterSurface(volume){
  const polygon=waterPolygon(volume),positions=[];for(let i=1;i<polygon.length-1;i++)for(const p of [polygon[0],polygon[i+1],polygon[i]])positions.push(p[0],volume.top,p[1]);
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();geometry.computeBoundingSphere();
  const material=new THREE.ShaderMaterial({uniforms:{time:{value:0},shorePlanes:{value:Array.from({length:8},(_,i)=>{const plane=(volume.planes||[]).filter(p=>Math.hypot(p[0],p[2])>1e-6)[i];if(!plane)return new THREE.Vector3(0,0,1000);const [a,b,c,d]=plane,n=Math.hypot(a,c);return new THREE.Vector3(a/n,c/n,(d-b*volume.top)/n)})}},vertexShader:vertex,fragmentShader:fragment,transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide});material.forceSinglePass=true;
- const mesh=new THREE.Mesh(geometry,material);mesh.name='water-surface';mesh.userData.waterSurface=true;mesh.layers.set(2);mesh.renderOrder=1;mesh.castShadow=mesh.receiveShadow=false;
+ const mesh=new THREE.Mesh(geometry,material);mesh.name='water-surface';mesh.userData.waterSurface=true;mesh.layers.set(3);mesh.renderOrder=1;mesh.castShadow=mesh.receiveShadow=false;
  // Scene-local time keeps cached maps synchronized without traversing the arena.
  mesh.onBeforeRender=(_renderer,scene)=>{material.uniforms.time.value=scene.userData.waterTime||0};return mesh;
 }

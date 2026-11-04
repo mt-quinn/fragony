@@ -193,3 +193,9 @@ Graphics settings include Pixel Forge, enabled at 100% by default, with a persis
 `tests/pixel-forge.mjs` covers defaults/migration, live saved controls, mask restoration/lifecycle and final pass ordering; AA lifecycle and menu-stage checks also cover the new resources and menu character exclusion.
 
 Pixel Forge surface texture is reconstructed from the unjittered scene depth already captured by the clean-actor mask. The original palette, fixed pixel size and edge treatment are unchanged. Screen-fixed shader/overlay grain is suppressed while Pixel Forge is active; normal film-grain settings apply when it is off or at zero intensity.
+
+### Water and sky with Pixel Forge
+
+Water has a dedicated layer: the opaque scene is styled first, then smooth translucent tint, world-space ripple crests and shoreline highlights are composited over it. The water pass tests against opaque depth, preserving walls and submerged geometry, and first-person weapons stay in front. This avoids projecting the pool floor's grain onto the liquid. Layer 2 remains industrial detailing; water uses layer 3. With Pixel Forge off, water returns to the normal world-color path. Swim physics and underwater fog are unchanged.
+
+The arena sky uses a seamless equirectangular composition with layered cloud banks, a darker upper sky and a warm horizon. Its values are separated to survive the limited palette. `dist/art-lab-water.html` is an excluded local review page for above-water, waterline, underwater and outdoor sky views.

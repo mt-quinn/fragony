@@ -14,7 +14,7 @@ for(const quality of [{},...Object.values(MOBILE_QUALITY)])for(const antialias o
  assert.equal(frame.world.samples,antialias?msaa:0);assert.equal(frame.gun.samples,antialias?msaa:0);
  assert.equal(!!frame.temporal,antialias&&taa);assert.equal(!!frame.spatial,antialias&&aaFilter!=='none');
  assert.equal(!!frame.world.depthTexture,antialias&&taa);
- const targets=[frame.styledInput,frame.cleanActors.target,frame.world,frame.gun,frame.ambientTarget,frame.bloomA,frame.bloomB,...(frame.temporal?.targets||[]),...(frame.spatial?[frame.spatial.input,frame.spatial.filtered,...(frame.spatial.smaa?[frame.spatial.smaa._edgesRT,frame.spatial.smaa._weightsRT]:[])]:[])];
+ const targets=[frame.waterLayer.target,frame.styledInput,frame.cleanActors.target,frame.world,frame.gun,frame.ambientTarget,frame.bloomA,frame.bloomB,...(frame.temporal?.targets||[]),...(frame.spatial?[frame.spatial.input,frame.spatial.filtered,...(frame.spatial.smaa?[frame.spatial.smaa._edgesRT,frame.spatial.smaa._weightsRT]:[])]:[])];
  
  renderer.getDrawingBufferSize=v=>v.set(800,450);frame.resize();assert.equal(frame.world.width,800);assert.equal(frame.temporal?.targets[0].height??450,450);assert.equal(frame.spatial?.filtered.width??800,800);
  for(const target of targets){allocations++;target.addEventListener('dispose',()=>disposals++);}
