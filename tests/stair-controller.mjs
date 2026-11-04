@@ -16,3 +16,13 @@ for(const start of[{x:13.43581447077,z:24.000006769615,feet:.59375,direction:-1}
  let p={...start,radius:.4,height:1.9},grounded=false,vy=0;for(let i=0;i<24;i++){vy-=23/60;p=moveCharacter(native.brushes,p,{x:start.direction*.05,y:vy/60,z:0},{grounded,stepHeight:.6});grounded=p.grounded;if(grounded||p.ceiling)vy=0;assert.ok(canOccupy(native.brushes,p));}assert.ok(Math.abs(p.x-start.x)>.7,'native seam resumes walking without a jump');
 }
 console.log('Native Firing Range seams: initially ungrounded players regain tread contact and walk up both formerly stuck approaches.');
+
+// Several native clip risers can enter one movement slice before its target.
+// Their individual .55m rises are walkable although their total height is 1.1m.
+for(const fps of[30,60,144]){
+ const stairs=[{x:0,z:0,w:1,d:3,bottom:0,top:.55},{x:.03125,z:0,w:1,d:3,bottom:0,top:1.1}];
+ let p={x:-1.5,z:0,feet:0,radius:.4,height:1.9};
+ for(let frame=0;frame<fps;frame++)p=moveCharacter(stairs,p,{x:Math.min(3/fps,.3-p.x),y:-23/(fps*fps),z:0},{grounded:p.grounded??true,stepHeight:.6});
+ assert.ok(p.x>.29&&p.feet>1.09,'first-impact stepping clears overlapping native risers at '+fps+'Hz');
+}
+console.log('Closely spaced native clip risers walk without combining into a full-height obstacle.');

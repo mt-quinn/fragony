@@ -327,6 +327,10 @@ else:
  visit(BASE/'map_source'/filename)
  for extra in cfg.get('extraMaps',[]):visit(BASE/'map_source'/extra)
 for spawn in cfg.get('spawns',[]):spawns.append(dict(position=game(spawn[:3]),source=spawn[:3],angle=spawn[3] if len(spawn)>3 else 0))
+if cfg.get('stairClearances'):
+ from stair_collision import clear_stairs
+ brushes[:]=clear_stairs(brushes,cfg['stairClearances'])
+
 if cfg.get('removeCollisionIds'):
  brushes[:]=[b for b in brushes if b['id']not in cfg['removeCollisionIds']]
 # The navigable footprint removes scenery within the rectangular source crop
@@ -367,6 +371,7 @@ if footprint_path.exists():
 source=dict(title='Stock Shipment' if ID=='shipment'else 'Nuked / Nuketown',author='Infinity Ward; source recovery xoxor4d / Stendby' if ID=='shipment'else 'Treyarch; CoD4 adaptation Stendby',scale=SCALE,origin=ORIGIN,cropSource=CROP,inputs=inputs,counts=dict(audit),format='Radiant iwmap 4 / v25 static models',provenance='https://customapscod.com/mod.php?id=ODE%3D' if ID=='shipment'else 'https://www.customapscod.com/mod.php?id=ODk%3D')
 if cfg:source.update(title=cfg['title'],author=cfg['author'],provenance=cfg['provenance'])
 if cfg.get('collisionAdaptation'):source['collisionAdaptation']=cfg['collisionAdaptation']
+if cfg.get('stairClearances'):source['stairClearances']=cfg['stairClearances']
 source['collisionMeshInstances']=len(collision_meshes['instances']);source['collisionMeshModels']=len(collision_meshes['models'])
 render_keys.clear();collision_keys.clear()
 def blob(values):return base64.b64encode(struct.pack('<%df'%len(values),*values)).decode()

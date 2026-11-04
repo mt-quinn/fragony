@@ -1,0 +1,80 @@
+[
+  {
+    "map": "killhouse",
+    "family": "wood",
+    "bounds": [
+      -22,
+      -12,
+      0,
+      2.5,
+      9,
+      23
+    ],
+    "reason": "Stacked com_pallet_stack / com_pallet props: source model names and stepped wooden slats, not a stair flight."
+  },
+  {
+    "map": "killhouse",
+    "family": "wood",
+    "bounds": [
+      18,
+      22,
+      0,
+      2.5,
+      -36,
+      -34
+    ],
+    "reason": "Stacked wooden pallet props, matching the com_pallet source geometry at the other sampled stacks."
+  },
+  {
+    "map": "firingrange",
+    "family": "paint",
+    "bounds": [
+      -26,
+      -10,
+      0,
+      2.2,
+      24,
+      54
+    ],
+    "reason": "p_glo_crate_wood_01 / ammunition-palette model edges; source model placements identify crates rather than staircase treads."
+  },
+  {
+    "map": "hijacked",
+    "family": "wood",
+    "bounds": [
+      -26,
+      -22,
+      18.5,
+      21,
+      -2,
+      -1
+    ],
+    "reason": "Cabin roof boards from mlv_p6_hijacked_back, above the arena's 18m playable height; not stairs."
+  },
+  {
+    "map": "shipment",
+    "family": "wood",
+    "bounds": [
+      10,
+      14,
+      0,
+      1.1,
+      17,
+      19
+    ],
+    "reason": "Stacked pallet slats above shipment-brush-341; native com_pallet geometry, not stairs."
+  },
+  {
+    "map": "shipment",
+    "family": "wood",
+    "bounds": [
+      17,
+      20,
+      0,
+      1.1,
+      -13,
+      -11
+    ],
+    "reason": "Stacked pallet slats above shipment-brush-326; matching source pallet prop geometry."
+  }
+]

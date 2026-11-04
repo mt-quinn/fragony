@@ -21,7 +21,22 @@
     "removeCollisionIds": [
       "firingrange-brush-165"
     ],
-    "collisionAdaptation": "Remove the CoD4 port\u2019s invisible tower-sealing player clip to restore the original watchtower platform; retain its original floor, walls, rails and roof."
+    "collisionAdaptation": "Remove the CoD4 port\u2019s invisible tower-sealing player clip to restore the original watchtower platform; retain its original floor, walls, rails and roof.",
+    "stairClearances": [
+      {
+        "x": 17.8,
+        "z": -19.91,
+        "w": 9,
+        "d": 2.5,
+        "yaw": -0.5235987755982988,
+        "bottom": 3,
+        "top": 9.5,
+        "blockers": [
+          "firingrange-brush-517"
+        ],
+        "reason": "Clear standing passage along the visible warehouse stair flights; retain the surrounding terrain solid and native stair ramps."
+      }
+    ]
   },
   "vacant": {
     "folder": "batch-audit/mp_vacant_map_source_all",

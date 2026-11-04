@@ -1,0 +1,42 @@
+{
+  "map": "firingrange",
+  "nodes": 5647,
+  "prunedNodes": 11677,
+  "rejectedDrops": 10683,
+  "edges": 75695,
+  "bytes": 673332,
+  "buildMs": 31233,
+  "spawnRoutes": 256,
+  "expectedSpawnRoutes": 256,
+  "actions": {
+    "walk": 74476,
+    "jump": 999,
+    "drop": 219,
+    "pad": 1
+  },
+  "pads": [
+    {
+      "id": "watchtower-access",
+      "from": {
+        "id": 1108,
+        "x": -29,
+        "y": 0.59,
+        "z": 28,
+        "horizontal": 0.32310988842807126,
+        "rise": -0.0040000000000000036
+      },
+      "to": {
+        "id": 1113,
+        "x": -29,
+        "y": 4.688,
+        "z": 35,
+        "horizontal": 0.3250000000000007,
+        "rise": 0.0004999999999997229
+      },
+      "encoded": true
+    }
+  ],
+  "elevators": [],
+  "warnings": [],
+  "issues": []
+}

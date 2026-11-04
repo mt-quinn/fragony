@@ -27,6 +27,7 @@ def visit_external(n):
  else:raise ValueError(n['cfg']['external'])
 
 def summit(n):
+ from summit_planes import signed_distance
  base=n['BASE']/'dump';prefix='maps/mp/mp_mountain.d3dbsp';w=json.loads((base/(prefix+'.gfxworld.json')).read_text());cl=json.loads((base/(prefix+'.clipmap.json')).read_text());emit,role,game,prism,block=n['emit'],n['role'],n['game'],n['prism'],n['block'];crop=n['CROP'];origin=n['ORIGIN'];scale=n['SCALE'];audit=n['audit']
  vb=(base/w['vertexFile']).read_bytes();ib=(base/w['indexFile']).read_bytes()
  entities=[dict(re.findall(r'"([^"]+)"\s+"([^"]*)"',body))for body in re.findall(r'\{([^{}]*)\}',(base/(prefix+'.ents')).read_text())]
@@ -57,7 +58,7 @@ def summit(n):
   if any(a>=b for a,b in zip(lo,hi)):continue
   ps=[]
   for side in b['sides']:
-   norm=n['apply'](matrix,side['normal']);distance=side['dist']+n['dot'](norm,offset);ps.append(n['direction'](norm)+[(distance-n['dot'](norm,origin))*scale])
+   norm=n['apply'](matrix,side['normal']);distance=signed_distance(side,b['bounds'])+n['dot'](norm,offset);ps.append(n['direction'](norm)+[(distance-n['dot'](norm,origin))*scale])
   for axis in range(3):
    for sign,limit in [(1,hi[axis]),(-1,-lo[axis])]:
     norm=[0,0,0];norm[axis]=sign;ps.append(n['direction'](norm)+[(limit-n['dot'](norm,origin))*scale])

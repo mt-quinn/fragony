@@ -1,0 +1,42 @@
+{
+  "map": "summit",
+  "nodes": 11412,
+  "prunedNodes": 4886,
+  "rejectedDrops": 0,
+  "edges": 217942,
+  "bytes": 1880488,
+  "buildMs": 809,
+  "spawnRoutes": 256,
+  "expectedSpawnRoutes": 256,
+  "actions": {
+    "walk": 213298,
+    "jump": 3649,
+    "drop": 994,
+    "pad": 1
+  },
+  "pads": [
+    {
+      "id": "gantry-access",
+      "from": {
+        "id": 9907,
+        "x": 23,
+        "y": 7.012,
+        "z": 32,
+        "horizontal": 0,
+        "rise": 0
+      },
+      "to": {
+        "id": 9915,
+        "x": 23,
+        "y": 8.5,
+        "z": 37,
+        "horizontal": 0,
+        "rise": 0
+      },
+      "encoded": true
+    }
+  ],
+  "elevators": [],
+  "warnings": [],
+  "issues": []
+}

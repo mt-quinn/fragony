@@ -44,12 +44,16 @@ export function recoverBody(blocks,body,bounds){
 }
 function horizontal(blocks,p,dx,dz,step,bounds,normals,stepHeight){
  let x=dx,z=dz;
- for(let pass=0;pass<4&&Math.hypot(x,z)>1e-8;pass++){
+ for(let pass=0;pass<8&&Math.hypot(x,z)>1e-8;pass++){
   const target=constrain({...p,x:p.x+x,z:p.z+z},bounds),hits=bodyContacts(blocks,target);
   if(!hits.length){p.x=target.x;p.z=target.z;break}
   if(step){const top=Math.max(...hits.map(h=>h.top));if(top>p.feet&&top-p.feet<=stepHeight+COLLISION.skin){const raised={...p,feet:top+COLLISION.skin};if(canOccupy(blocks,raised)&&canOccupy(blocks,{...target,feet:raised.feet})){p.x=target.x;p.z=target.z;p.feet=raised.feet;break}}}
   let lo=0,hi=1;for(let j=0;j<14;j++){const t=(lo+hi)/2;if(canOccupy(blocks,{...p,x:p.x+x*t,z:p.z+z*t}))lo=t;else hi=t}
   const impact=bodyContacts(blocks,{...p,x:p.x+x*hi,z:p.z+z*hi});p.x+=x*lo;p.z+=z*lo;x*=1-lo;z*=1-lo;
+  // Resolve the first riser before considering later risers inside this move.
+  // Thin native clip treads can overlap the target footprint at different heights.
+  // Testing only the final target treats their combined rise as one tall wall.
+  if(step&&impact.length){const top=Math.max(...impact.map(h=>h.top));if(top>p.feet&&top-p.feet<=stepHeight+COLLISION.skin&&canOccupy(blocks,{...p,feet:top+COLLISION.skin})){p.feet=top+COLLISION.skin;continue}}
   for(const h of impact.length?impact:hits){normals.push({x:h.nx,z:h.nz});const into=x*h.nx+z*h.nz;if(into<0){x-=h.nx*into;z-=h.nz*into}}
  }
 }

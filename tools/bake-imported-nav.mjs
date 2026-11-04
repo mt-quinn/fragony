@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import {gzipSync,gunzipSync} from 'node:zlib';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {sourceNavigationKey} from './source-navigation-key.mjs';
 import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
@@ -32,7 +34,7 @@ for(const id of requested){
  const spec=sourceSpecs.find(s=>s.id===id),imported=spec?null:await import(`../dist/maps/${id}.js`),map=spec?createSourceArena(spec,await readSourceData(new URL(`../dist/maps/${id}-data.json.gz`,import.meta.url)),null):imported.default||imported[id.toUpperCase()],began=performance.now();
  if(map.brushes.triangleCollision){map.brushes.triangleCollision.faceLimit=64000;map.brushes.triangleCollision.queryLimit=4096;}
  console.log(`Building ${map.name}: ${map.brushes.length} source collision brushes, ${map.pads.length} pads, ${map.anchors.length} anchors.`);
- const auditRoot=new URL('../../reference-maps/'+(spec?.sourceFamily==='eliteforce'?'eliteforce-next-map-round/':'')+id+'/',import.meta.url);fs.mkdirSync(auditRoot,{recursive:true});
+ const auditRoot=process.env.SOURCE_NAV_AUDIT_DIR?pathToFileURL(path.resolve(process.env.SOURCE_NAV_AUDIT_DIR,id)+'/'):new URL('../../reference-maps/'+(spec?.sourceFamily==='eliteforce'?'eliteforce-next-map-round/':'')+id+'/',import.meta.url);fs.mkdirSync(auditRoot,{recursive:true});
  const auditPath=new URL('navigation-audit.json.gz',auditRoot),auditKey=new URL('navigation-audit-key.json',auditRoot),geometryKey=sourceNavigationKey(map);let nav,reused=false;
  if(process.env.SOURCE_NAV_REUSE==='1'&&fs.existsSync(auditPath)&&fs.existsSync(auditKey)){
   const key=JSON.parse(fs.readFileSync(auditKey));if(key.geometry===geometryKey&&key.maxHeight>=map.maxHeight){
