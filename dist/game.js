@@ -1,5 +1,6 @@
+import {settingsWorkspaceHTML,settingsRows,settingsSections,settingID,settingOutputID,settingValueText,SETTINGS_AA_PRESETS} from './settings-workspace.js';
 import {BALANCE,toDisplay,fromDisplay,maxHealth,normalizePerks,activePerks,equipPerk,displayedHistory,weaponEngagement} from './balance.js';
-import {gameViewportSize} from './viewport.js';
+import {gameViewportSize,displayReport} from './viewport.js';
 import {batchHealthPickups} from './pickup-view.js';
 import {MenuStage,MENU_STAGE} from './menu-stage.js';
 import {MobileAutoJump} from './mobile-jump.js';
@@ -11,7 +12,7 @@ import {modelAttachments,applyAttachmentModels,animateAttachmentModels} from './
 import {FireControl,FeedSystem,distanceDamage,reloadDuration} from './weapon-cycle.js';
 import {traceCartridges} from './ballistics.js';
 import {nearbyAutoTarget,autoFirePadding,AUTO_AIM_PADDING} from './mobile-targeting.js';
-import {MobileController,wantsTouch} from './mobile.js';
+import {MobileController,wantsTouch,MOBILE_DEFAULTS} from './mobile.js';
 import {BenchmarkRunner,openBenchmark,benchmarkReportHTML} from './graphics-benchmark.js';
 import {graphicsOptions,graphicsRenderOptions,graphicsControlsHTML,EFFECT_PRESETS} from './graphics.js';
 import {drawMapFromBag,validMapRotation,rotationAfterPlayedMap} from './map-rotation.js';
@@ -120,7 +121,7 @@ async function init(){
  applyGraphicsRendererSettings();
  sizeRenderer();renderer.outputColorSpace=THREE.SRGBColorSpace;applyGraphicsRendererSettings();studioMap=studioEnvironment(renderer);scene.environment=studioMap.texture;scene.environmentIntensity=.34;frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());$('viewport').appendChild(renderer.domElement);if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{if(mobile)mobile.resize();else{sizeRenderer();frameRenderer?.resize();}}).observe($('viewport'));
  scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,1.0));const sun=new THREE.DirectionalLight(0xfff2d6,2.8);sun.position.set(-24,52,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-57,right:57,top:57,bottom:-57,near:1,far:125});renderSun=sun;sun.shadow.mapSize.set(shadowSize(),shadowSize());sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);scene.traverse(o=>{if(o.isLight)o.layers.enable(1)});const weaponFill=new THREE.DirectionalLight(0xdde9ef,1.5);weaponFill.position.set(-2,3,1);weaponFill.layers.set(1);camera.add(weaponFill);camera.add(weaponFill.target);weaponFill.target.position.set(0,0,-1);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewRig=createDummy();previewDummy=previewRig.group;menuStage=new MenuStage(scene,previewRig);prepareMenuStage();
- let last=performance.now();renderer.setAnimationLoop(now=>{if(benchmarkOverlay)return;if(benchmarkChild&&(!benchmarkRunner||!benchmarkRunner.frame(now)))return;updateAAStats(now);const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;mobile?.update(dt);if(document.hidden||mobile?.enabled&&!mobile.landscape)return;if(mode==='inspect'){presentInspection(dt);return;}if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){menuStage.present(camera,gameViewportSize().width,gameViewportSize().height,dt,settings.motion)}updateEffects(dt*(slow?BALANCE.worldSlow:1));arena.userData.healthBatches?.sync();frameRenderer.render(scene,camera,dt,slow,MAP.water||[])});
+ let last=performance.now();renderer.setAnimationLoop(now=>{if(benchmarkOverlay)return;if(benchmarkChild&&(!benchmarkRunner||!benchmarkRunner.frame(now)))return;updateAAStats(now);const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;mobile?.update(dt);if(document.hidden||mobile?.enabled&&!mobile.landscape)return;if(mode==='inspect'){presentInspection(dt);return;}if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){menuStage.present(camera,gameViewportSize().width,gameViewportSize().height,dt,settings.motion)}updateEffects(dt*(slow?BALANCE.worldSlow:1));arena.userData.healthBatches?.sync();frameRenderer.render(scene,camera,dt,slow,MAP.water||[]);drawSettingsPreview();});
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();if(mode==='play')pause();mobile?.setFeedback('GRAPHICS PAUSED · RESTORING');});
  if(benchmarkChild)startBenchmarkChild();
  renderer.domElement.addEventListener('webglcontextrestored',()=>{frameRenderer?.dispose();frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());if(mobile?.overlay==='pause')mobile.showPause();});
@@ -155,6 +156,7 @@ function setupMobile(){
   action:touchAction,
   resize:()=>{if(!renderer)return;sizeRenderer();frameRenderer?.resize();},
   settingsChanged:()=>{},
+  showSettings:showControls,
   audioHTML:()=>['guns','steps','feedback','music'].map((k,i)=>settingRow(k,['Gunfire','Footsteps','Hit & damage feedback','Music'][i])).join(''),
   visualHTML:()=>graphicsSettingsHTML()+settingRow('motion','Camera motion')+minimapSettingsHTML(false),
   bindAudio:panel=>{bindGraphicsSettings(panel);bindAntialiasSetting(panel);bindMinimapSettings(panel);for(const key of ['guns','steps','feedback','music','motion']){const input=panel.querySelector('#setting-'+key);if(!input)continue;input.oninput=e=>{settings[key]=Number(e.target.value);$('value-'+key).textContent=settingValue(key);e.target.setAttribute('aria-valuetext',settingValue(key));localStorage.setItem('dh-settings',JSON.stringify(settings));gameAudio.applySettings(settings);};}}
@@ -853,22 +855,132 @@ function prepareMenuStage(){
 }
 function mainMenu(){mobileAutoJump.reset();if(menuStage){if(mode==='play'||mode==='results'||mode==='shop'&&!shopInspect)menuReturnMapId=MAP.id;prepareMenuStage();}practiceMode=false;mobile?.clear();mobile?.closeOverlay();if(mobile)mobile.practice=false;clearDeathView();hurtFeedback.reset();$('damage').style.opacity=0;$('panel').className='panel';buildWeapon();gameAudio.stopWorld();mode='menu';document.exitPointerLock?.();$('panel').hidden=true;$('hud').hidden=true;$('menu').hidden=false;document.body.classList.remove('playing');weaponGroup.visible=false;$('continue').hidden=!localStorage.getItem('dh-run')}
 function pause(){mobileAutoJump.reset();if(mode!=='play')return;playerSlide.buffer=0;resetFireControl();locked=false;mobile?.clear();physicalKeys.clear();keys.clear();mouseDown=false;slow=false;$('damage').style.opacity=0;$('slowTint').style.opacity=0;gameAudio.stopWorld();if(mobile?.enabled)mobile.showPause();else showControls('play')}
-function showControls(back=controlsBack){if(mobile?.enabled){mobile.showSettings(back);return;}controlsBack=back;bindingPending=null;controlsMessage='';renderControls()}
-function saveControls(){localStorage.setItem('dh-controls',JSON.stringify(controls.bindings));localStorage.setItem('dh-settings',JSON.stringify(settings))}
-function renderControls(){
- $('panel').hidden=false;$('panel').className='panel controls-panel settings-panel';$('panel').innerHTML=`<div class="controls-heading"><div><small>${controlsBack==='play'?'PAUSED':''}</small><h2>SETTINGS</h2></div><div class="controls-heading-actions">${isPractice()?'<button id="practice-maps">MAPS</button><button id="practice-workbench">WORKBENCH</button><button id="practice-exit">END PRACTICE</button>':''}<button id="reset-controls">RESET CONTROLS</button><button class="primary" id="controls-back">${controlsBack==='play'?'RESUME':'BACK'}</button></div></div><div class="settings-overview"><section class="settings-category"><h3>CONTROLS</h3>${controlsOptionsHTML(settings)}</section>${settingsHTML()}</div><section class="settings-bindings"><h3>KEY BINDINGS</h3>${bindingsHTML(controls,settings,bindingPending,controlsMessage,false)}</section>`;
- $('panel').querySelectorAll('[data-binding]').forEach(b=>b.onclick=()=>{const[id,slot]=b.dataset.binding.split(':');bindingPending={id,slot:Number(slot)};renderControls()});
- $('controls-back').onclick=()=>{bindingPending=null;$('panel').className='panel';if(controlsBack==='play')lock();else $('panel').hidden=true};
- $('reset-controls').onclick=()=>{controls=new ControlBindings();settings.sensitivity=1;settings.invertY=settings.crouchToggle=false;saveControls();controlsMessage='Default controls restored.';renderControls()};
- $('control-sensitivity').oninput=e=>{settings.sensitivity=Number(e.target.value);e.target.setAttribute('aria-valuetext',settings.sensitivity.toFixed(2)+'×');e.target.style.setProperty('--fill',(settings.sensitivity-.2)/2.8*100+'%');saveControls();e.target.nextElementSibling&&(e.target.nextElementSibling.textContent=settings.sensitivity.toFixed(2)+'×')};
- $('control-hold-semi').onchange=e=>{settings.holdSemi=e.target.checked;saveControls();};$('control-invert').onchange=e=>{settings.invertY=e.target.checked;saveControls()};$('control-crouch').onchange=e=>{settings.crouchToggle=e.target.value==='toggle';crouchLatch=false;saveControls()};
- if(isPractice()){$('practice-maps').onclick=showPracticeMaps;$('practice-workbench').onclick=()=>showShop(false);$('practice-exit').onclick=mainMenu;}
- if(bindingPending){$('bind-escape').onclick=()=>commitBinding('Escape');$('bind-cancel').onclick=()=>{bindingPending=null;renderControls()};if($('bind-clear'))$('bind-clear').onclick=()=>commitBinding('');if(bindingPending.code)$('bind-replace').onclick=()=>commitBinding(bindingPending.code,true)}bindSettings();
+const settingsUI={category:'Controls',sections:{},input:null,preview:false,report:false,detail:null,displayReport:'',undo:null,scroll:{},message:''};
+let settingsPreviewPending=false;
+function settingsHost(){return mobile?.enabled&&mobile.panel?mobile.panel:$('panel')}
+function settingsVisible(){const host=settingsHost();return !!host&&!host.hidden&&host.className.includes('settings-host')}
+function settingsSection(){const sections=settingsSections(settingsUI.category,settingsUI.input);return sections.includes(settingsUI.sections[settingsUI.category])?settingsUI.sections[settingsUI.category]:sections[0]}
+function rememberSettingsScroll(){if(!settingsVisible())return;const body=settingsHost().querySelector('.sw-content');if(body)settingsUI.scroll[settingsUI.category+':'+settingsSection()+':'+settingsUI.input]=body.scrollTop||0;}
+function navigateSettings(category,section=null){rememberSettingsScroll();settingsUI.category=category;if(section)settingsUI.sections[category]=section;settingsUI.report=false;settingsUI.detail=null;settingsUI.preview=false;bindingPending=null;renderControls()}
+function settingsSnapshot(){let benchmark=null;try{benchmark=JSON.parse(localStorage.getItem('dh-graphics-benchmark')||'null');if(!benchmark?.settings||!Array.isArray(benchmark.results))benchmark=null}catch{}return{...settingsUI,section:settingsSection(),settings,touchSettings:mobile?.settings||MOBILE_DEFAULTS,touch:!!mobile?.enabled,practice:isPractice(),back:controlsBack,controls,bindingPending,gyroReady:mobile?.gyroReady,aaSummary:frameRenderer?.aaSummary?.(),benchmark};}
+function showControls(back=controlsBack){controlsBack=back==='play'?'play':'menu';if(mobile)mobile.settingsBack=controlsBack;if(settingsUI.input===null)settingsUI.input=mobile?.enabled?'Touch':'Keyboard';bindingPending=null;controlsMessage='';settingsUI.message='';renderControls()}
+function saveControls(){try{localStorage.setItem('dh-controls',JSON.stringify(controls.bindings));localStorage.setItem('dh-settings',JSON.stringify(settings));return true}catch{return false}}
+function settingsStatus(message){settingsUI.message=message;const status=$('settings-status');if(status)status.textContent=message;}
+function settingsSaved(ok=true){settingsStatus(ok?'Saved on this device':'Storage unavailable · active for this session');}
+function closeSettings(){bindingPending=null;settingsPreviewPending=false;if(mobile?.enabled)mobile.closeOverlay();$('panel').className='panel';$('panel').hidden=true;if(controlsBack==='play')lock();}
+function requestSettingsPreview(){settingsPreviewPending=true;}
+function drawSettingsPreview(){
+ if(!settingsPreviewPending||!settingsVisible())return;const canvas=$('settings-preview-canvas');if(!canvas?.getContext||!renderer?.domElement)return;
+ const ctx=canvas.getContext('2d');if(!ctx?.drawImage)return;try{ctx.drawImage(renderer.domElement,0,0,canvas.width,canvas.height);settingsPreviewPending=false;}catch{settingsPreviewPending=false;}
 }
-function commitBinding(code,replace=false){const p=bindingPending,result=controls.assign(p.id,p.slot,code,replace);if(Array.isArray(result)&&result.length){bindingPending={...p,code,conflicts:result};renderControls();return}controlsMessage=ACTIONS.find(a=>a.id===p.id).label+': '+keyLabel(code);bindingPending=null;saveControls();physicalKeys.clear();keys.clear();mouseDown=false;renderControls()}
-function captureBinding(code,e){if(!bindingPending)return false;if(e?.target?.id==='bind-cancel'||e?.target?.id==='bind-clear'||e?.target?.id==='bind-replace'||e?.target?.id==='bind-escape')return false;e?.preventDefault?.();if(bindingPending.code)return true;if(code==='Escape'){bindingPending=null;renderControls();return true}commitBinding(code);return true}
+function renderControls(){
+ if(settingsUI.input===null)settingsUI.input=mobile?.enabled?'Touch':'Keyboard';settingsUI.sections[settingsUI.category]=settingsSection();
+ const state=settingsSnapshot(),host=settingsHost(),html=settingsWorkspaceHTML(state);
+ if(mobile?.enabled&&mobile.showPanel){mobile.showPanel('settings',html);host.classList.add('settings-host');}else{host.hidden=false;host.className='panel settings-host';host.innerHTML=html;}
+ const on=(id,fn)=>{const node=$(id);if(node)node.onclick=fn;};
+ host.querySelectorAll('[data-settings-category]').forEach(b=>b.onclick=()=>navigateSettings(b.dataset.settingsCategory));
+ host.querySelectorAll('[data-settings-section]').forEach(b=>b.onclick=()=>navigateSettings(settingsUI.category,b.dataset.settingsSection));
+ host.querySelectorAll('[data-settings-input]').forEach(b=>b.onclick=()=>{rememberSettingsScroll();if(b.dataset.settingsInput==='Touch'&&!mobile?.enabled)return;settingsUI.input=b.dataset.settingsInput;settingsUI.preview=false;bindingPending=null;renderControls()});
+ host.querySelectorAll('[data-settings-action]').forEach(b=>b.onclick=()=>settingsAction(b.dataset.settingsAction));
+ host.querySelectorAll('[data-binding]').forEach(b=>b.onclick=()=>{const [id,slot]=b.dataset.binding.split(':');rememberSettingsScroll();bindingPending={id,slot:Number(slot)};renderControls();});
+ const rows=settingsRows(settingsUI.category,settingsSection(),settingsUI.input);
+ for(const row of rows){if(row.type==='action')continue;const input=$(settingID(row));if(!input)continue;
+  const change=async event=>{const value=row.type==='toggle'?event.target.checked:row.type==='range'?Number(event.target.value):event.target.value;
+   await changeWorkspaceSetting(row,value,event.target);
+  };if(row.type==='range'){input.oninput=change;input.onchange=()=>{if(row.key==='aoStrength')rebuildGraphics();requestSettingsPreview();};}else input.onchange=change;
+ }
+ on('controls-back',closeSettings);on('settings-preview-toggle',()=>{rememberSettingsScroll();settingsUI.preview=!settingsUI.preview;renderControls()});
+ on('settings-reset',()=>resetSettingsSection());on('settings-undo',undoSettingsReset);
+ if(bindingPending){on('bind-escape',()=>commitBinding('Escape'));on('bind-cancel',()=>{bindingPending=null;renderControls()});on('bind-clear',()=>commitBinding(''));if(bindingPending.code)on('bind-replace',()=>commitBinding(bindingPending.code,true));}
+ const body=host.querySelector('.sw-content');if(body)body.scrollTop=settingsUI.scroll[settingsUI.category+':'+settingsSection()+':'+settingsUI.input]||0;
+ host.querySelector('[data-settings-category="'+settingsUI.category+'"]')?.focus?.({preventScroll:true});
+ host.onkeydown=event=>{if(event.key!=='Tab'||bindingPending)return;const nodes=[...host.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea,a[href]')].filter(node=>node.getClientRects().length);if(!nodes.length)return;const first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}};requestSettingsPreview();
+}
+function updateWorkspaceGraphics(key,range=false){
+ if(!range){rebuildGraphics();requestSettingsPreview();return;}
+ applyGraphicsRendererSettings();const f=frameRenderer,u=f?.output?.uniforms;
+ if(f&&u){f.pixelForgeIntensity=settings.pixelForge?settings.pixelForgeIntensity:0;f.bloomEnabled=settings.bloomStrength>0;
+  const values={pixelForgeAmount:f.pixelForgeIntensity,untonemappedExposure:settings.toneMap==='none'?settings.exposure:1,bloomAmount:settings.bloomStrength,aoAmount:f.gtao?settings.aoStrength:0,vignetteAmount:settings.vignette,grainAmount:settings.grain?1:0,gradeAmount:settings.colorGrade?1:0};
+  for(const [name,value]of Object.entries(values))if(u[name])u[name].value=value;
+ }
+ if(key==='fov'&&camera){camera.fov=settings.fov;camera.updateProjectionMatrix();frameRenderer?.resetHistory();}requestSettingsPreview();
+}
+async function changeWorkspaceSetting(row,value,input=null){
+ settingsUI.undo=null;const undo=$('settings-undo');if(undo)undo.hidden=true;
+ if(row.type==='range')value=clamp(Number.isFinite(value)?value:row.min,row.min,row.max);
+ if(row.type==='select'&&!row.choices.some(([v])=>String(v)===String(value)))return false;
+ if(row.scope==='touch'){
+  if(!mobile)return false;mobile.settings[row.key]=value;
+  if(row.key==='gyro'&&value!=='off'&&!mobile.gyroReady){const ok=await mobile.enableGyro();if(!ok){settingsStatus('Motion access unavailable or declined. Touch aiming still works.');renderControls();return false;}}
+  const ok=mobile.commitSettings();settingsSaved(ok);if(row.key==='gyro'||row.key==='preset'){rememberSettingsScroll();renderControls();$(settingID(row))?.focus?.({preventScroll:true});}
+ }else{
+  if(row.scope==='effects'){const preset=EFFECT_PRESETS[value];if(!preset)return false;Object.assign(settings,preset);}
+  else if(row.key==='aaPreset'){if(!SETTINGS_AA_PRESETS[value])return false;Object.assign(settings,SETTINGS_AA_PRESETS[value],{antialias:true});}
+  else settings[row.key]=row.key==='crouchToggle'?value==='toggle':['msaa','resolutionScale'].includes(row.key)?Number(value):value;
+  Object.assign(settings,graphicsOptions(settings,graphicsContext));settingsSaved(saveControls());
+  if(['graphics','aa','effects'].includes(row.scope))updateWorkspaceGraphics(row.key,row.type==='range');
+  if(row.key==='hudScale')applyHUDScale();if(['minimap','minimapNorth','minimapScale'].includes(row.key))applyMinimapSettings();
+  if(['guns','steps','feedback','music'].includes(row.key))gameAudio.applySettings(settings);
+  if(row.key==='crouchToggle'){crouchLatch=false;physicalKeys.clear();keys.clear();}
+  if(row.key==='aaStats'&&!settings.aaStats&&aaStatsClock.node)aaStatsClock.node.hidden=true;
+  if(row.scope==='effects'||row.key==='aaPreset'||row.key==='antialias'){rememberSettingsScroll();renderControls();$(settingID(row))?.focus?.({preventScroll:true});}
+ }
+ if(row.type==='range'){
+  const text=settingValueText(row,value),output=$(settingOutputID(row));if(output)output.textContent=text;input?.setAttribute?.('aria-valuetext',text);input?.style?.setProperty?.('--fill',(value-row.min)/(row.max-row.min)*100+'%');
+ }
+ return true;
+}
+function defaultGameSettings(){return {...graphicsOptions({},{...graphicsContext,legacy:{}}),motion:.65,guns:1,steps:1,feedback:1,music:1,sensitivity:1,hudScale:1,minimap:true,minimapNorth:false,minimapScale:1,invertY:false,crouchToggle:false,holdSemi:false,aaStats:false}}
+function resetWorkspaceValues(gameKeys=[],touchKeys=[],actions=[]){
+ const defaults=defaultGameSettings(),defaultBindings=new ControlBindings();
+ settingsUI.undo={game:Object.fromEntries(gameKeys.map(k=>[k,settings[k]])),touch:Object.fromEntries(touchKeys.map(k=>[k,mobile?.settings[k]])),bindings:Object.fromEntries(actions.map(id=>[id,[...controls.bindings[id]]]))};
+ for(const key of gameKeys)settings[key]=defaults[key];if(mobile)for(const key of touchKeys)mobile.settings[key]=MOBILE_DEFAULTS[key];for(const id of actions)controls.bindings[id]=[...defaultBindings.bindings[id]];
+ const ok=persistWorkspaceReset(settingsUI.undo);settingsStatus(ok?'Defaults restored · Undo is available':'Storage unavailable · defaults active for this session');renderControls();
+}
+function resetSettingsSection(){
+ const section=settingsSection();if(settingsUI.category==='Controls'&&settingsUI.input==='Keyboard'&&section!=='General')return resetWorkspaceValues([],[],ACTIONS.filter(a=>a.group===section).map(a=>a.id));
+ const game=new Set(),touch=new Set();for(const row of settingsRows(settingsUI.category,section,settingsUI.input)){
+  if(row.type==='action')continue;if(row.scope==='effects'){for(const key of Object.keys(EFFECT_PRESETS.balanced))game.add(key);}else if(row.key==='aaPreset'){for(const key of ['msaa','aaFilter','taa'])game.add(key);}else (row.scope==='touch'?touch:game).add(row.key);
+ }
+ resetWorkspaceValues([...game],[...touch]);
+}
+function persistWorkspaceReset(changes){
+ Object.assign(settings,graphicsOptions(settings,graphicsContext));const changedKeys=Object.keys(changes.game),touchChanged=Object.keys(changes.touch).length>0;
+ const ok=saveControls(),touchOK=touchChanged?(mobile?.commitSettings?.()??true):true;
+ if(changedKeys.some(k=>['guns','steps','feedback','music'].includes(k)))gameAudio.applySettings(settings);
+ if(changedKeys.some(k=>['hudScale','minimap','minimapNorth','minimapScale'].includes(k)))applyHUDScale();
+ if(changedKeys.some(k=>k in graphicsOptions({}))){rebuildGraphics();if(camera){camera.fov=settings.fov;camera.updateProjectionMatrix();}}
+ if(changedKeys.includes('aaStats')&&!settings.aaStats&&aaStatsClock.node)aaStatsClock.node.hidden=true;
+ crouchLatch=false;bindingPending=null;physicalKeys.clear();keys.clear();requestSettingsPreview();return ok&&touchOK;
+}
+function undoSettingsReset(){const undo=settingsUI.undo;if(!undo)return;Object.assign(settings,undo.game);if(mobile)Object.assign(mobile.settings,undo.touch);for(const [id,keys]of Object.entries(undo.bindings))controls.bindings[id]=[...keys];settingsUI.undo=null;const ok=persistWorkspaceReset(undo);settingsStatus(ok?'Reset undone':'Storage unavailable · reset undone for this session');renderControls();}
+async function settingsAction(action){
+ if(action==='bindings'){settingsUI.input='Keyboard';navigateSettings('Controls','Movement');return;}
+ if(action==='smoothing'){navigateSettings('Graphics','Smoothing');return;}
+ if(action==='close-detail'){settingsUI.report=false;settingsUI.detail=null;renderControls();return;}
+ if(action==='editor'||action==='editor-minimap'){if(!mobile)return;rememberSettingsScroll();mobile.startEditor('settings');if(action==='editor-minimap')mobile.selectEditor('minimap');return;}
+ if(action==='gyro'){if(!mobile)return;const ok=await mobile.enableGyro();mobile.commitSettings();settingsStatus(ok?'Recentered. Hold your phone comfortably.':'Motion access unavailable or declined. Touch aiming still works.');renderControls();return;}
+ if(action==='benchmark'){settingsUI.sections.Graphics='Performance';settingsUI.category='Graphics';startGraphicsBenchmark();return;}
+ if(action==='report'){settingsUI.report=true;renderControls();return;}
+ if(action==='download-report'){const report=settingsSnapshot().benchmark;if(!report)return;const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),link=document.createElement('a'),url=URL.createObjectURL(blob);link.href=url;link.download='fragony-graphics-benchmark.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}
+ if(action==='guide'){if(mobile)mobile.showGuide('settings');else{settingsUI.detail='guide';renderControls();}return;}
+ if(action==='display-report'){const text=JSON.stringify(displayReport(),null,2);try{await navigator.clipboard.writeText(text);settingsStatus('Display report copied');}catch{settingsUI.displayReport=text;settingsUI.detail='display';renderControls();}return;}
+ if(action==='install'){settingsUI.detail='install';renderControls();return;}
+ if(action==='practice'){
+  rememberSettingsScroll();if(!isPractice()&&mode==='play')saveRun();if(isPractice()){closeSettings();return;}mobile?.closeOverlay();$('panel').hidden=true;return beginPractice();
+ }
+ if(action==='maps'&&isPractice()){if(mobile)mobile.showPracticeMaps();else showPracticeMaps();return;}
+ if(action==='workbench'&&isPractice()){mobile?.closeOverlay();showShop(false);return;}
+ if(action==='end-practice'&&isPractice()){mobile?.closeOverlay();mainMenu();return;}
+ if(action==='reset-touch'&&mobile){resetWorkspaceValues([],Object.keys(MOBILE_DEFAULTS));return;}
+ if(action==='reset-graphics'){resetWorkspaceValues([...Object.keys(graphicsOptions({})), 'aaStats']);return;}
+ if(action==='reset-bindings'){resetWorkspaceValues([],[],ACTIONS.map(a=>a.id));}
+}
+
+function commitBinding(code,replace=false){const p=bindingPending,result=controls.assign(p.id,p.slot,code,replace);if(Array.isArray(result)&&result.length){bindingPending={...p,code,conflicts:result};renderControls();return}controlsMessage=ACTIONS.find(a=>a.id===p.id).label+': '+keyLabel(code);settingsUI.undo=null;bindingPending=null;settingsSaved(saveControls());if(settingsUI.message==='Saved on this device')settingsUI.message=controlsMessage;physicalKeys.clear();keys.clear();mouseDown=false;renderControls()}
+function captureBinding(code,e){if(!bindingPending)return false;if((code.startsWith('Mouse')||code.startsWith('Wheel'))&&e?.target?.closest?.('button,input,select,a')&&!e.target.closest('[data-binding-capture]'))return false;e?.preventDefault?.();if(bindingPending.code)return true;if(code==='Escape'){bindingPending=null;renderControls();return true}commitBinding(code);return true}
 function syncInputs(){keys.clear();for(const a of ACTIONS)if(controls.bindings[a.id].some(c=>c&&physicalKeys.has(c)))keys.add(a.code);if(settings.crouchToggle){keys.delete('KeyC');if(crouchLatch)keys.add('KeyC')}mouseDown=keys.has('MouseLeft');$('leaderboard').style.fontSize=keys.has('Tab')?'22px':''}
-function inputPress(code,e){if(mode==='inspect'&&code==='Escape'){closeInspection();return;}if(mobile?.enabled){if(code==='Escape'&&mode==='play')pause();return;}if(captureBinding(code,e))return;if(mode!=='play'||!locked)return;e?.preventDefault?.();const fresh=!physicalKeys.has(code);physicalKeys.add(code);const actions=controls.actionsFor(code);if(fresh){for(const a of actions){if(a.id==='pause'){locked=false;document.exitPointerLock?.();pause();return}if(a.id==='crouch'&&settings.crouchToggle)crouchLatch=!crouchLatch;if(respawnTime>0)continue;if(a.id==='jump')jumpBuffered=FEEL.jumpBuffer;if(a.id==='fire'&&code.startsWith('Wheel')&&!playerWeapon().charge)shoot();if(a.id==='reload')reload();if(a.id==='streak'&&streakReady){streakReady=false;streak=0;activateStreak()}if(a.id.startsWith('weapon'))switchWeapon(WEAPON_ORDER[Number(a.id.slice(6))-1]);if(a.id==='previous'||a.id==='next'){const order=WEAPON_ORDER.filter(g=>owned.includes(g)),i=order.indexOf(equipped);switchWeapon(order[(i+(a.id==='next'?1:order.length-1))%order.length])}}}syncInputs()}
+function inputPress(code,e){if(mode==='inspect'&&code==='Escape'){closeInspection();return;}if(captureBinding(code,e))return;if(code==='Escape'&&settingsVisible()&&e?.target?.tagName!=='SELECT'){e?.preventDefault?.();closeSettings();return;}if(mobile?.enabled){if(code==='Escape'&&mode==='play')pause();return;}if(mode!=='play'||!locked)return;e?.preventDefault?.();const fresh=!physicalKeys.has(code);physicalKeys.add(code);const actions=controls.actionsFor(code);if(fresh){for(const a of actions){if(a.id==='pause'){locked=false;document.exitPointerLock?.();pause();return}if(a.id==='crouch'&&settings.crouchToggle)crouchLatch=!crouchLatch;if(respawnTime>0)continue;if(a.id==='jump')jumpBuffered=FEEL.jumpBuffer;if(a.id==='fire'&&code.startsWith('Wheel')&&!playerWeapon().charge)shoot();if(a.id==='reload')reload();if(a.id==='streak'&&streakReady){streakReady=false;streak=0;activateStreak()}if(a.id.startsWith('weapon'))switchWeapon(WEAPON_ORDER[Number(a.id.slice(6))-1]);if(a.id==='previous'||a.id==='next'){const order=WEAPON_ORDER.filter(g=>owned.includes(g)),i=order.indexOf(equipped);switchWeapon(order[(i+(a.id==='next'?1:order.length-1))%order.length])}}}syncInputs()}
 function updateStance(){
  const feet=playerPos.y-eyeHeight,wants=keys.has('KeyC'),clear=canOccupy(blocks,{x:playerPos.x,z:playerPos.z,feet,radius:COLLISION.radius,height:COLLISION.standing});
  headBlocked=crouched&&!wants&&!clear;const next=wants||crouched&&!clear;
@@ -912,7 +1024,7 @@ document.addEventListener('keydown',e=>inputPress(e.code,e));document.addEventLi
 function startGraphicsBenchmark(){
  if(benchmarkOverlay||benchmarkChild)return;
  if(mobile?.enabled&&!mobile.landscape){mobile.setFeedback('TURN TO LANDSCAPE TO BENCHMARK');return;}
- benchmarkOverlay=openBenchmark({settings:{...graphicsOptions(settings),motion:settings.motion},summary:frameRenderer?.aaSummary?.()||'',onClose:()=>{benchmarkOverlay=null;frameRenderer?.resetHistory();if(mobile?.enabled){mobile.showSettings(mobile.settingsBack);mobile.panel.querySelector('[data-tab=graphics]')?.click();}else showGraphicsSettings();}});
+ benchmarkOverlay=openBenchmark({settings:{...graphicsOptions(settings),motion:settings.motion},summary:frameRenderer?.aaSummary?.()||'',onClose:()=>{benchmarkOverlay=null;frameRenderer?.resetHistory();settingsUI.category='Graphics';settingsUI.sections.Graphics='Performance';settingsUI.report=!!settingsSnapshot().benchmark;renderControls();}});
 }
 function startBenchmarkChild(){
  muted=true;gameAudio.setMuted(true);settings.aaStats=false;let anchor=null,baseYaw=0,lastEffect=-1,lastProjectile=-1,lastProgress=0,progressPhase='';
@@ -948,10 +1060,7 @@ function startBenchmarkChild(){
 }
 
 function graphicsSettingsHTML(){return graphicsControlsHTML(settings,antialiasSettingHTML(),resolutionSettingHTML());}
-function showGraphicsSettings(){
- $('panel').hidden=false;$('panel').className='panel controls-panel settings-panel graphics-panel';$('panel').innerHTML=`<div class="controls-heading"><h2>GRAPHICS</h2><button class="primary" id="graphics-back">BACK</button></div>${graphicsSettingsHTML()}`;
- $('graphics-back').onclick=renderControls;bindAntialiasSetting($('panel'));bindGraphicsSettings($('panel'));$('panel').scrollTop=0;
-}
+function showGraphicsSettings(){navigateSettings('Graphics','Quality')}
 function bindGraphicsSettings(panel){
  const persist=()=>{Object.assign(settings,graphicsOptions(settings,graphicsContext));localStorage.setItem('dh-settings',JSON.stringify(settings));};
  const summary=()=>{const output=panel.querySelector('#aa-summary');if(output)output.textContent=frameRenderer?.aaSummary?.()||'';};

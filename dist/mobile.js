@@ -1,6 +1,7 @@
 import {viewportSize,displayReport,syncDisplayMode} from './viewport.js';
 import {MOBILE_DEFAULTS,mobileSettings,CONTROL_DEFS,presetLayout,normalizeLayout,controlRect,layoutOverlaps,TouchState,AutoFire,touchLook} from './mobile-core.js';
 
+export {MOBILE_DEFAULTS};
 const paths={
  minimap:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 3v3m0 8v3M5 12h3m8 0h3m-4 2-3-7-3 7 3-1Z',
  ads:'M12 2v5m0 10v5M2 12h5m10 0h5M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z',
@@ -130,8 +131,8 @@ export class MobileController{
  }
  async enableGyro(){try{if(typeof DeviceOrientationEvent==='undefined')throw new Error('unavailable');const result=typeof DeviceOrientationEvent.requestPermission==='function'?await DeviceOrientationEvent.requestPermission():'granted';if(result!=='granted')throw new Error('denied');this.gyroReady=true;this.gyroBase=null;this.settings.gyro=this.settings.gyro==='off'?'always':this.settings.gyro;this.save();return true;}catch{this.settings.gyro='off';this.gyroReady=false;this.save();return false;}}
  save(){return store('fg-touch-settings',this.settings)&&store('fg-touch-layouts',this.layouts);}
- closeOverlay(){this.panel.hidden=true;this.overlay=null;}
- showPanel(kind,html){this.clear();this.overlay=kind;this.panel.innerHTML=html;this.panel.hidden=false;this.panel.scrollTop=0;this.panel.querySelector('button')?.focus({preventScroll:true});}
+ closeOverlay(){this.panel.hidden=true;this.panel.classList?.remove('settings-host');this.overlay=null;}
+ showPanel(kind,html){this.panel.classList?.remove('settings-host');this.clear();this.overlay=kind;this.panel.innerHTML=html;this.panel.hidden=false;this.panel.scrollTop=0;this.panel.querySelector('button')?.focus({preventScroll:true});}
  header(title,back='BACK'){return `<header class="touch-panel-header"><div><small>FRAGONY / ${this.practice?'PRACTICE':'TOUCH CONTROLS'}</small><h2>${title}</h2></div><button class="touch-primary" data-close>${back}</button></header>`;}
  back(){this.closeOverlay();if(this.api.read().mode==='play')this.api.resume();}
  showPause(){
@@ -139,6 +140,7 @@ export class MobileController{
   if(this.practice)this.panel.querySelector('[data-workbench]').onclick=()=>{this.closeOverlay();this.api.workbench();};if(this.practice)this.panel.querySelector('[data-practice-maps]').onclick=()=>this.showPracticeMaps();this.panel.querySelector('[data-close]').onclick=()=>this.back();this.panel.querySelector('[data-settings]').onclick=()=>this.showSettings('play');this.panel.querySelector('[data-editor]').onclick=()=>this.startEditor('pause');this.panel.querySelector('[data-guide]').onclick=()=>this.showGuide('pause');this.panel.querySelector('[data-exit]').onclick=()=>{this.closeOverlay();this.api.menu();};
  }
  showSettings(back='menu'){
+  if(this.api.showSettings){this.settingsBack=back;return this.api.showSettings(back);}
   this.settingsBack=back;
   const select=(id,label,choices,hint='')=>`<label class="touch-option"><span>${label}${hint?`<small>${hint}</small>`:''}</span><select data-option="${id}">${choices.map(([v,l])=>`<option value="${v}" ${String(this.settings[id])===v?'selected':''}>${l}</option>`).join('')}</select></label>`;
   const toggle=(id,label,hint)=>`<label class="touch-option"><span>${label}<small>${hint}</small></span><input data-option="${id}" type="checkbox" ${this.settings[id]?'checked':''}></label>`;
@@ -158,7 +160,7 @@ export class MobileController{
   this.panel.querySelector('[data-display-report]').onclick=async()=>{const text=JSON.stringify(displayReport(),null,2),output=this.panel.querySelector('.touch-display-report');try{await navigator.clipboard.writeText(text);this.panel.querySelector('[data-display-report]').textContent='DISPLAY REPORT COPIED';}catch{output.textContent=text;output.hidden=false;}};
   this.panel.querySelector('[data-reset]').onclick=()=>{this.settings={...MOBILE_DEFAULTS};this.commitSettings();this.showSettings(back);};
  }
- commitSettings(){const ok=this.save();this.applyLayout();this.clear();this.api.settingsChanged?.();const status=this.panel.querySelector('#touch-settings-status');if(status)status.textContent=ok?'SAVED ON THIS DEVICE':'STORAGE UNAVAILABLE · SETTINGS ACTIVE FOR THIS SESSION';}
+ commitSettings(){const ok=this.save();this.applyLayout();this.clear();this.api.settingsChanged?.();const status=this.panel.querySelector('#touch-settings-status');if(status)status.textContent=ok?'SAVED ON THIS DEVICE':'STORAGE UNAVAILABLE · SETTINGS ACTIVE FOR THIS SESSION';return ok;}
  showGuide(back='menu'){
   this.showPanel('guide',`${this.header('SIMPLE. NEVER EASY.','GOT IT')}<div class="touch-guide-grid"><article><b>01</b><h3>MOVE & TRACK</h3><p>Drag on the ${this.settings.preset==='left'?'right':'left'} to move. Keep moving into an obstacle to jump over it automatically. Swipe the ${this.settings.preset==='left'?'left':'right'} side to aim.</p></article><article><b>02</b><h3>HOLD YOUR SIGHTS</h3><p>Keep a visible dummy under the crosshair. The ring fills, then your weapon fires. Track through recoil.</p></article><article><b>03</b><h3>TAKE CONTROL</h3><p>Drag the Slow time button to keep aiming as you activate focus. Use Hip fire for immediate shots. All weapons can also fire automatically, including charged launchers.</p></article><article><b>04</b><h3>STAY IN THE FIGHT</h3><p>Reload between fights. Tap Slow time to spend focus. Earn three kills, then tap Streak to use your reward.</p></article></div><div class="touch-guide-footer"><span>Auto-jump clears obstacles while you keep moving. Push into the edge to climb out of water automatically.</span><button class="touch-primary" data-practice>PRACTICE</button></div>`);
   this.panel.querySelector('[data-close]').onclick=()=>{store('fg-touch-intro',true);if(back==='pause')this.showPause();else if(back==='settings')this.showSettings(this.settingsBack);else{this.closeOverlay();if(this.api.read().mode==='play')this.api.resume();}};this.panel.querySelector('[data-practice]').onclick=()=>this.beginPractice();

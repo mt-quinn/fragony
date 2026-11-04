@@ -73,3 +73,14 @@ User approved the concrete balance proposal, with Frangible retaining normal Rat
 4. Verify numerical combinations, native gameplay and mobile shop flow; build and push only scoped changes to GitHub under existing authorization.
 
 Approved balance implementation phases1–4 COMPLETE locally. All64 main regression commands pass;96native payload combinations plus native heavy-opponent timing and25round rival purchasing pass; final production build and20-map production-only loader checks pass. Real browser verifies all11offers/no scrolling or overlap at844×390, free two-perk swaps and scoreboard→shop→next round with100display HP. Final scoped GitHub commit/push pending. No map/stair source changes included in this task.
+
+# Approved settings overhaul — 2026-11-04
+User approved the interactive six-category proposal. Implement a shared fixed settings workspace for mobile/desktop with category/subpage navigation, independent graphics controls, live persistence, contextual practice preview, full bindings/conflicts and HUD editor access, scoped resets/undo, support/diagnostics and all existing actions. Preserve saved preferences and gameplay.
+1. Implement schema/view and responsive shell using existing mechanisms — in progress.
+2. Wire shared mobile/desktop persistence, preview returns, bindings and resets — pending.
+3. Verify complete option coverage, UI flows, responsive bounds and existing regressions — pending.
+4. Build and push scoped verified changes to mt-quinn/fragony under existing authorization — pending.
+
+Settings implementation update: shared workspace, complete control inventory, scoped resets/undo and live preview — complete. Focused native tests, full gameplay regression pass (old-layout expectations updated and rerun), desktop/mobile browser verification — complete. Final clean production build and GitHub publication — in progress.
+
+Final production build and 20-map production-only loading checks passed. All 65 test commands passed across the broad run and focused reruns after updating old UI expectations. Browser checks complete; publishing to authorized GitHub main.

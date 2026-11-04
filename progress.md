@@ -49,3 +49,9 @@ Balance implementation checkpoint: shared 200/90 internal durability with base10
 Balance phases1–3 complete. Native payload and incoming safety checks, Frangible parity, normalized HUD/recap/healing/assists, perk migration, bot shopping and attack scheduling, delayed nonrecursive streaks, mobile auto-fire with actual detonation opportunities, committed bursts and role feedback implemented. Browser verifies five-gun full-stock mobile shop, free two-perk swaps, saved loadout→next round, 100display HP, and scoreboard sole Continue to Shop. Retired numerical assertions updated to approved rules; source collection tests explicitly injure actors because full-health overhealing is intentionally removed. Production build and final full-suite results pending.
 
 Final balance verification:64/64 regression commands pass. Native safety/Frangible/mobile combat checks rerun after final copy/defensive cleanup; production build218files/252990037bytes before final tiny code cleanup, no temporary QA fixture. Static release checks load all20maps from production alone. Full details in docs/qa/balance-2026-11-04.md. Prepare scoped GitHub push under the user's existing publication instruction.
+
+
+## Settings overhaul — 2026-11-04
+Implemented approved shared settings workspace and maintained existing preference storage/runtime paths. Focused settings and binding checks passed; all unrelated gameplay suite commands passed. Updated obsolete old-layout assertions and reran both successfully. Browser verified phone/desktop flow and found/fixed focused-button keyboard capture. Temporary QA fixtures removed before final release build.
+
+Final validation: all 65 test commands passed across broad/focused runs; clean 220-file static release built and all 20 production maps loaded. No temporary QA fixtures included. Physical touch and motion permission checks remain device testing.
