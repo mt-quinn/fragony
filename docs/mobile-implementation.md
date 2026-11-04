@@ -7,8 +7,8 @@ The touch version activates for coarse pointers and iPhones/iPads. Desktop keeps
 - Left floating joystick: analog movement. Keep a direction held into an obstruction for about 140 ms to auto-jump at full normal height. A fixed joystick is available in settings. Sprinting has been removed.
 - Swipe the open area on the right to aim. Each finger owns its original control until release or cancellation, including when it crosses other buttons.
 - Simple Mode is the default. A small 6 cm margin around each live, visible hitbox starts acquisition slightly before the actual crosshair reaches the opponent. Firing still requires the real crosshair to hit the opponent. Losing the target or encountering cover immediately releases fire and drains charge to zero within 180 ms. Returning to the same opponent retains the remaining charge; another opponent starts fresh. Reloading, switching weapons, dying and pausing clear acquisition immediately. Corpses do not trigger it.
-- ADS is independent: tap to toggle by default, or choose hold. Dragging the ADS button continues aiming. Automatic hip fire has no extra distance limit; ADS is optional at any normal weapon engagement distance.
-- Manual hip-fire fires immediately through the normal weapon cadence and temporarily leaves ADS while held. Releasing it restores the ADS toggle. Every weapon auto-fires in Simple Mode, including stock rockets and charged launchers.
+- Slow time supports dragging to aim from the moment the finger lands, in both toggle and hold modes. Each gesture keeps ownership when crossing another button. Mobile has no ADS button; desktop ADS is unchanged. Automatic hip fire has no extra distance limit.
+- Manual hip-fire fires immediately through the normal weapon cadence. Every weapon auto-fires in Simple Mode, including stock rockets and charged launchers.
 - Tap reload, slow time, streak or switch. Auto-jump holds the logical jump input for at least 500 ms and activates against a blocked water edge to swim/climb out. Jump/crouch controls are absent on mobile. Tap the weapon readout to choose any owned weapon. Tap placement to see standings.
 - Throwables are removed from combat, controls, equipment and shop offers. Old throwable purchases are stripped/refunded once on save migration.
 
@@ -16,7 +16,7 @@ The game retains its existing recoil, spread, ammunition, attachment stats, weap
 
 ## Controls and presentation
 
-Settings include Simple/manual mode, optional hip-fire button, ADS toggle/hold/drag, floating/fixed movement, focus toggle/hold, look/ADS/scope/vertical sensitivity, aim slowdown, invert Y, optional gyro, FOV, graphics, audio and camera motion.
+Settings include Simple/manual mode, optional hip-fire button, floating/fixed movement, focus toggle/hold, look/vertical sensitivity, aim slowdown, invert Y, optional gyro, FOV, graphics, audio and camera motion.
 
 Two-thumb, four-finger and left-handed presets each retain their own layout. The editor supports dragging, size, opacity, optional visibility, fine nudges, overlap warnings, reset, cancel, save and practice. Controls clamp to safe-area bounds and retain a 44 CSS-pixel hit target. The visual treatment uses Fragony's ink, chalk, acid accent, authored icons and existing weapon silhouettes.
 
@@ -46,9 +46,9 @@ Graphics profiles cap pixel count and device ratio independently of touch coordi
 
 ## Verification
 
-`npm test` includes `tests/mobile.mjs` and the existing game regressions. Mobile tests exercise acquisition, loss, cover, corpses, range, ADS, rocket exception, stall limits, actual concurrent pointer handlers, gesture cancellation, manual hip-fire, layout safe bounds, sensitivity, native world sensing/input integration and practice save protection. `tests/audio-lifecycle.mjs` covers ambient configuration ordering, shared context/gesture priming, interruption and rejected/pending resume retries, foreground/mute behavior, closed-context recovery and safe disposal during asynchronous music loading.
+`npm test` includes `tests/mobile.mjs` and the existing game regressions. Mobile tests exercise acquisition, loss, cover, corpses, range, native ADS compatibility, stall limits, concurrent movement/look/slow-time/fire handlers, gesture cancellation, manual hip-fire, saved-layout migration, layout safe bounds, sensitivity, native world sensing/input integration and practice save protection. `tests/audio-lifecycle.mjs` covers ambient configuration ordering, shared context/gesture priming, interruption and rejected/pending resume retries, foreground/mute behavior, closed-context recovery and safe disposal during asynchronous music loading.
 
-Browser verification covers phone-sized menu, first-run guide, live practice, ADS/manual shots with real ammo consumption, weapon picker, settings, HUD drag/save, portrait pause/return, and complete round/results. Responsive inspections include 844×390, 667×375 and 568×320. These are desktop browser checks, not physical iPhone frame-time, motion-permission or Safari edge-gesture measurements. The in-app test browser does not expose raw simultaneous touch dispatch; concurrent pointer behavior is verified through the real controller handlers instead.
+Browser verification covers phone-sized menu, first-run guide, live practice, slow-time dragging, manual shots with real ammo consumption, weapon picker, settings, HUD drag/save, portrait pause/return, and complete round/results. Responsive inspections include 844×390, 667×375 and 568×320. These are desktop browser checks, not physical iPhone frame-time, motion-permission or Safari edge-gesture measurements. The in-app test browser does not expose raw simultaneous touch dispatch; concurrent pointer behavior is verified through the real controller handlers instead.
 
 
 ## Redesigned arsenal
@@ -80,3 +80,6 @@ Focused tests cover956×440 with stale378 window height, portrait440×956, empty
 ## Sustained-obstruction auto-jump
 
 `mobile-jump.js` compares world-space movement intent with collision normals and actual directional progress. It waits 140 ms with direction within roughly 26°, permits 35 ms of brief contact gaps, and rejects ordinary wall sliding/progress, weak input, ceilings, launch-pad flight and inactive input. A committed jump uses `FEEL.jumpSpeed` and holds Space for at least 500 ms even when horizontal input subsequently releases. Swimming may trigger without ground contact; the held input drives native `swimVertical` to clear banks. Pause, death, respawn and cleared touch input reset the detector/hold. Desktop jump/crouch remain manual. Permanent burst/volley/manual labels near the reticle are removed; charging, heat and hit feedback remain transient. Killstreak readiness uses “TAP STREAK” on touch and key labels on desktop.
+
+### Slow-time aiming (2026-11-04)
+The ADS control and its mobile-only settings are removed from every preset and the layout editor. Existing layouts preserve all remaining control positions. Slow time always allows drag-to-aim, including when an old saved ADS-drag preference is disabled. Toggle stays active after release; hold releases with the finger. Cancellation and lifecycle cleanup clear focus. A retired ADS-only gyro preference falls back to Off; players can explicitly enable Always-on gyro.

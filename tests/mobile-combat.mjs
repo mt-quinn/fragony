@@ -6,7 +6,8 @@ import {ACTIONS,ControlBindings} from '../dist/controls.js';
 import {normalizeEquipment,EQUIPMENT,normalizeBuilds,migrateLoadoutSave} from '../dist/loadout.js';
 import {createGameHarness} from './harness.mjs';
 assert.ok(!ACTIONS.some(a=>a.id==='grenade'));assert.equal(new ControlBindings({grenade:['KeyG','']}).actionsFor('KeyG').length,0);
-const layout=normalizeLayout({jump:{x:.2},grenade:{x:.3},crouch:{x:.4}});for(const key of ['jump','grenade','crouch']){assert.ok(!(key in CONTROL_DEFS));assert.ok(!(key in layout));}
+const layout=normalizeLayout({jump:{x:.2},grenade:{x:.3},crouch:{x:.4},ads:{x:.8}});for(const key of ['jump','grenade','crouch','ads']){assert.ok(!(key in CONTROL_DEFS));assert.ok(!(key in layout));}
+const migratedLayout=normalizeLayout({ads:{x:.88,y:.36},focus:{x:.44,y:.66,scale:1.2}});assert.equal(migratedLayout.focus.x,.44);assert.equal(migratedLayout.focus.scale,1.2);assert.equal(mobileSettings({gyro:'ads'}).gyro,'off','retired ADS-only motion mode does not enable always-on motion');
 assert.deepEqual(Object.keys(EQUIPMENT),['streak']);assert.deepEqual(normalizeEquipment({throwable:'quick',owned:['frag','impact','quick','surge'],streak:'surge'}),{streak:'surge',owned:['airstrike','surge']});
 const old={attachmentVersion:2,credits:100,perks:{frags:true,armor:true},equipment:{throwable:'quick',owned:['frag','impact','quick','airstrike','surge'],streak:'surge'},builds:normalizeBuilds(),shopOffers:{version:2}};
 const migrated=migrateLoadoutSave(old);assert.equal(migrated.credits,600);assert.equal(migrated.perks.armor,true);assert.equal(migrated.perks.frags,undefined);assert.equal(migrated.equipment.throwable,undefined);assert.equal(migrated.equipment.streak,'surge');assert.equal(migrated.shopOffers,null);assert.deepEqual(migrateLoadoutSave(migrated),migrated,'refund is idempotent');
