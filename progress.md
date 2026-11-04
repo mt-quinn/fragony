@@ -27,3 +27,5 @@ Implemented offer selection, two-gun bays / 3–6 gun strip, all-stock supplies,
 Full npm test suite passed through final water renderer/gameplay tests. All 12 actual-browser layouts and purchase/free-swap/progression paths passed. Added npm run build and Vercel static configuration; production package builds successfully. Final map-only release checks and GitHub push remain.
 
 Production verification passed: all 20 prepared maps load using build files alone; exact runtime archives and navigation preserved. Source diff has no whitespace errors. Preparing normal initial push to mt-quinn/fragony main with the approved shop and Vercel build configuration.
+
+GitHub publication completed: normal initial push of main to https://github.com/mt-quinn/fragony.git succeeded, preserving the existing game history. Implementation commit: 7ad42c0. Full npm test suite, 20-map production checks and browser shop flow/layout checks passed. Vercel import configuration is included; no ChatGPT Sites publication or Vercel deployment was performed.
