@@ -1,8 +1,12 @@
 /* Landscape touch interface. Screen coordinates stay independent of HUD zoom. */
 #mobile{position:fixed;inset:0;z-index:20;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);--acid:#d9ef45;--chalk:#eef0e6;--ink:#182127}
-/* Keep the installed app rooted to its real viewport; only interactive content
-   uses device safe insets. Never reserve a browser-toolbar-sized strip. */
-.touch-device{position:fixed;inset:0;width:100%;height:100%;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+/* Do not fix html/body to WebKit's possibly inset visual viewport. The stage,
+   controls and renderer instead share the document's explicit viewport extent. */
+html:has(body.touch-device){height:100vh;height:100dvh;overflow:hidden;overscroll-behavior:none}
+@media(display-mode:standalone),(display-mode:fullscreen){html:has(body.touch-device){height:100vh;height:100lvh}}
+html.installed-app:has(body.touch-device){height:100vh;height:100lvh}
+.touch-device{position:relative;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+.touch-device #viewport,.touch-device #mobile,.touch-device #hud,.touch-device .screen,.touch-device .panel,.touch-device .grain,.touch-device #damage,.touch-device #slowTint,.touch-device #healthDanger{position:absolute;inset:0}
 .touch-device #viewport,.touch-device #hud{touch-action:none;user-select:none;-webkit-user-select:none}
 .touch-device button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .touch-device #hud{zoom:1!important;width:100%!important;height:100%!important}
@@ -166,3 +170,5 @@
 @media(orientation:landscape) and (min-width:760px){.touch-settings-body [data-section=controls] .touch-option{min-height:66px;font-size:12px}.touch-settings-body [data-section=controls] .touch-option small{font-size:10px}}
 @media(orientation:landscape){.touch-range{min-height:68px;gap:2px}.touch-range input[type=range]{height:40px;margin:0;background:linear-gradient(#eef0e64d,#eef0e64d) center/100% 4px no-repeat}.touch-settings-body [data-section=audio] .setting-row input[type=range]{height:36px;background:linear-gradient(to right,var(--acid) var(--fill),#eef0e64d var(--fill)) center/100% 4px no-repeat}.touch-settings-body .minimap-setting{min-height:44px}}
 @media(orientation:landscape){.touch-device .compact-armory .attachment-card.previewed{border:1px dashed var(--orange);background:#d9ef4508}}
+
+.touch-display-report{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.4 monospace;user-select:text;-webkit-user-select:text}

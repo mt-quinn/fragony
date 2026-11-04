@@ -1,0 +1,12 @@
+
+> fragony@0.1.0 test:viewport
+> node tests/viewport.mjs && node tests/mobile.mjs && node tests/mobile-menus.mjs && node tests/menu-stage.mjs && node tests/settings.mjs
+
+Viewport:956x440 stage with stale378 window, rotation, shared render/camera/touch sizing, safe insets, empty-stage fallback and installation configuration pass.
+Mobile: acquisition, loss, cover, corpses, range, weapon exceptions, manual hip fire, ADS, multi-pointer ownership, cancellation, layout bounds, tuning and native input integration pass.
+Controller: simultaneous movement/look/ADS/fire, fixed finger ownership, grenade cancellation and interrupted gesture cleanup pass.
+Practice: saved progression, invulnerability and unlimited round time pass.
+Acquisition margin: near misses, distance cutoff, rotated/scaled hitboxes, cover/corpses and native precharge/real-hit/drain integration pass.
+Mobile menus: single-board shop, six visible offers, retained categories, one starting-gun action, unique reset/gear controls, real purchases and run-safe catalog routing pass.
+Menu: grounded world pose, unobstructed framing at four sizes, hidden pickups/actors, centered gameplay/inspection, practice map memory and saved campaign/rotation preserved.
+Settings: visible categories, live values/accessible units, saved volume/motion/HUD scale, 50–200% limits and logical HUD viewport pass.

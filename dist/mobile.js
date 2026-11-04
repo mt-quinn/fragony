@@ -1,3 +1,4 @@
+import {viewportSize,displayReport,syncDisplayMode} from './viewport.js';
 import {MOBILE_DEFAULTS,mobileSettings,CONTROL_DEFS,presetLayout,normalizeLayout,controlRect,layoutOverlaps,TouchState,AutoFire,touchLook} from './mobile-core.js';
 
 const paths={
@@ -22,7 +23,7 @@ function store(key,value){try{localStorage.setItem(key,JSON.stringify(value));re
 export class MobileController{
  constructor(api){
   this.api=api;this.enabled=true;this.settings=mobileSettings(readStore('fg-touch-settings'));this.layouts=readStore('fg-touch-layouts')||{};this.state=new TouchState();this.auto=new AutoFire();this.crouch=false;this.practice=false;this.overlay=null;this.editor=null;this.lastMode='';this.lastInfo=0;this.gyroReady=false;this.gyroBase=null;this.gyroDelta={x:0,y:0};this.target=null;this.targetDistance=Infinity;this.assisted=false;this.wake=null;this.active=false;
-  document.body.classList.add('touch-device');
+  document.body.classList.add('touch-device');syncDisplayMode();
   const root=document.createElement('div');root.id='mobile';root.innerHTML=`
    <div id="touch-controls" hidden><div id="touch-look" aria-label="Swipe to look"></div>
     <div class="touch-top"><button id="touch-score" aria-label="Show scoreboard"><span id="touch-placement">1ST</span><small id="touch-match">ROUND 01</small></button><div class="touch-clock"><strong id="touch-time">1:30</strong><small id="touch-map"></small></div><button id="touch-pause" aria-label="Pause">${icon('pause')}</button></div>
@@ -39,8 +40,8 @@ export class MobileController{
   this.controls.addEventListener('pointerdown',e=>this.down(e));this.controls.addEventListener('pointermove',e=>this.move(e));for(const name of ['pointerup','pointercancel','lostpointercapture'])this.controls.addEventListener(name,e=>this.up(e,name!=='pointerup'));
   this.controls.addEventListener('contextmenu',e=>e.preventDefault());
   this.nodes['touch-pause'].onclick=()=>this.api.pause();this.nodes['touch-score'].onclick=()=>this.showScores();this.nodes['touch-weapon'].onclick=()=>this.showWeapons();
-  this.resizeBound=()=>this.resize();window.addEventListener('resize',this.resizeBound);window.visualViewport?.addEventListener('resize',this.resizeBound);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.interrupt();this.releaseWake();}else this.gyroBase=null;});
+  this.resizeBound=()=>this.settleResize();window.addEventListener('resize',this.resizeBound);window.visualViewport?.addEventListener('resize',this.resizeBound);window.addEventListener('orientationchange',this.resizeBound);window.addEventListener('pageshow',this.resizeBound);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.interrupt();this.releaseWake();}else{this.gyroBase=null;this.settleResize();}});
   window.addEventListener('pagehide',()=>{this.interrupt();this.releaseWake();});window.addEventListener('blur',()=>this.interrupt());
   window.addEventListener('deviceorientation',e=>this.orientation(e));
   this.installMenu();this.resize();
@@ -50,14 +51,18 @@ export class MobileController{
   const guide=document.createElement('div');guide.className='touch-menu-note';guide.innerHTML='<b>SIMPLE MODE</b><span>You aim. Your weapon fires.</span>';document.querySelector('.intro').append(guide);
  }
  get layout(){return normalizeLayout(this.layouts[this.settings.preset],this.settings.preset)}
- get landscape(){return innerWidth>innerHeight;}
- get area(){const s=getComputedStyle(this.root),left=parseFloat(s.paddingLeft)||0,right=parseFloat(s.paddingRight)||0,top=parseFloat(s.paddingTop)||0,bottom=parseFloat(s.paddingBottom)||0;return{x:left+8,y:top+8,w:innerWidth-left-right-16,h:innerHeight-top-bottom-16};}
+ get viewport(){return viewportSize(this.root)}
+ get landscape(){const {width,height}=this.viewport;return width>height;}
+ get area(){const s=getComputedStyle(this.root),left=parseFloat(s.paddingLeft)||0,right=parseFloat(s.paddingRight)||0,top=parseFloat(s.paddingTop)||0,bottom=parseFloat(s.paddingBottom)||0;return{x:left+8,y:top+8,w:this.viewport.width-left-right-16,h:this.viewport.height-top-bottom-16};}
  applyLayout(layout=this.layout){
   const area=this.area;
   for(const [id,node]of Object.entries(this.buttons)){const d=layout[id],r=controlRect(id,layout,area,this.settings.controlScale);node.style.left=r.x+'px';node.style.top=r.y+'px';node.style.setProperty('--control-size',r.size+'px');node.style.setProperty('--control-opacity',d.opacity*(id==='minimap'?1:this.settings.controlOpacity));node.hidden=id==='fire'?(this.settings.fireMode==='simple'&&this.api.read().type!=='rocket'&&(d.hidden||!this.settings.manualFire)):d.hidden||id==='minimap'&&this.api.read().minimapEnabled===false;}
  }
+ settleResize(){
+  this.resize();clearTimeout(this.resizeTimer);clearTimeout(this.resizeTimerLate);const settled=()=>{const size=this.viewport;if(size.width!==this.layoutWidth||size.height!==this.layoutHeight)this.resize();};this.resizeTimer=setTimeout(settled,80);this.resizeTimerLate=setTimeout(settled,300);
+ }
  resize(){
-  const portrait=!this.landscape;this.rotate.hidden=!portrait;document.body.classList.toggle('touch-portrait',portrait);
+  syncDisplayMode();const size=this.viewport;this.layoutWidth=size.width;this.layoutHeight=size.height;const portrait=!this.landscape;this.rotate.hidden=!portrait;document.body.classList.toggle('touch-portrait',portrait);
   if(portrait){this.interrupt();}else this.clear();this.gyroBase=null;this.applyLayout();if(this.editor)this.renderEditorControls();this.api.resize?.();
  }
  clear(){if(this.preparing||this.state.held.has('fire'))this.setFeedback('');this.state.clear();this.preparing=this.cancelGrenade=false;this.crouch=false;this.cancelFire=false;this.auto.reset();this.target=null;this.gyroDelta={x:0,y:0};for(const b of Object.values(this.buttons))b.classList.remove('pressed','selected','cancel');this.buttons.stick.querySelector('i').style.transform='translate(-50%,-50%)';this.api.clear?.();}
@@ -68,8 +73,8 @@ export class MobileController{
   if(!this.active||this.overlay||this.editor)return;
   if(e.target.closest('#touch-pause,#touch-score,#touch-weapon,[data-control="minimap"]'))return;
   e.preventDefault();const id=e.pointerId,button=e.target.closest('[data-control]');let role=button?.dataset.control||'look';
-  const leftHand=this.settings.preset==='left',movementSide=leftHand?e.clientX>innerWidth*.65:e.clientX<innerWidth*.35;
-  if(!button&&movementSide&&e.clientY>innerHeight*.35)role='stick';
+  const leftHand=this.settings.preset==='left',movementSide=leftHand?e.clientX>this.viewport.width*.65:e.clientX<this.viewport.width*.35;
+  if(!button&&movementSide&&e.clientY>this.viewport.height*.35)role='stick';
   if(!this.state.begin(id,role,e.clientX,e.clientY))return;
   this.controls.setPointerCapture(id);this.requestWake();this.api.unlock?.();
   const node=this.buttons[role];node?.classList.add('pressed');
@@ -87,8 +92,8 @@ export class MobileController{
   if(!d)return;
   if(d.role==='stick'){const m=this.state.move;this.buttons.stick.querySelector('i').style.transform=`translate(calc(-50% + ${m.x*r.size*.32}px),calc(-50% + ${-m.y*r.size*.32}px))`;}
   else if(d.role==='look'||d.role==='fire'||d.role==='grenade'||d.role==='ads'&&this.settings.adsDrag)this.api.look(d.x,d.y);
-  if(d.role==='fire'&&this.api.read().type==='rocket'&&this.api.read().chargeWeapon){this.cancelFire=e.clientY<innerHeight*.22;this.setFeedback(this.cancelFire?'RELEASE TO CANCEL':'HOLD TO CHARGE · RELEASE TO LAUNCH',Infinity);}
-  if(d.role==='grenade'){this.cancelGrenade=e.clientY<innerHeight*.22;this.buttons.grenade.classList.toggle('cancel',this.cancelGrenade);this.setFeedback(this.cancelGrenade?'RELEASE TO CANCEL':'AIM · RELEASE TO THROW · DRAG TO TOP TO CANCEL',Infinity);}
+  if(d.role==='fire'&&this.api.read().type==='rocket'&&this.api.read().chargeWeapon){this.cancelFire=e.clientY<this.viewport.height*.22;this.setFeedback(this.cancelFire?'RELEASE TO CANCEL':'HOLD TO CHARGE · RELEASE TO LAUNCH',Infinity);}
+  if(d.role==='grenade'){this.cancelGrenade=e.clientY<this.viewport.height*.22;this.buttons.grenade.classList.toggle('cancel',this.cancelGrenade);this.setFeedback(this.cancelGrenade?'RELEASE TO CANCEL':'AIM · RELEASE TO THROW · DRAG TO TOP TO CANCEL',Infinity);}
  }
  up(e,cancelled=false){
   const contact=this.state.end(e.pointerId);if(!contact)return;e.preventDefault?.();const role=contact.role;if(!this.state.held.has(role))this.buttons[role]?.classList.remove('pressed');
@@ -124,7 +129,7 @@ export class MobileController{
   const fire=this.settings.fireMode==='simple'&&this.auto.step(dt,{target,weapon:g.type,blocked:blocked||!this.active,onTarget});
   if(this.settings.fireMode!=='simple')this.auto.reset();return this.active&&(manual||fire)&&!this.preparing;
  }
- look(dx,dy){const g=this.api.read();return touchLook(dx,dy,innerWidth,this.settings,{ads:this.state.ads&&!this.state.held.has('fire'),zoom:g.zoom,assisted:this.settings.aimAssist&&this.assisted});}
+ look(dx,dy){const g=this.api.read();return touchLook(dx,dy,this.viewport.width,this.settings,{ads:this.state.ads&&!this.state.held.has('fire'),zoom:g.zoom,assisted:this.settings.aimAssist&&this.assisted});}
  orientation(e){
   if(!this.gyroReady||!this.active||!Number.isFinite(e.beta)||!Number.isFinite(e.gamma)){this.gyroBase=null;return;}
   const angle=screen.orientation?.angle??window.orientation??90,orientation=angle===-90||angle===270?-1:1;
@@ -151,13 +156,14 @@ export class MobileController{
    <section data-section="aim" hidden>${range('sensitivity','Look sensitivity',.3,2.5)}${range('adsSensitivity','ADS sensitivity',.2,1.5)}${range('scopeSensitivity','Scoped sensitivity',.15,1.2)}${range('vertical','Vertical sensitivity',.5,1.5)}${toggle('aimAssist','Aim slowdown','Slows your swipe near a visible target. You steer.')}${toggle('invertY','Invert vertical aim','Reverse vertical touch movement.')}${select('gyro','Gyroscope',[['off','Off'],['ads','While aiming'],['always','Always']],'Optional fine aiming by tilting your phone.')}${range('gyroSensitivity','Gyro sensitivity',.2,2)}<button class="touch-row-action" data-gyro>${this.gyroReady?'RECENTER GYRO':'ENABLE MOTION ACCESS'} <span>↗</span></button><p class="touch-help" id="gyro-status">${this.gyroReady?'Motion access is enabled.': 'Motion access is optional. Touch aiming always works.'}</p></section>
    <section data-section="layout" hidden>${select('preset','Layout preset',[['thumbs','Two thumbs'],['claw','Four fingers'],['left','Left handed']])}${range('controlScale','Control size',.7,1.4)}${range('controlOpacity','Control opacity',.2,1)}<button class="touch-row-action" data-editor>EDIT INDIVIDUAL CONTROLS <span>↗</span></button><p class="touch-help">Each preset remembers its own positions, sizes and opacity.</p></section>
    <section data-section="audio" hidden>${this.api.audioHTML()}</section>
-   <section data-section="visuals" hidden>${select('quality','Graphics',[['battery','Battery saver'],['balanced','Balanced'],['high','High detail']],'Balanced keeps the sights sharp and effects restrained.')}${range('fov','Field of view',65,95,1)}${this.api.visualHTML()}<p class="touch-help">For more screen space on iPhone: Share → Add to Home Screen → Open as Web App. Playing in Safari works too.</p></section>
+   <section data-section="visuals" hidden>${select('quality','Graphics',[['battery','Battery saver'],['balanced','Balanced'],['high','High detail']],'Balanced keeps the sights sharp and effects restrained.')}${range('fov','Field of view',65,95,1)}${this.api.visualHTML()}<p class="touch-help">For more screen space on iPhone: Share → Add to Home Screen → Open as Web App. Playing in Safari works too.</p><button class="touch-row-action" data-display-report>COPY DISPLAY REPORT <span>↗</span></button><pre class="touch-display-report" hidden></pre></section>
    </div><footer class="touch-settings-footer"><span id="touch-settings-status" role="status">SAVED ON THIS DEVICE</span><button data-reset>RESET TOUCH SETTINGS</button></footer>`);
   this.panel.querySelector('[data-close]').onclick=()=>{this.closeOverlay();if(back==='play')this.api.resume();};
   this.panel.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{this.panel.querySelectorAll('[data-tab]').forEach(t=>t.classList.toggle('selected',t===b));this.panel.querySelectorAll('[data-section]').forEach(s=>s.hidden=s.dataset.section!==b.dataset.tab);});
   this.panel.querySelectorAll('[data-option]').forEach(input=>input.onchange=async()=>{const id=input.dataset.option;this.settings[id]=input.type==='checkbox'?input.checked:input.value;if(id==='gyro'&&input.value!=='off'&&!this.gyroReady){const ok=await this.enableGyro();input.value=this.settings.gyro;this.panel.querySelector('#gyro-status').textContent=ok?'Motion access enabled. Hold your phone comfortably.':'Motion access unavailable or declined. Touch aiming is ready.';}this.commitSettings();});
   this.panel.querySelectorAll('[data-range]').forEach(input=>input.oninput=()=>{this.settings[input.dataset.range]=Number(input.value);input.previousElementSibling.textContent=input.dataset.range==='fov'?input.value+'°':Math.round(Number(input.value)*100)+'%';this.commitSettings();});
   this.api.bindAudio?.(this.panel);this.panel.querySelector('[data-editor]').onclick=()=>this.startEditor('settings');this.panel.querySelector('[data-guide]').onclick=()=>this.showGuide('settings');this.panel.querySelector('[data-gyro]').onclick=async()=>{const ok=await this.enableGyro();this.panel.querySelector('[data-option=gyro]').value=this.settings.gyro;this.commitSettings();this.panel.querySelector('#gyro-status').textContent=ok?'Recentered. Hold your phone comfortably.':'Motion access unavailable or declined. Touch aiming is ready.';};
+  this.panel.querySelector('[data-display-report]').onclick=async()=>{const text=JSON.stringify(displayReport(),null,2),output=this.panel.querySelector('.touch-display-report');try{await navigator.clipboard.writeText(text);this.panel.querySelector('[data-display-report]').textContent='DISPLAY REPORT COPIED';}catch{output.textContent=text;output.hidden=false;}};
   this.panel.querySelector('[data-reset]').onclick=()=>{this.settings={...MOBILE_DEFAULTS};this.commitSettings();this.showSettings(back);};
  }
  commitSettings(){const ok=this.save();this.applyLayout();this.clear();this.api.settingsChanged?.();const status=this.panel.querySelector('#touch-settings-status');if(status)status.textContent=ok?'SAVED ON THIS DEVICE':'STORAGE UNAVAILABLE · SETTINGS ACTIVE FOR THIS SESSION';}

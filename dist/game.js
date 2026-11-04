@@ -1,3 +1,4 @@
+import {gameViewportSize} from './viewport.js';
 import {batchHealthPickups} from './pickup-view.js';
 import {MenuStage,MENU_STAGE} from './menu-stage.js';
 import {CrouchSlide,slideSlope,botSlideChoice} from './slide.js';
@@ -105,12 +106,12 @@ async function init(){
  applyHUDScale();
  gameAudio.visibility=(a,b)=>visible(new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z));
  scene=new THREE.Scene();scene.background=new THREE.Color(0x182127);scene.fog=new THREE.Fog(0x182127,38,120);
- camera=new THREE.PerspectiveCamera(85,innerWidth/innerHeight,.07,160);camera.rotation.order='YXZ';
+ camera=new THREE.PerspectiveCamera(85,gameViewportSize().width/gameViewportSize().height,.07,160);camera.rotation.order='YXZ';
  try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch(e){$('start').textContent='WEBGL REQUIRED';$('start').disabled=true;return}
  renderer.shadowMap.enabled=renderOptions().shadows!==false;renderer.shadowMap.type=THREE.PCFShadowMap;
- sizeRenderer();renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;studioMap=studioEnvironment(renderer);scene.environment=studioMap.texture;scene.environmentIntensity=.34;frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());$('viewport').appendChild(renderer.domElement);
+ sizeRenderer();renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;studioMap=studioEnvironment(renderer);scene.environment=studioMap.texture;scene.environmentIntensity=.34;frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());$('viewport').appendChild(renderer.domElement);if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{if(mobile)mobile.resize();else{sizeRenderer();frameRenderer?.resize();}}).observe($('viewport'));
  scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,1.0));const sun=new THREE.DirectionalLight(0xfff2d6,2.8);sun.position.set(-24,52,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-57,right:57,top:57,bottom:-57,near:1,far:125});renderSun=sun;sun.shadow.mapSize.set(mobile&&mobile.settings.quality!=='high'?1024:2048,mobile&&mobile.settings.quality!=='high'?1024:2048);sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);scene.traverse(o=>{if(o.isLight)o.layers.enable(1)});const weaponFill=new THREE.DirectionalLight(0xdde9ef,1.5);weaponFill.position.set(-2,3,1);weaponFill.layers.set(1);camera.add(weaponFill);camera.add(weaponFill.target);weaponFill.target.position.set(0,0,-1);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewRig=createDummy();previewDummy=previewRig.group;menuStage=new MenuStage(scene,previewRig);prepareMenuStage();
- let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;mobile?.update(dt);if(document.hidden||mobile?.enabled&&!mobile.landscape)return;if(mode==='inspect'){presentInspection(dt);return;}if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){menuStage.present(camera,innerWidth,innerHeight,dt,settings.motion)}updateEffects(dt*(slow?.25:1));arena.userData.healthBatches?.sync();frameRenderer.render(scene,camera,dt,slow,MAP.water||[])});
+ let last=performance.now();renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;mobile?.update(dt);if(document.hidden||mobile?.enabled&&!mobile.landscape)return;if(mode==='inspect'){presentInspection(dt);return;}if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){menuStage.present(camera,gameViewportSize().width,gameViewportSize().height,dt,settings.motion)}updateEffects(dt*(slow?.25:1));arena.userData.healthBatches?.sync();frameRenderer.render(scene,camera,dt,slow,MAP.water||[])});
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();if(mode==='play')pause();mobile?.setFeedback('GRAPHICS PAUSED · RESTORING');});
  renderer.domElement.addEventListener('webglcontextrestored',()=>{frameRenderer?.dispose();frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());if(mobile?.overlay==='pause')mobile.showPause();});
 }
@@ -118,7 +119,7 @@ async function init(){
 function renderOptions(){return mobile?.enabled?MOBILE_QUALITY[mobile.settings.quality]:{ao:true,bloom:true};}
 function sizeRenderer(){
  if(!renderer)return;const quality=mobile?.enabled?MOBILE_QUALITY[mobile.settings.quality]:{pixels:2100000,ratio:1.5};
- renderer.setPixelRatio(Math.min(devicePixelRatio||1,quality.ratio,Math.sqrt(quality.pixels/(innerWidth*innerHeight))));renderer.setSize(innerWidth,innerHeight);
+ const {width,height}=gameViewportSize();camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,quality.ratio,Math.sqrt(quality.pixels/(width*height))));renderer.setSize(width,height);
 }
 function applyMobileQuality(){
  if(!renderer)return;const q=renderOptions();renderer.shadowMap.enabled=q.shadows!==false;
@@ -140,7 +141,7 @@ function setupMobile(){
   look:(dx,dy)=>{if(respawnTime>0)return;const d=mobile.look(dx,dy);yaw+=d.yaw;pitch=clamp(pitch+d.pitch,-1.5,1.5);turnX+=dx*.001;turnY+=dy*.001;mobileTargetClock=0;},
   gyro:(x,y)=>{const gain=THREE.MathUtils.degToRad(mobile.settings.gyroSensitivity)*(keys.has('MouseRight')?mobile.settings.adsSensitivity:1);yaw-=x*gain;pitch=clamp(pitch-y*gain,-1.5,1.5);mobileTargetClock=0;},
   action:touchAction,
-  resize:()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();sizeRenderer();frameRenderer?.resize();},
+  resize:()=>{if(!renderer)return;sizeRenderer();frameRenderer?.resize();},
   settingsChanged:()=>{if(mobile.settings.quality!==appliedQuality){appliedQuality=mobile.settings.quality;applyMobileQuality();}},
   audioHTML:()=>['guns','steps','feedback','music'].map((k,i)=>settingRow(k,['Gunfire','Footsteps','Hit & damage feedback','Music'][i])).join(''),
   visualHTML:()=>settingRow('motion','Camera motion')+minimapSettingsHTML(false),
@@ -868,7 +869,7 @@ document.addEventListener('mousemove',e=>{
 });
 
 document.addEventListener('mousedown',e=>inputPress(mouseCode(e.button),e));document.addEventListener('mouseup',e=>{physicalKeys.delete(mouseCode(e.button));if(mode==='play'&&locked&&!mobile?.enabled)syncInputs()});document.addEventListener('contextmenu',e=>e.preventDefault());
-document.addEventListener('keydown',e=>inputPress(e.code,e));document.addEventListener('keyup',e=>{physicalKeys.delete(e.code);if(mode==='play'&&locked&&!mobile?.enabled)syncInputs()});window.addEventListener('blur',()=>{physicalKeys.clear();keys.clear();mouseDown=false;if(locked){if(mobile?.enabled||dragLook){locked=false;pause()}else document.exitPointerLock()}});document.addEventListener('wheel',e=>{const code=e.deltaY>0?'WheelDown':'WheelUp';if(captureBinding(code,e))return;if(mode==='play'&&locked){inputPress(code,e);physicalKeys.delete(code);syncInputs()}},{passive:false});window.addEventListener('resize',()=>{applyHUDScale();if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();sizeRenderer();frameRenderer?.resize()});
+document.addEventListener('keydown',e=>inputPress(e.code,e));document.addEventListener('keyup',e=>{physicalKeys.delete(e.code);if(mode==='play'&&locked&&!mobile?.enabled)syncInputs()});window.addEventListener('blur',()=>{physicalKeys.clear();keys.clear();mouseDown=false;if(locked){if(mobile?.enabled||dragLook){locked=false;pause()}else document.exitPointerLock()}});document.addEventListener('wheel',e=>{const code=e.deltaY>0?'WheelDown':'WheelUp';if(captureBinding(code,e))return;if(mode==='play'&&locked){inputPress(code,e);physicalKeys.delete(code);syncInputs()}},{passive:false});window.addEventListener('resize',()=>{applyHUDScale();if(!renderer)return;sizeRenderer();frameRenderer?.resize()});
 
 
 init();
