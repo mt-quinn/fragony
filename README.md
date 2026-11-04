@@ -199,3 +199,14 @@ Pixel Forge surface texture is reconstructed from the unjittered scene depth alr
 Water has a dedicated layer: the opaque scene is styled first, then smooth translucent tint, world-space ripple crests and shoreline highlights are composited over it. The water pass tests against opaque depth, preserving walls and submerged geometry, and first-person weapons stay in front. This avoids projecting the pool floor's grain onto the liquid. Layer 2 remains industrial detailing; water uses layer 3. With Pixel Forge off, water returns to the normal world-color path. Swim physics and underwater fog are unchanged.
 
 The arena sky uses a seamless equirectangular composition with layered cloud banks, a darker upper sky and a warm horizon. Its values are separated to survive the limited palette. `dist/art-lab-water.html` is an excluded local review page for above-water, waterline, underwater and outdoor sky views.
+
+
+## Between-round shop
+
+A surviving scoreboard continues directly to the dedicated shop; the shop starts the next round. All current attachment, weapon, perk and killstreak offers remain visible together. Select an offer to read its mechanic and tradeoff, then use the shared Buy / Buy & fit button. Owned weapons are pictured above their upgrades (two guns) or in a single starting-weapon strip (three or more). Your kit manages owned parts, free sights, killstreak selection and inspection; stock resets preserve purchases. Arsenal and practice retain their full catalog.
+
+## GitHub and Vercel
+
+The source repository is https://github.com/mt-quinn/fragony. Import its `main` branch into Vercel using the repository root. `vercel.json` selects the static preset, runs `npm run build`, and serves `build/`. The build uses the existing prepared release pipeline and includes all 20 maps while excluding authoring archives and experimental art-lab pages. No environment variables or server functions are required.
+
+Local preview: `npm start` serves `dist/`. Production package: `npm run build`. Validate the production package and prepared maps with `npm run test:release`. The between-round flow and copy are covered by `tests/round-shop.mjs` as part of `npm test`.

@@ -1,0 +1,137 @@
+/* Between-round shop. Offers and the purchase dock own separate grid tracks. */
+#panel.round-shop-screen{padding:10px max(18px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))!important;overflow:hidden;background:#172126;display:grid;place-items:center;touch-action:manipulation;}
+.round-shop{--tile:#263238;--shop-text:#eff2e7;--shop-muted:#b7c4c5;--shop-acid:#d8f345;--shop-line:#425158;width:100%;height:100%;max-width:1440px;max-height:900px;min-height:0;display:grid;grid-template-rows:48px minmax(0,1fr) auto;gap:10px;color:var(--shop-text);font-family:Barlow,sans-serif;font-size:14px;line-height:1.2;}
+.round-shop button{appearance:none;margin:0;border:0;border-radius:7px;padding:0;background:transparent;color:inherit;min-width:0;min-height:44px;font:600 14px/1.2 Barlow,sans-serif;letter-spacing:0;text-transform:none;}
+.round-shop button:disabled{opacity:1;cursor:default;}
+.round-shop button:focus-visible,.round-shop select:focus-visible{outline:2px solid var(--shop-acid);outline-offset:2px;}
+.round-shop small{font:400 12px/1.2 Barlow,sans-serif;letter-spacing:0;color:var(--shop-muted);}
+.round-header{display:flex;align-items:center;gap:20px;min-width:0;}
+.round-header>div{display:flex;align-items:baseline;gap:15px;min-width:0;}
+.round-header h1{width:auto;transform:none;position:static;margin:0;font:800 italic 34px/.95 var(--display);letter-spacing:-.6px;color:var(--shop-text);text-transform:uppercase;}
+.round-header h1:after{display:none;}
+.round-header>div>span{text-transform:uppercase;color:var(--shop-muted);font-size:12px;white-space:nowrap;}
+.round-header>button{margin-left:auto;padding:0 12px;color:var(--shop-muted);}
+.round-header>strong{font:700 36px/1 var(--display);color:var(--shop-acid);white-space:nowrap;}
+.round-header>strong>small{display:inline;font-size:12px;color:inherit;margin-left:7px;}
+.round-board{display:grid;grid-template-columns:minmax(0,2.15fr) minmax(0,1fr);gap:16px;min-height:0;min-width:0;}
+.round-arsenal{display:grid;grid-template-rows:76px minmax(0,1fr);gap:9px;min-height:0;min-width:0;}
+.round-guns{display:grid;grid-template-columns:repeat(var(--gun-count),minmax(0,1fr));gap:6px;min-width:0;min-height:0;}
+.round-shop .round-gun{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;background:var(--tile);padding:5px;min-height:0;}
+.round-gun>.gun-icon{width:min(100%,100px);height:36px;flex-shrink:0;}
+.round-gun>b{font:700 14px/1.1 var(--display);max-width:100%;min-width:0;overflow-wrap:anywhere;text-transform:capitalize;}
+.round-gun>small{font-size:11px;white-space:nowrap;}
+.round-gun[aria-pressed=true]>small{color:var(--shop-acid);}
+.round-gun.is-referenced{box-shadow:inset 0 -2px var(--shop-acid);}
+.round-parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;min-height:0;min-width:0;}
+.round-shop .round-offer{position:relative;background:var(--tile);padding:12px;min-height:0;text-align:left;min-width:0;}
+.round-shop .round-offer:hover{background:#303e42;}
+.round-shop .round-offer[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--shop-acid);background:#303f38;}
+.round-part{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr) auto;gap:8px;align-items:end;}
+.round-effect{grid-column:1/-1;align-self:start;min-width:0;}
+.round-effect>b{display:block;font:700 clamp(15px,1.35vw,21px)/1.1 Barlow,sans-serif;}
+.round-effect>small{display:block;margin-top:6px;line-height:1.25;font-size:clamp(11px,.95vw,14px);}
+.round-target{display:flex;align-items:center;gap:7px;min-width:0;}
+.round-target>.gun-icon{width:64px;height:38px;flex-shrink:0;}
+.round-target>small{font-size:11px;overflow-wrap:anywhere;text-transform:capitalize;}
+.round-offer>em{font:600 14px/1.1 Barlow,sans-serif;font-style:normal;color:var(--shop-acid);white-space:nowrap;align-self:end;}
+.round-offer.is-owned>em{color:var(--shop-text);}
+.round-supplies{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:10px;min-height:0;border-left:1px solid var(--shop-line);padding-left:16px;}
+.round-supply-group{display:grid;grid-template-rows:auto minmax(0,1fr);gap:5px;min-height:0;min-width:0;}
+.round-supply-group h3,.round-kit-gear h3{font:600 12px/1.1 Barlow,sans-serif;text-transform:uppercase;letter-spacing:1.5px;color:var(--shop-muted);margin:0;}
+.round-supply-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;min-height:0;min-width:0;}
+.round-supply-grid:not(:has(>:nth-child(2))){grid-template-columns:1fr;}
+.round-supply{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr) auto;gap:6px;align-items:center;}
+.round-supply>.round-effect{align-self:center;}
+.round-supply>.round-effect>b{font-size:clamp(14px,1.2vw,19px);text-transform:capitalize;}
+.round-supply>.round-effect>small{font-size:clamp(11px,.95vw,14px);margin-top:5px;}
+.round-supply>.round-target{grid-column:2;grid-row:1/3;}
+.round-supply:has(.round-target)>.round-effect{grid-column:1;}
+.round-supply>.round-target>.gun-icon{width:65px;height:42px;}
+.round-supply>em{grid-column:1;font-size:13px;}
+.round-dock{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;min-width:0;min-height:58px;border-top:1px solid var(--shop-line);padding-top:8px;}
+.round-description{min-width:0;}
+.round-description>b{font:600 13px/1.2 Barlow,sans-serif;display:block;text-transform:capitalize;}
+.round-description>span{font:400 13px/1.3 Barlow,sans-serif;display:block;color:var(--shop-muted);margin-top:4px;overflow-wrap:anywhere;}
+.round-shop #buy-offer,.round-shop .round-play{padding:12px 18px;background:var(--shop-text);color:#172126;min-height:46px;font-size:15px;font-weight:700;white-space:nowrap;}
+.round-shop #buy-offer:disabled{background:var(--tile);color:var(--shop-muted);}
+.round-shop .round-play{background:var(--shop-acid);display:flex;align-items:center;gap:20px;font:700 23px/1 var(--display);text-transform:uppercase;}
+.round-play>span{font:400 25px/1 Barlow,sans-serif;}
+.round-bays{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-height:0;}
+.round-bay{display:grid;grid-template-rows:88px minmax(0,1fr);gap:9px;min-height:0;min-width:0;}
+.round-bay .round-gun{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:1fr 1fr;text-align:left;justify-content:start;gap:2px 10px;}
+.round-bay .round-gun>.gun-icon{grid-row:1/3;width:100px;height:62px;}
+.round-bay .round-gun>b{font-size:18px;align-self:end;}
+.round-bay .round-gun>small{align-self:start;}
+.round-bay-parts{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px;min-height:0;}
+.round-bay .round-part{grid-template-rows:minmax(0,1fr) auto;gap:4px;}
+.round-bay .round-target{display:none;}
+.round-bay .round-effect{grid-column:1;}
+.round-bay .round-offer>em{grid-column:2;grid-row:1/3;align-self:center;}
+.round-empty{font:400 13px/1.35 Barlow,sans-serif!important;color:var(--shop-muted);margin:0!important;align-self:center;}
+.round-kit-body{display:grid;grid-template-rows:76px minmax(0,1fr);gap:14px;min-height:0;}
+.round-kit-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;min-height:0;}
+.round-kit-title{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.round-kit-title>.gun-icon{width:80px;height:45px;}
+.round-kit-title b{font:700 24px/1 var(--display);}
+.round-kit-title small{display:block;margin-top:4px;}
+.round-kit-title>button{padding:0 8px;color:var(--shop-muted);}
+.round-kit-title>button:first-of-type{margin-left:auto;}
+.round-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;}
+.round-slots label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;}
+.round-slots label>span{font-size:12px;color:var(--shop-muted);}
+.round-shop select{font:500 13px/1.2 Barlow,sans-serif;min-height:44px;width:100%;min-width:0;background:var(--tile);color:var(--shop-text);border:0;border-radius:5px;padding:6px;color-scheme:dark;}
+.round-slots label>small{grid-column:1/-1;}
+.round-kit-gear{border-left:1px solid var(--shop-line);padding-left:20px;}
+.round-kit-gear h3{margin:0 0 8px;}
+.round-kit-gear .owned-gear{display:block;margin:0 0 16px;padding:0;border:0;}
+.round-kit-gear .owned-gear label{display:block;}
+.round-kit-gear .owned-gear label>span{display:none;}
+.round-kit-gear p{font-size:13px;line-height:1.4;margin:0 0 14px;}
+.round-kit-gear #savequit{padding:0 12px;border:1px solid var(--shop-line);}
+.round-kit-open .round-dock{grid-template-columns:1fr;}
+.round-shop .attachment-replace{position:absolute;z-index:3;inset:0;background:#172126;display:grid;place-items:center;padding:18px;}
+.round-shop .attachment-replace>div{width:min(100%,720px);}
+.round-shop .attachment-replace h2{font:700 25px/1.1 var(--display)!important;margin:10px 0!important;border:0;padding:0;}
+.round-shop .attachment-replace button{padding:8px 12px;background:var(--tile);margin:6px;min-width:140px;}
+.round-shop .attachment-replace small{display:block;}
+@media(max-width:1100px){
+ .round-shop{grid-template-rows:44px minmax(0,1fr) auto;gap:8px;}
+ .round-board{gap:12px;}.round-supplies{padding-left:12px;gap:8px;}
+ .round-arsenal{grid-template-rows:68px minmax(0,1fr);gap:7px;}
+ .round-gun>.gun-icon{height:30px;}.round-gun>b{font-size:12px;}
+ .round-shop .round-offer{padding:9px;}.round-effect>b{font-size:15px;}.round-effect>small{font-size:11px;margin-top:4px;}
+ .round-target{display:block;}.round-target>.gun-icon{width:58px;height:28px;}.round-target>small{display:block;font-size:11px;}
+ .round-offer>em{font-size:12px;}.round-supply>.round-target{display:flex;}.round-supply>.round-target>.gun-icon{width:48px;height:30px;}
+ .round-supply>.round-effect>b{font-size:14px;}.round-supply>.round-effect>small{font-size:11px;}.round-supply>em{font-size:12px;}
+ .round-dock{gap:10px;min-height:54px;}.round-description>b,.round-description>span{font-size:12px;}
+ .round-shop #buy-offer{font-size:13px;padding:10px 12px;}.round-shop .round-play{font-size:20px;padding:10px 14px;gap:12px;}
+ .round-bay{grid-template-rows:68px minmax(0,1fr);gap:7px;}.round-bay .round-gun>.gun-icon{width:75px;height:48px;}.round-bay .round-gun>b{font-size:16px;}
+ .round-kit-body{grid-template-rows:64px minmax(0,1fr);gap:8px;}.round-kit-title{margin-bottom:6px;}.round-kit-title b{font-size:20px;}.round-kit-title>button{font-size:12px;}
+ .round-slots{gap:6px 12px;}.round-shop select{font-size:12px;}
+}
+@media(orientation:landscape) and (max-height:430px){
+ #panel.round-shop-screen{padding-top:5px!important;padding-bottom:max(5px,env(safe-area-inset-bottom))!important;}
+ .round-shop{grid-template-rows:44px minmax(0,1fr) auto;gap:5px;}
+ .round-arsenal,.round-bay{grid-template-rows:60px minmax(0,1fr);gap:5px;}
+ .round-gun{gap:2px!important;}.round-gun>.gun-icon{height:25px;}.round-gun>b{font-size:11px;}
+ .round-parts,.round-bay-parts{gap:5px;}.round-shop .round-offer{padding:7px;}
+ .round-effect>b{font-size:14px;}.round-part .round-effect>small{display:none;}
+ .round-target>.gun-icon{height:23px;width:48px;}.round-target>small{font-size:11px;}
+ .round-supplies{gap:6px;}.round-supply-group{gap:3px;}.round-supply-group h3{font-size:11px;}
+ .round-supply>.round-effect>b{font-size:13px;}.round-supply>.round-effect>small{font-size:11px;margin-top:3px;}.round-supply{gap:3px;}
+ .round-dock{padding-top:5px;min-height:50px;}.round-description>span{margin-top:2px;font-size:11px;}
+ .round-kit-title>.gun-icon{display:none;}.round-slots label>small{display:none;}.round-kit-gear .owned-gear{margin-bottom:8px;}
+}
+/* The game requests landscape on phones; narrow desktop windows can still reflow. */
+@media(max-width:600px) and (orientation:portrait){
+ #panel.round-shop-screen{overflow:auto;display:block;}
+ .round-shop{height:auto;min-height:100%;grid-template-rows:auto auto auto;}
+ .round-board{grid-template-columns:1fr;}.round-arsenal{grid-template-rows:auto auto;}
+ .round-guns{grid-template-columns:repeat(3,minmax(0,1fr));}.round-gun{min-height:76px!important;}
+ .round-parts{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;grid-auto-rows:minmax(130px,auto);}
+ .round-supplies{border-left:0;border-top:1px solid var(--shop-line);padding:12px 0 0;grid-template-rows:none;grid-auto-rows:minmax(100px,auto);}
+ .round-bays{grid-template-columns:1fr;}.round-bay{grid-template-rows:76px auto;}.round-bay .round-guns{grid-template-columns:1fr;}.round-bay-parts{grid-auto-rows:minmax(80px,auto);grid-template-rows:none;}
+ .round-dock{grid-template-columns:minmax(0,1fr) auto;}.round-description{grid-column:1/-1;}
+ .round-header{gap:8px;}.round-header h1{font-size:29px;}.round-header>div{gap:8px;}.round-header>button{padding:0 4px;font-size:12px;}.round-header>strong{font-size:28px;}
+ .round-kit-body{grid-template-rows:auto auto;}.round-kit-layout{grid-template-columns:1fr;}.round-slots{grid-template-columns:1fr;}.round-kit-title{flex-wrap:wrap;}.round-kit-gear{border:0;padding:0;}
+}

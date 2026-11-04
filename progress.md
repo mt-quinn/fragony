@@ -19,3 +19,11 @@ Water follow-up implemented: obstruction while swimming triggers a 500ms held ju
 Final browser validation passes at 956×440/3×: removed controls, full jump height, ≥500ms held input, water-bank exit, all weapon families including charged rockets and “TAP STREAK”; no browser errors. Full regressions passed through the final water test, whose old renderer mock lacked the world-texture uniform added by the prior graphics update; updated that fixture and verified it separately. Unrelated shader lab files are excluded via an isolated release checkout.
 
 Published mobile cleanup successfully at https://dead-heat.the-game-ban-7336.chatgpt.site using commit 4651485b7a6913d40d730c402a923776bb4ea08f; production package passed all 20 prepared-map checks. Unrelated shader work remains in the workspace and was excluded from publication.
+
+Started approved shop implementation. Working tree clean. Read existing catalog, result navigation, shop generation and transaction tests. Plan: retain real purchase functions, add explicit offer selection and kit subview, and route surviving scoreboard solely to the separate shop.
+
+Implemented offer selection, two-gun bays / 3–6 gun strip, all-stock supplies, selected purchase dock, owned-kit subview, clear streak copy and surviving-scoreboard single exit into shop. Shop and mobile menu transaction tests pass; new round-shop test verifies progression, stock, saved-run restoration and complete copy. Preparing browser visual and full-flow checks.
+
+Full npm test suite passed through final water renderer/gameplay tests. All 12 actual-browser layouts and purchase/free-swap/progression paths passed. Added npm run build and Vercel static configuration; production package builds successfully. Final map-only release checks and GitHub push remain.
+
+Production verification passed: all 20 prepared maps load using build files alone; exact runtime archives and navigation preserved. Source diff has no whitespace errors. Preparing normal initial push to mt-quinn/fragony main with the approved shop and Vercel build configuration.
