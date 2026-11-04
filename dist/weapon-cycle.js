@@ -23,7 +23,7 @@ export class FireControl{
  }
  shot(w){if(w.slamfire)this.heat=Math.min(1,this.heat+.28)}
 }
-export function distanceDamage(w,distance){if(!w.falloff)return 1;const f=w.falloff,t=clamp((distance-f.close)/(f.far-f.close),0,1);return f.near+(f.farScale-f.near)*t;}
+export function distanceDamage(w,distance){const bonus=w.closeBonus?1+(w.closeBonus.scale-1)*(1-clamp((distance-w.closeBonus.close)/(w.closeBonus.far-w.closeBonus.close),0,1)):1;if(!w.falloff)return bonus;const f=w.falloff,t=clamp((distance-f.close)/(f.far-f.close),0,1);return (f.near+(f.farScale-f.near)*t)*bonus;}
 export function damagePerCartridge(w){return w.damage*w.pellets+w.splash;}
 export function reloadDuration(w,ammo,fast=true){return w.feedMode==='coupled'&&fast?w.quickReload:ammo===0&&w.emptyReload?w.emptyReload:w.reload;}
 export class FeedSystem{
@@ -42,8 +42,8 @@ export class FeedSystem{
    s.reload=null;if(trigger||s.ammo>=w.mag){s.passive=0;return s;}
    s.passive+=dt;while(s.passive>=(w.insert||.6)&&s.ammo<w.mag){s.ammo++;s.passive-=w.insert||.6;}return s;
   }
-  if(!active&&w.handling==='sling'&&s.holster>=1&&!s.reload)this.start(g,w,scale);
-  if(!active&&(w.handling!=='sling'||s.holster<1))return s;
+  if(!active&&w.handling==='sling'&&s.holster>=.6&&!s.reload)this.start(g,w,scale);
+  if(!active&&(w.handling!=='sling'||s.holster<.6))return s;
   const r=s.reload;if(!r)return s;r.left=Math.max(0,r.left-dt);
   if(r.individual){r.next-=dt;while(r.next<=1e-7&&s.ammo<w.mag){s.ammo++;r.next+=r.insert;}}
   if(r.left<=1e-7){s.ammo=w.mag;s.reload=null;if(w.feedMode==='coupled')s.fast=!s.fast;}

@@ -135,3 +135,5 @@
  .round-header{gap:8px;}.round-header h1{font-size:29px;}.round-header>div{gap:8px;}.round-header>button{padding:0 4px;font-size:12px;}.round-header>strong{font-size:28px;}
  .round-kit-body{grid-template-rows:auto auto;}.round-kit-layout{grid-template-columns:1fr;}.round-slots{grid-template-columns:1fr;}.round-kit-title{flex-wrap:wrap;}.round-kit-gear{border:0;padding:0;}
 }
+
+.round-perk-options{display:grid;grid-template-columns:1fr 1fr;gap:6px}.round-perk-options button{padding:8px;font:inherit;font-size:12px;text-align:left;border:1px solid #637172;border-radius:7px;background:#24343a;color:#eef0e6}.round-perk-options button[aria-pressed="true"]{border-color:#d9ef45;color:#d9ef45}.round-perk-options button:disabled{opacity:.5}

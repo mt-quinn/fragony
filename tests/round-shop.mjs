@@ -3,7 +3,7 @@ import {partCopy,supplyCopy} from '../dist/shop-copy.js';
 import {WEAPON_SLOTS} from '../dist/loadout.js';
 import {createGameHarness} from './harness.mjs';
 for(let g=0;g<6;g++)for(const [slot,parts]of Object.entries(WEAPON_SLOTS[g]))for(const a of parts){const copy=partCopy(g,a);assert.ok(copy.title&&copy.hint&&copy.detail);if(slot!=='optic'){assert.notEqual(copy.hint,'Changes weapon behavior',a.id);assert.ok(!/DPS|\d+\.\d+ s|%/.test(copy.detail),a.id);}}
-assert.equal(partCopy(5,WEAPON_SLOTS[5].feed[2]).title,'Reload one shell at a time');assert.match(supplyCopy({id:'surge',name:'Surge'}).detail,/three kills, activate.*slow-motion/);
+assert.equal(partCopy(5,WEAPON_SLOTS[5].feed[2]).title,'Reload one shell at a time');assert.match(supplyCopy({id:'surge',name:'Surge'}).detail,/three weapon kills, restore.*slow-motion/);
 const h=createGameHarness(564);h.setup();await h.run(`(async()=>{
  owned=[0,1,2,3,5];equipped=startingWeapon=0;round=4;credits=1200;perks={};builds=normalizeBuilds();equipment=normalizeEquipment();shopOffers=null;showShop();
  assert.equal(mode,'shop');assert.ok($('panel').className.includes('round-shop-screen'));assert.equal(($('panel').innerHTML.match(/data-start=/g)||[]).length,5);

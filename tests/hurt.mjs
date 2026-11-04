@@ -24,9 +24,9 @@ for(const [bearing,expected]of [[Math.PI,0],[Math.PI/2,Math.PI/2],[0,Math.PI],[-
 const eye={x:0,y:1.7,z:0};assert.ok(nearMissSegment({x:1,y:1,z:-10},{x:1,y:1,z:10},eye));assert.equal(nearMissSegment({x:1,y:1,z:-10},{x:1,y:1,z:-2},eye),null,'stopped by cover before passing player');assert.equal(nearMissSegment({x:4,y:1,z:-10},{x:4,y:1,z:10},eye),null,'distant fire excluded');assert.equal(nearMissSegment(eye,eye,eye),null);
 h.run(`
 spawnPlayer();worldMeshes=[];bots.forEach(b=>scene.remove(b.group));const shooter=bots[0];shooter.pos.set(1,0,-10);bots=[shooter];playerPos.set(0,1.7,0);playerSpawnAt=0;opponentAI.clock=10;hurtFeedback.reset();const gun={type:'rifle',damage:10,spread:0,range:30,pellets:1};
-fireBotWeapon(shooter,{x:1,y:1,z:10},gun);assert.equal(health,100);assert.equal(hurtFeedback.directions[0].sourceId,shooter.name+':'+shooter.lifeId);assert.equal(hurtFeedback.step(0,health,100,yaw).directions[0].kind,'near');
+fireBotWeapon(shooter,{x:1,y:1,z:10},gun);assert.equal(health,200);assert.equal(hurtFeedback.directions[0].sourceId,shooter.name+':'+shooter.lifeId);assert.equal(hurtFeedback.step(0,health,100,yaw).directions[0].kind,'near');
 // The actual trace stops at solid cover; no visual suppression passes through it.
 hurtFeedback.reset();const cover=new THREE.Mesh(new THREE.BoxGeometry(5,3,.3),new THREE.MeshBasicMaterial());cover.position.set(0,1,-4);scene.add(cover);worldMeshes=[cover];fireBotWeapon(shooter,{x:1,y:1,z:10},gun);assert.equal(hurtFeedback.directions.length,0);
-scene.remove(cover);worldMeshes=[];fireBotWeapon(shooter,{x:0,y:1,z:0},gun);assert.ok(health<100);assert.equal(hurtFeedback.step(0,health,100,yaw).directions[0].kind,'hit');
+scene.remove(cover);worldMeshes=[];fireBotWeapon(shooter,{x:0,y:1,z:0},gun);assert.ok(health<200);assert.equal(hurtFeedback.step(0,health,100,yaw).directions[0].kind,'hit');
 `);
 console.log('Incoming fire: per-shooter overlap layers, refresh/upgrade priority, all camera quadrants, actual near-miss bullet segments and blocked-shot suppression pass.');

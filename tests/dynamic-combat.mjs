@@ -29,11 +29,11 @@ target.pos.z=target.eye.z=bot.pos.z+4;b.weaponHeld=3;ai.clock+=.2;ai.perceive(bo
 b.memory.get('rival').at=ai.clock-.4;b.visible=false;ai.chooseGoal(bot,b);assert.equal(b.action,'pursue');
 
 // A fragment is a route opportunity, not a replacement for the strategic goal.
-world.pickups=[healthPickup('fragment',0,0,6,5)];world.pickups[0].timer=0;bot.pos.set(0,0,4);b.visible=false;b.target=null;b.heard=null;b.detour=null;b.detourIn=0;b.recover=0;
+world.pickups=[healthPickup('fragment',0,0,6,5)];world.pickups[0].timer=0;bot.pos.set(0,0,4);bot.hp=95;b.visible=false;b.target=null;b.heard=null;b.detour=null;b.detourIn=0;b.recover=0;
 ai.setGoal(b,'rotate',{x:0,y:0,z:15});b.path=nodes.filter(n=>n.x===0&&n.z>4&&n.z<=15).map(n=>({...n,action:'walk'}));ai.pickRouteDetour(bot,b);
 assert.equal(b.detour.pickup.id,'fragment');assert.equal(b.goal.z,15);assert.equal(ai.stats.detours,1);
 let collected=false;
-for(let i=0;i<400;i++){ai.navigate(bot,b,1/120);if(bot.pos.distanceTo(new THREE.Vector3(0,0,6))<.65){world.pickups[0].timer=15;bot.hp=105;collected=true}if(collected&&bot.pos.z>9)break}
+for(let i=0;i<400;i++){ai.navigate(bot,b,1/120);if(bot.pos.distanceTo(new THREE.Vector3(0,0,6))<.65){world.pickups[0].timer=15;bot.hp=100;collected=true}if(collected&&bot.pos.z>9)break}
 assert.ok(collected&&bot.pos.z>9,'physical detour rejoins the larger route');assert.equal(b.goal.z,15);
 
 const ledgeAI=new ArenaAI({navigation:{...navigation,blocks:[{x:0,z:0,w:2,d:20,bottom:0,top:2}]},world:{...world,projectiles:()=>[{pos:{x:0,y:3,z:8},velocity:{x:0,y:0,z:-24},owner:null}]},round:12,random:()=>.1});

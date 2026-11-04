@@ -109,7 +109,7 @@ export class MobileController{
   const ring=this.nodes['touch-acquire'];ring.dataset.phase=g.charge>0?'acquiring':this.auto.phase;ring.style.setProperty('--acquire',g.charge>0?g.charge:this.auto.progress);ring.querySelector('small').textContent=g.charge>0?'CHARGING '+Math.round(g.charge*100)+'%':'';
   this.lastInfo+=dt;if(this.lastInfo<.08)return;this.lastInfo=0;
   this.nodes['touch-placement'].textContent=g.placement;this.nodes['touch-match'].textContent=this.practice?'PRACTICE':'ROUND '+String(g.round).padStart(2,'0');this.nodes['touch-time'].textContent=this.practice?'∞':g.time;this.nodes['touch-map'].textContent=g.map;
-  this.nodes['touch-hp'].textContent=Math.ceil(g.health);this.nodes['touch-hp'].style.color=g.health<35?'#ff8565':'';this.nodes['touch-hp'].nextElementSibling.firstElementChild.style.width=Math.min(100,g.health/g.maxHealth*100)+'%';
+  this.nodes['touch-hp'].textContent=Math.ceil(g.health)+(g.armor>0?' +'+Math.ceil(g.armor):'');this.nodes['touch-hp'].style.color=g.health<35?'#ff8565':'';this.nodes['touch-hp'].nextElementSibling.firstElementChild.style.width=Math.min(100,g.health/g.maxHealth*100)+'%';
   if(this.weapon!==g.equipped){this.weapon=g.equipped;this.nodes['touch-gun-icon'].innerHTML=g.icon;this.nodes['touch-gun-name'].textContent=g.weapon;this.applyLayout();}
   this.nodes['touch-gun-mode'].textContent=g.gunMode+' · '+g.shots+(g.shots===1?' SHOT':' SHOTS');
   this.nodes['touch-ammo'].textContent=g.reloading?'RELOADING':g.ammo+' / ∞';

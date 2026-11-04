@@ -8,4 +8,4 @@ export const MAPS=[RESERVOIR,RUST,SHIPMENT,NUKETOWN,...SOURCE_ARENAS];
 export const MAP={...RESERVOIR};
 export function selectMap(id){const chosen=MAPS.find(m=>m.id===id)||RESERVOIR;for(const key of Object.keys(MAP))delete MAP[key];Object.assign(MAP,chosen);return MAP}
 export const ALL_WEAPONS=['rifle','pistol','smg','rail','rocket','shotgun'];
-export function randomWeaponPair(random=Math.random){const first=Math.floor(random()*ALL_WEAPONS.length);let second=Math.floor(random()*(ALL_WEAPONS.length-1));if(second>=first)second++;return[ALL_WEAPONS[first],ALL_WEAPONS[second]]}
+export function randomWeaponPair(random=Math.random){return [ALL_WEAPONS[Math.floor(random()*3)],ALL_WEAPONS[3+Math.floor(random()*3)]]}

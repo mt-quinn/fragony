@@ -58,6 +58,9 @@ export function synthesize(name,sampleRate=32000,seed=17){
   else if(name==='shatter'){clack(0,.5);clack(.035,.35);clack(.08,.25);noise(.015,.15,.4,2700)}
   else if(name==='heartbeat'){body(0,.1,.55,85,48);body(.16,.12,.35,74,42)}
   else if(name==='damage'){body(0,.13,.5,105,45);noise(0,.05,.45,1600)}
+  else if(name==='arc-hit'){noise(0,.085,.8,6500);body(0,.1,.3,1100,250);noise(.045,.06,.5,4300)}
+  else if(name==='pierce-hit'){noise(0,.045,.7,4800);body(0,.085,.25,650,320)}
+  else if(name==='refund'){body(0,.11,.3,700,690);body(.07,.14,.3,1050,1040)}
   else if(name==='charge'){noise(0,.48,.32,2100,.12);body(0,.48,.12,180,350,.14)}
   else if(name==='slow-on'||name==='slow-off'){noise(0,.18,.3,1500);body(0,.22,.28,name==='slow-on'?260:100,name==='slow-on'?80:280,.008)}
   // A tiny room slap adds size without masking the next attack or footsteps.
@@ -131,7 +134,7 @@ export class GameAudio{
     const distance=Math.hypot(v.pos.x-this.listener.x,v.pos.y-this.listener.y,v.pos.z-this.listener.z),gain=attenuation(distance,AUDIO_TUNING.curves[v.curve]);
     v.gain.gain.setTargetAtTime(v.volume*gain*(1-v.occlusion*(1-AUDIO_TUNING.occlusion.gain)),this.context.currentTime,.025);
   }
-  play(name,{pos=null,volume=1,curve='foley',bus='ui',priority=1,occlusion=true,variant=0,pan=0}={}){
+  play(name,{pos=null,volume=1,curve='foley',bus='ui',priority=1,occlusion=true,variant=0,pan=0,pitch=1}={}){
     if(this.muted||this.background)return null;this.unlock();const c=this.context;if(!c||c.state==='closed'||c.state==='suspended'||c.state==='interrupted')return null;
     const d=pos?Math.hypot(pos.x-this.listener.x,pos.y-this.listener.y,pos.z-this.listener.z):0,falloff=pos?attenuation(d,AUDIO_TUNING.curves[curve]):1;if(falloff<=.002)return null;
     const importance=priority*falloff,category=[...this.voices].filter(v=>v.bus===bus);if(category.length>=AUDIO_TUNING.limits[bus]||this.voices.size>=AUDIO_TUNING.limits.total){const pool=category.length>=AUDIO_TUNING.limits[bus]?category:[...this.voices],lowest=pool.sort((a,b)=>a.importance-b.importance||a.started-b.started)[0];if(lowest&&lowest.importance>importance)return null;if(lowest)this.stopVoice(lowest)}
@@ -142,14 +145,14 @@ export class GameAudio{
     if(pos){panner=c.createPanner();panner.panningModel='HRTF';panner.distanceModel='inverse';panner.refDistance=1;panner.rolloffFactor=0;panner.maxDistance=100;panner.coneInnerAngle=panner.coneOuterAngle=360;panner.coneOuterGain=1;
       if(panner.positionX){panner.positionX.value=pos.x;panner.positionY.value=pos.y;panner.positionZ.value=pos.z}else panner.setPosition(pos.x,pos.y,pos.z);gain.connect(panner);panner.connect(this.buses[bus]);
     }else if(pan&&c.createStereoPanner){panner=c.createStereoPanner();panner.pan.value=pan;gain.connect(panner);panner.connect(this.buses[bus])}else gain.connect(this.buses[bus]);
-    const rate=1+(Math.random()-.5)*.04,voice={source,gain,filter,panner,pos:pos?{x:pos.x,y:pos.y,z:pos.z}:null,curve,bus,volume,occlusion:obscured,importance,started:c.currentTime,rate};
+    const rate=pitch*(1+(Math.random()-.5)*.04),voice={source,gain,filter,panner,pos:pos?{x:pos.x,y:pos.y,z:pos.z}:null,curve,bus,volume,occlusion:obscured,importance,started:c.currentTime,rate};
     gain.gain.value=volume*falloff*(1-obscured*(1-AUDIO_TUNING.occlusion.gain));source.playbackRate.value=rate*(this.slow?(bus==='self'?.92:bus==='ui'?1:.78):1);
     this.voices.add(voice);source.onended=()=>this.release(voice);source.start();return voice;
   }
   release(v){if(v.released)return;v.released=true;this.voices.delete(v);for(const n of [v.source,v.gain,v.filter,v.panner])try{n?.disconnect()}catch{}}
   stopVoice(v){try{v.gain.gain.setTargetAtTime(0,this.context.currentTime,.005);v.source.stop(this.context.currentTime+.025)}catch{}this.voices.delete(v)}
   stopWorld(){for(const v of [...this.voices])this.stopVoice(v)}
-  weapon(type,{pos=null}={}){return this.play(type,{pos,volume:pos?AUDIO_TUNING.volumes.enemyWeapon:AUDIO_TUNING.volumes.selfWeapon,curve:'weapon',bus:pos?'gunfire':'self',priority:pos?2:5})}
+  weapon(type,{pos=null,spec=null}={}){const pitch=spec?.volley>1?.84:spec?.charge?.8:spec?.actionKey==='surveyor'?.82:spec?.actionKey&&spec?.mode==='auto'?1.12:1;return this.play(type,{pos,pitch,volume:pos?AUDIO_TUNING.volumes.enemyWeapon:AUDIO_TUNING.volumes.selfWeapon,curve:'weapon',bus:pos?'gunfire':'self',priority:pos?2:5})}
   footstep(pos,{self=false,metal=false,landing=false,quiet=false}={}){
     const index=this.stepIndex++;
     if(!self&&Math.hypot(pos.x-this.listener.x,pos.z-this.listener.z)<8&&this.context){this.duck('self',.82,.1)}

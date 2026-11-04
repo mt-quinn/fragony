@@ -23,7 +23,7 @@ for(const barrel of [null,...WEAPON_SLOTS[1].action])for(const muzzle of [null,.
 }
 assert.deepEqual(WEAPON_ORDER,[1,2,0,5,4,3]);assert.deepEqual(WEAPON_ORDER.map(weaponSlot),[1,2,3,4,5,6]);
 const game=createGameHarness();game.setup();game.run(`{
-owned=[1,2,0,5,4,3];equipped=1;buildWeapon();ammo=0;reload();assert.ok(weaponGroup.userData.nailer.emptyReload);assert.equal(playerWeapon().damage,45);assert.equal(playerWeapon().mag,7);assert.equal(playerWeapon().interval,.53);assert.equal(playerWeapon().reload,1.6);assert.deepEqual(Array.from(WEAPON_ORDER,i=>weapons[i].name),['NAILER','RATTLER','JACKHAMMER','SLEDGEHAMMER','DEMOLISHER','LANCER']);
+owned=[1,2,0,5,4,3];equipped=1;buildWeapon();ammo=0;reload();assert.ok(weaponGroup.userData.nailer.emptyReload);assert.equal(playerWeapon().damage,60);assert.equal(playerWeapon().mag,6);assert.equal(playerWeapon().interval,.5);assert.equal(playerWeapon().reload,1.5);assert.deepEqual(Array.from(WEAPON_ORDER,i=>weapons[i].name),['NAILER','RATTLER','JACKHAMMER','SLEDGEHAMMER','DEMOLISHER','LANCER']);
 reloading=0;ammo=7;keys.clear();weaponMotion.reset();nearWall=0;worldMeshes=[];viewHeight=playerPos.y;for(let i=0;i<120;i++){keys.add('MouseRight');present(1/60)}weaponGroup.updateMatrixWorld(true);const sight=weaponGroup.userData.nailer.irons.getObjectByName('front-sight-dot').getWorldPosition(new THREE.Vector3()).project(camera);assert.ok(Math.abs(sight.x)<1e-4&&Math.abs(sight.y)<1e-4,'iron sight on actual aim axis');keys.clear();
 for(let i=0;i<6;i++){locked=true;mode='play';inputPress('Digit'+(i+1));assert.equal(equipped,WEAPON_ORDER[i]);physicalKeys.clear();syncInputs()}
 }`);
