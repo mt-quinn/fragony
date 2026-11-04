@@ -43,10 +43,8 @@ export class MobileController{
   window.addEventListener('deviceorientation',e=>this.orientation(e));
   this.installMenu();this.resize();
  }
- installMenu(){
-  const nav=document.querySelector('.menu-actions');const practice=document.createElement('button');practice.id='touch-practice';practice.className='menu-secondary';practice.textContent='Practice';practice.onclick=()=>this.beginPractice();nav.append(practice);
-  const guide=document.createElement('div');guide.className='touch-menu-note';guide.innerHTML='<b>SIMPLE MODE</b><span>You aim. Your weapon fires.</span>';document.querySelector('.intro').append(guide);
- }
+ installMenu(){document.getElementById('menu-practice').onclick=()=>this.beginPractice();}
+
  get layout(){return normalizeLayout(this.layouts[this.settings.preset],this.settings.preset)}
  get viewport(){return viewportSize(this.root)}
  get landscape(){const {width,height}=this.viewport;return width>height;}

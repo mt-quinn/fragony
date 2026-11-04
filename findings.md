@@ -59,3 +59,13 @@ Approved balance implementation details: Frangible retains stock accuracy and ra
 - Resets affect only the current section or explicit Help reset scope and support Undo across navigation. Storage and clipboard failures remain usable.
 - Browser verification: desktop 1280×720; touch landscape 844×390, short 667×320. Quality fits at 844×390 with no scroll (182px available/182px content); short screens scroll internally; footer remains inside viewport. Console clear.
 - Real-browser checks: effect changes, reset/undo, saved touch sensitivity after reload, keyboard conflict replacement, HUD editor cancel return, benchmark cancellation return, practice launch, pause settings and resume. Motion permissions and physical device behavior require device testing.
+
+## Main menu overhaul implementation and live review
+- User approved the frozen firefight composition, explicitly rejected any tagline, and required the underline to span FRAG precisely.
+- Menu uses a DOM FRAG span underline and shared persistent footer on touch/keyboard, saved-run summary read without campaign mutations, and original entry actions.
+- First review exposed an upright slide and shallow upper-crossing backdrop. Replaced it with a static IK pose (reclined torso, planted support hand, asymmetric legs) and Reservoir east gallery framing.
+- User then flagged the floating background actor. Changed it to a grounded braced opponent on the real gallery floor with contact shadow; checking sightlines and contact at phone sizes.
+- Early checks found missing flex-direction in inherited menu CSS and missing dataset in the native DOM stub; corrected both. Old menu framing assertions are being replaced for the approved composition while preserving run/camera isolation checks.
+- Final user-approved character composition: sliding shooter right; closer crouched opponent left, lower body intentionally cropped by footer, head below the wordmark. User then requested Shoot House's central corridor as the background.
+- Moved the entire local composition (camera and actors together) into Shoot House's central firing lane at [0, 1.56365, 0], oriented along the lane. Both actors/camera fit actual collision there. Initial load and menu return now load the menu map before rendering when it was evicted. No saved run/map bag changes.
+- Camera uses a consistent horizontal field of view in landscape to preserve the approved framing across screen ratios. Portrait camera is separately framed to avoid a nearby cover wall.

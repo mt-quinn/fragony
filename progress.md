@@ -55,3 +55,8 @@ Final balance verification:64/64 regression commands pass. Native safety/Frangib
 Implemented approved shared settings workspace and maintained existing preference storage/runtime paths. Focused settings and binding checks passed; all unrelated gameplay suite commands passed. Updated obsolete old-layout assertions and reran both successfully. Browser verified phone/desktop flow and found/fixed focused-button keyboard capture. Temporary QA fixtures removed before final release build.
 
 Final validation: all 65 test commands passed across broad/focused runs; clean 220-file static release built and all 20 production maps loaded. No temporary QA fixtures included. Physical touch and motion permission checks remain device testing.
+
+
+## Approved main menu overhaul — 2026-11-04
+Implemented shared action strip, saved-run priority/summary, exact FRAG underline, no tagline or touch promo text. User iterated the in-engine poses and approved a foreground duel with a close cropped left opponent, reclined sliding right opponent, then approved Shoot House's central lane background. Native scene tests now pass five viewports, real collision grounding, unobstructed rays, reduced motion, stable scene allocations, campaign/rotation preservation and practice map memory. Browser saved/fresh layouts, Settings/Arsenal return, and touch practice entry checked; broad regressions and release package checks in progress.
+Final checks: all 66 regression commands passed; 20-map production-only loading passed. Added guarded boot buttons and Retry for a menu-map fetch failure; focused failure test passed. Final static release rebuilt without QA files. User approved the final Shoot House composition. Physical iOS/Android testing remains outside desktop-browser verification.

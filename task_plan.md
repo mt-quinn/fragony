@@ -84,3 +84,10 @@ User approved the interactive six-category proposal. Implement a shared fixed se
 Settings implementation update: shared workspace, complete control inventory, scoped resets/undo and live preview — complete. Focused native tests, full gameplay regression pass (old-layout expectations updated and rerun), desktop/mobile browser verification — complete. Final clean production build and GitHub publication — in progress.
 
 Final production build and 20-map production-only loading checks passed. All 65 test commands passed across the broad run and focused reruns after updating old UI expectations. Browser checks complete; publishing to authorized GitHub main.
+
+# Approved main menu overhaul — 2026-11-04
+1. Replace the standing pose with a frozen in-engine Reservoir firefight using actual mannequins and weapons, restrained camera motion, shared rendering — in progress.
+2. Implement one persistent bottom action strip; Continue with saved round/credits or New Run priority; Practice/Arsenal/Settings/audio retained; underline the exact FRAG span, no tagline — pending.
+3. Verify camera/combat isolation, saved campaign/rotation, phone/desktop framing, reduced motion, production build, then push to authorized GitHub main — pending.
+
+Main menu completion: approved Shoot House central-corridor duel and action strip implemented. No tagline; FRAG underline uses the actual span. All 66 test commands passed, plus final focused load-failure/retry checks; all 20 maps loaded from the production package. Desktop/phone saved and fresh layouts, Settings/Arsenal return, and touch Practice→menu flow verified. Temporary QA files removed. Final publication to authorized GitHub main remains.
