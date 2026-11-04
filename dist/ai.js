@@ -181,13 +181,13 @@ export class ArenaAI{
       if(r.owner===bot||distance(bot.pos,r.pos)>11)continue;
       const dx=bot.pos.x-r.pos.x,dz=bot.pos.z-r.pos.z,speed=Math.hypot(r.velocity.x,r.velocity.z),approach=(dx*r.velocity.x+dz*r.velocity.z)/Math.max(.1,speed);
       const sideDistance=Math.abs(dx*r.velocity.z-dz*r.velocity.x)/Math.max(.1,speed);
-      if(!r.grenade&&(approach<0||sideDistance>2.6))continue;
+      if((approach<0||sideDistance>2.6))continue;
       const bearing=Math.atan2(r.pos.x-bot.pos.x,r.pos.z-bot.pos.z);
       if(Math.abs(angleDelta(bearing,b.facing))>Math.PI*.65||!this.world.canSee({x:bot.pos.x,y:bot.pos.y+1.3,z:bot.pos.z},r.pos))continue;
       b.dodgeCooldown=1.5;
       if(this.random()>this.difficulty.dodgeChance)return;
       let choice=null,best=-Infinity;
-      for(const side of [b.strafe,-b.strafe]){const x=r.grenade?dx+side*dz*.5:r.velocity.z*side,z=r.grenade?dz-side*dx*.5:-r.velocity.x*side,d=Math.max(.01,Math.hypot(x,z)),floor=this.navigation.blocks?surfaceAt(this.navigation.blocks,bot.pos.x,bot.pos.z,bot.pos.y):bot.pos.y,from={...bot.pos,y:floor},to={x:bot.pos.x+x/d*2.2,y:floor,z:bot.pos.z+z/d*2.2};
+      for(const side of [b.strafe,-b.strafe]){const x=r.velocity.z*side,z=-r.velocity.x*side,d=Math.max(.01,Math.hypot(x,z)),floor=this.navigation.blocks?surfaceAt(this.navigation.blocks,bot.pos.x,bot.pos.z,bot.pos.y):bot.pos.y,from={...bot.pos,y:floor},to={x:bot.pos.x+x/d*2.2,y:floor,z:bot.pos.z+z/d*2.2};
         if(!this.walkClear(from,to))continue;const value=horizontal(to,r.pos);if(value>best){best=value;choice={x,z}}
       }
       if(choice){b.dodge={delay:this.difficulty.dodgeReaction,left:.38,...choice};this.stats.dodges++}return;

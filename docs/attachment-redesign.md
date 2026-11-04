@@ -161,7 +161,7 @@ Other than the specifically described frangible and slug payloads, retain existi
 
 ## Firing behavior and mobile
 
-Stock Nailer, Lancer and Demolisher become genuine semi-auto in manual mode; the Sledgehammer fires once per pump cycle/trigger pull; Rattler and Jackhammer remain automatic. This is an explicit manual-input change from today's held repeat. Offer a **hold-to-repeat semi-auto** accessibility toggle, default on for touch manual hip-fire and off for desktop manual fire. Conversions still change cadence, damage and recoil even with that convenience enabled.
+Stock Nailer, Lancer and Demolisher become genuine semi-auto in manual mode; the Sledgehammer fires once per pump cycle/trigger press; Rattler and Jackhammer remain automatic. This is an explicit manual-input change from today's held repeat. Offer a **hold-to-repeat semi-auto** accessibility toggle, default on for touch manual hip-fire and off for desktop manual fire. Conversions still change cadence, damage and recoil even with that convenience enabled.
 
 Simple Mode remains the default on mobile. It supplies deliberate trigger pulses for semi-auto guns at legal cadence and repeats bursts while a valid target is maintained. Keep the approved small acquisition margin and .18 s charge drain. Timer charge does not create hits, steer bullets or replace shot cooldowns.
 
@@ -178,7 +178,7 @@ Current shops offer four random attachments and force one optic offer. The new s
 - Actions: 300–420 credits. Ammunition: 240–340. Feed: 140–220. Handling: 180–240. Keep existing round rewards/kill credits initially; a core conversion should be a plausible first purchase after a good opening round.
 - One pinned attachment offer carries into the next shop, replacing one offer of its category. Pinning is free; no paid reroll currency or new permanent progression.
 - Buying conflicting parts never silently replaces another slot or discards an owned attachment. Replacing within a slot is explicit; adding a fourth gameplay attachment asks which fitted part to remove.
-- New cards show the complete before/after firing pattern, damage per cartridge and per volley, sustained output including reload, loaded trigger pulls, reload behavior and key tradeoffs. Convert RPM alone into burst timing when relevant.
+- New cards show the complete before/after firing pattern, damage per cartridge and per volley, sustained output including reload, loaded shots, reload behavior and key tradeoffs. Convert RPM alone into burst timing when relevant.
 - Practice offers every proposed attachment, free, with a one-tap stock reset. The Arsenal lists the same catalog with sample build previews; purchases remain run-local.
 
 Migration: preserve weapon/perk/equipment progression. Map clearly equivalent old feeds to new feeds and old optics to free preferences. Refund the old purchase price of every retired/non-equivalent part, including unequipped owned parts, exactly once. Rebuild incompatible saved shop offers without granting purchases. Keep migrated weapons usable with stock parts if no clean equivalent exists. No save wipe.
@@ -214,7 +214,7 @@ The proposed catalog is complete for this pass; the examples are representative,
 
 The entire approved catalog and supporting flow are implemented in the buildless game. Runtime data uses stable per-weapon action/ammunition/feed/handling IDs; free optic IDs remain compatible. Old catalog data is retained only for migration prices/equivalent feed mapping. The resolver caches compiled weapon stats, and projectile specs are captured at launch.
 
-`FireControl` separates logical trigger pulls from physical cartridge shots, preserving existing stock cadence while supporting committed/manual bursts, cancelable Simple Mode bursts, paired ammunition consumption and charged hold/release. `FeedSystem` keeps phase/loading state per weapon; Service sling progress pauses on switching back, preserving loaded rounds for use, and resumes when holstered or manually reloading.
+`FireControl` separates logical trigger presses from physical cartridge shots, preserving existing stock cadence while supporting committed/manual bursts, cancelable Simple Mode bursts, paired ammunition consumption and charged hold/release. `FeedSystem` keeps phase/loading state per weapon; Service sling progress pauses on switching back, preserving loaded rounds for use, and resumes when holstered or manually reloading.
 
 The inspection view hides arms, centers visible gun bounds, provides front-quarter lighting and can cycle actual conversion rhythms without consuming campaign ammo. Its renderer is the existing game context. Named sight anchors survive geometry merging; extra paired muzzle materials are disposed along with model buffers.
 

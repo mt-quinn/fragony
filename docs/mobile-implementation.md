@@ -4,13 +4,13 @@ The touch version activates for coarse pointers and iPhones/iPads. Desktop keeps
 
 ## Playing
 
-- Left floating joystick: analog movement. Crouch while moving to knee slide; tap again to stand. A fixed joystick is available in settings. Sprinting has been removed.
+- Left floating joystick: analog movement. Keep a direction held into an obstruction for about 140 ms to auto-jump at full normal height. A fixed joystick is available in settings. Sprinting has been removed.
 - Swipe the open area on the right to aim. Each finger owns its original control until release or cancellation, including when it crosses other buttons.
 - Simple Mode is the default. A small 6 cm margin around each live, visible hitbox starts acquisition slightly before the actual crosshair reaches the opponent. Firing still requires the real crosshair to hit the opponent. Losing the target or encountering cover immediately releases fire and drains charge to zero within 180 ms. Returning to the same opponent retains the remaining charge; another opponent starts fresh. Reloading, switching weapons, dying and pausing clear acquisition immediately. Corpses do not trigger it.
 - ADS is independent: tap to toggle by default, or choose hold. Dragging the ADS button continues aiming. Automatic hip fire has no extra distance limit; ADS is optional at any normal weapon engagement distance.
-- Manual hip-fire fires immediately through the normal weapon cadence and temporarily leaves ADS while held. Releasing it restores the ADS toggle. Rockets always require manual fire, even when the optional hip-fire button is hidden.
-- Tap jump, crouch, reload, slow time, streak or switch. Hold jump to swim up; crouch swims down. Tap the weapon readout to choose any owned weapon. Tap placement to see standings.
-- Hold a grenade and drag to aim; release to throw. Drag into the top 22% of the screen before release to cancel. A canceled/interrupted contact never throws.
+- Manual hip-fire fires immediately through the normal weapon cadence and temporarily leaves ADS while held. Releasing it restores the ADS toggle. Every weapon auto-fires in Simple Mode, including stock rockets and charged launchers.
+- Tap reload, slow time, streak or switch. Auto-jump holds the logical jump input for at least 500 ms and activates against a blocked water edge to swim/climb out. Jump/crouch controls are absent on mobile. Tap the weapon readout to choose any owned weapon. Tap placement to see standings.
+- Throwables are removed from combat, controls, equipment and shop offers. Old throwable purchases are stripped/refunded once on save migration.
 
 The game retains its existing recoil, spread, ammunition, attachment stats, weapon animations, damage, collision, jump pads, swimming, bots, scoring, seven-map rotation and roguelike progression. Empty mobile magazines automatically reload. Simple Mode controls the trigger; it does not steer the camera or manufacture hits. Optional aim slowdown reduces touch sensitivity near a visible opponent and checks cover.
 
@@ -20,7 +20,7 @@ Settings include Simple/manual mode, optional hip-fire button, ADS toggle/hold/d
 
 Two-thumb, four-finger and left-handed presets each retain their own layout. The editor supports dragging, size, opacity, optional visibility, fine nudges, overlap warnings, reset, cancel, save and practice. Controls clamp to safe-area bounds and retain a 44 CSS-pixel hit target. The visual treatment uses Fragony's ink, chalk, acid accent, authored icons and existing weapon silhouettes.
 
-Practice uses the current arena, moving opponents, all six weapons, replenished grenades, no incoming player damage and unlimited time. It never overwrites the saved run. Leave practice and use Continue to restore that run. First-run instructions explain the default interaction; they remain available through pause/settings.
+Practice uses the current arena, moving opponents, all six weapons, no incoming player damage and unlimited time. It never overwrites the saved run. Leave practice and use Continue to restore that run. First-run instructions explain the default interaction; they remain available through pause/settings.
 
 ## iOS browser behavior
 
@@ -53,13 +53,13 @@ Browser verification covers phone-sized menu, first-run guide, live practice, AD
 
 ## Redesigned arsenal
 
-Practice pause now opens the free Weapon Workbench. Fit all72 parts, inspect/rotate/cycle the physical model, then return directly with the selected weapon equipped. The campaign remains saved separately. The firing HUD shows automatic/semi/burst/charge mode and loaded trigger pulls; charging and slamfire recoil state are visible. Manual hip-fire defaults to hold-to-repeat for semi-auto weapons, with a setting to change it. Simple Mode pulses/repeats at each conversion’s legal cadence; losing the real target cancels an unspent burst while preserving the recovery. Charged rockets require holding and releasing the manual control; dragging to the top cancels without spending a round. Existing acquisition margin/drain and ambient audio handling remain in place.
+Practice pause now opens the free Weapon Workbench. Fit all72 parts, inspect/rotate/cycle the physical model, then return directly with the selected weapon equipped. The campaign remains saved separately. The firing HUD shows automatic/semi/burst/charge mode and loaded shots; charging and slamfire recoil state are visible. Manual hip-fire defaults to hold-to-repeat for semi-auto weapons, with a setting to change it. Simple Mode pulses/repeats at each conversion’s legal cadence; losing the real target cancels an unspent burst while preserving the recovery. Automatic charged rockets discharge at full charge and cancel if the target is lost. Explicit manual fire still supports hold/release and drag-to-cancel. Existing acquisition margin/drain and ambient audio handling remain in place.
 
 The landscape non-combat UI has since been redesigned around a fixed shop board, denser multi-column settings, and side-by-side results. See [current menu design](mobile-menu-redesign.md) and [momentum slide](momentum-slide.md).
 
 Practice pause now includes **Change Practice Map** for all seven arenas. It keeps the current practice weapon and attachment build, leaves the campaign save untouched, and does not draw from the normal match-rotation bag.
 
-Mobile automatic targeting now acquires twice as quickly: rifle60ms, pistol80ms, SMG45ms, rail120ms, shotgun75ms. The extra hip-fire range limiter, its saved setting, and the AIM DOWN SIGHTS range prompt have been removed. Mechanical weapon firing, charge, reload, and manual rocket behavior remain unchanged.
+Mobile automatic targeting now acquires twice as quickly: rifle60ms, pistol80ms, SMG45ms, rail120ms, rocket100ms, shotgun75ms. The extra hip-fire range limiter, its saved setting, and the AIM DOWN SIGHTS range prompt have been removed. Mechanical weapon firing, charge, reload, and manual rocket behavior remain unchanged.
 
 ### Home Screen viewport correction (2026-11-03)
 The iOS status-bar meta setting uses `default`, avoiding the old `black-translucent` overlay mode. Root html/body explicitly fill the available viewport; the touch body is fixed to all four viewport edges. Canvas/menu backgrounds fill that rectangle while controls keep their existing `env(safe-area-inset-*)` notch/home-indicator protection. No guessed Safari toolbar height or `screen.height` enlargement is used. The user supplied a landscape Home Screen screenshot showing a full-width empty strip beneath the entire scene, consistent with the viewport gap reported in [WebKit313800](https://bugs.webkit.org/show_bug.cgi?id=313800). See [Apple status-bar mode semantics](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html).
@@ -76,3 +76,7 @@ The manifest now requests fullscreen with standalone fallback. The deprecated Ap
 Settings → Visuals → Copy Display Report copies the release marker, installed mode, screen/window/visual viewport, document/stage/canvas/control rectangles and safe-area values. It contains no save data or URLs and is shared only if the user chooses to send it. Clipboard-denied contexts show selectable text. This makes a remaining device failure measurable instead of repeating unsupported CSS guesses.
 
 Focused tests cover956×440 with stale378 window height, portrait440×956, empty-rectangle fallback, shared renderer/camera sizing and safe insets. Browser review confirms full440/956 stage/canvas/control height, zero root scrolling, rotation pause and visible report access. Actual iOS26.6.2 still requires the user's relaunch test; do not label that platform bug resolved from emulation alone.
+
+## Sustained-obstruction auto-jump
+
+`mobile-jump.js` compares world-space movement intent with collision normals and actual directional progress. It waits 140 ms with direction within roughly 26°, permits 35 ms of brief contact gaps, and rejects ordinary wall sliding/progress, weak input, ceilings, launch-pad flight and inactive input. A committed jump uses `FEEL.jumpSpeed` and holds Space for at least 500 ms even when horizontal input subsequently releases. Swimming may trigger without ground contact; the held input drives native `swimVertical` to clear banks. Pause, death, respawn and cleared touch input reset the detector/hold. Desktop jump/crouch remain manual. Permanent burst/volley/manual labels near the reticle are removed; charging, heat and hit feedback remain transient. Killstreak readiness uses “TAP STREAK” on touch and key labels on desktop.

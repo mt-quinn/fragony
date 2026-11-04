@@ -10,11 +10,11 @@ export function mobileSettings(saved={}){
 }
 export const CONTROL_DEFS={
  minimap:{label:'Minimap',size:130,x:.13,y:.30,passive:true},
- stick:{label:'Move',size:112,x:.13,y:.72},ads:{label:'Aim',size:62,x:.88,y:.36},fire:{label:'Hip fire',size:72,x:.78,y:.57},jump:{label:'Jump',size:54,x:.94,y:.56},crouch:{label:'Crouch / slide',size:54,x:.90,y:.78},reload:{label:'Reload',size:50,x:.79,y:.80},grenade:{label:'Grenade',size:48,x:.69,y:.78},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
+ stick:{label:'Move',size:112,x:.13,y:.72},ads:{label:'Aim',size:62,x:.88,y:.36},fire:{label:'Hip fire',size:72,x:.78,y:.57},reload:{label:'Reload',size:50,x:.79,y:.80},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
 };
 export function presetLayout(preset='thumbs'){
  const layout=Object.fromEntries(Object.entries(CONTROL_DEFS).map(([id,d])=>[id,{x:d.x,y:d.y,scale:1,opacity:1,hidden:false}]));
- if(preset==='claw'){Object.assign(layout.minimap,{x:.33,y:.28});Object.assign(layout.fire,{x:.14,y:.22});Object.assign(layout.ads,{x:.87,y:.23});Object.assign(layout.jump,{x:.93,y:.48});}
+ if(preset==='claw'){Object.assign(layout.minimap,{x:.33,y:.28});Object.assign(layout.fire,{x:.14,y:.22});Object.assign(layout.ads,{x:.87,y:.23});}
  if(preset==='left')for(const d of Object.values(layout))d.x=1-d.x;
  return layout;
 }
@@ -23,7 +23,7 @@ export function normalizeLayout(saved,preset='thumbs'){
  for(const [id,d]of Object.entries(result)){
   const v=saved?.[id];if(!v||typeof v!=='object')continue;
   for(const [k,min,max]of [['x',0,1],['y',0,1],['scale',.65,1.6],['opacity',.2,1]])if(Number.isFinite(v[k]))d[k]=clamp(v[k],min,max);
-  d.hidden=!!v.hidden&&!['stick','ads','jump','reload','swap'].includes(id);
+  d.hidden=!!v.hidden&&!['stick','ads','reload','swap'].includes(id);
  }
  return result;
 }
@@ -54,14 +54,14 @@ export class TouchState{
 }
 // Evidence-informed approximation, deliberately separate from weapon fire intervals.
 // Mobile targeting delay only; mechanical fire/charge/reload timing is separate.
-export const AUTO_FIRE={rifle:{acquire:.06},pistol:{acquire:.08},smg:{acquire:.045},rail:{acquire:.12},rocket:{manual:true,acquire:.1},shotgun:{acquire:.075}};
+export const AUTO_FIRE={rifle:{acquire:.06},pistol:{acquire:.08},smg:{acquire:.045},rail:{acquire:.12},rocket:{acquire:.1},shotgun:{acquire:.075}};
 export const AUTO_FIRE_DRAIN=.18;
 export class AutoFire{
  constructor(){this.reset();}
  reset(){this.target=null;this.age=0;this.progress=0;this.phase='searching';this.reason='no-target';}
  step(dt,{target=null,weapon='rifle',blocked=false,manual=false,onTarget=true}={}){
   const profile=AUTO_FIRE[weapon]||AUTO_FIRE.rifle;
-  if(blocked||profile.manual){this.reset();this.phase='unavailable';this.reason=blocked?'blocked':'manual-weapon';return false;}
+  if(blocked){this.reset();this.phase='unavailable';this.reason='blocked';return false;}
   if(!target){
    this.age=Math.max(0,this.age-clamp(dt,0,.05)*profile.acquire/AUTO_FIRE_DRAIN);this.progress=clamp(this.age/profile.acquire,0,1);this.phase=this.progress>0?'draining':'searching';this.reason='no-target';if(!this.age)this.target=null;return false;
   }

@@ -16,7 +16,7 @@ export function settleRivals(roster,standings,round,weapons,upgrades,random=Math
   const offers=createShopOffers({...r,round,weapons,upgrades},random),choices=[];
   for(const g of offers.weapons)choices.push({kind:'gun',g,price:upgrades.find(u=>u.gun===g).price,weight:(r.owned.length<3?2:1)+(g===[2,0,3,5,4][index%5]?2:0)+random()*2});
   for(const p of offers.attachments){const a=attachment(p.gun,p.id);choices.push({kind:'part',...p,price:p.price??a.price,weight:(a.slot==='action'?1.4:a.slot==='ammunition'?1.1:.8)+random()*2});}
-  // Focus and extra grenades are deliberately passed over: these rivals prioritize
+  // Focus is deliberately passed over: these rivals prioritize
   // gunfights, rather than buying abilities they don't use.
   for(const id of offers.perks.filter(id=>id!=='focus')){const u=upgrades.find(u=>u.id===id);choices.push({kind:'perk',id,price:u.price,weight:(Object.keys(r.perks).length<2?2:1)+(id==='armor'?.8:0)+random()*2});}
   choices.sort((a,b)=>b.weight-a.weight);

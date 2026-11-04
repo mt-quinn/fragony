@@ -16,3 +16,15 @@ User added independent render resolution. Keep quality as effects quality (shado
 Expanded by user: full graphics controls plus brief built-in benchmark over three maps and six native gameplay/effects scenes. Implement isolated benchmark child to preserve parent game state.
 
 Completed: full graphics controls; independent resolution/effects/AA; six native benchmark scenes; saved reports/download; desktop/phone browser validation, save/cancel preservation and production packaging verified.
+
+# Mobile movement and combat cleanup
+
+1. Inspect reticle labels, touch controls, collision movement, gear/shop/save paths — complete.
+2. Add sustained-obstruction auto-jump and held water exit; remove permanent reticle labels/throwables; universal mobile auto-fire and vocabulary — complete.
+3. Test movement edge cases and saved-run/shop migration, review browser UI and full gameplay, build and publish existing Site — verification complete; publishing in progress.
+
+Preserve desktop jump/crouch and gun-fired rockets/explosive ammunition. Mobile auto-jump uses the full existing jump impulse. Remove grenade mechanics from benchmark too.
+
+Additional user instruction: every weapon must support mobile automatic fire. Remove rocket acquisition exemption; charged launchers automatically discharge at full charge in auto-fire mode, cancel on target loss, retain explicit manual fire option.
+
+Jump steering: automatic jumps hold the logical jump input for at least 500ms, including when blocked in water, so swimming uses sustained upward input to exit onto banks.

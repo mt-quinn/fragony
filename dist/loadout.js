@@ -1,5 +1,6 @@
 import {WEAPON_SLOTS as LEGACY_SLOTS,OPTICS as LEGACY_OPTICS,attachment as legacyAttachment,migrateBuilds as legacyBuilds} from './legacy-loadout.js';
-export {EQUIPMENT,normalizeEquipment} from './legacy-loadout.js';
+import {EQUIPMENT,normalizeEquipment} from './legacy-loadout.js';
+export {EQUIPMENT,normalizeEquipment};
 export const ATTACHMENT_VERSION=2,MAX_PARTS=3;
 export const OPTICS=LEGACY_OPTICS.map(a=>({...a,price:0,effects:{}}));
 const action=(id,name,price,config,desc)=>({id,name,price,config,desc,slot:'action',effects:{},visual:id});
@@ -81,7 +82,14 @@ export function effectLines(a){if(!a)return[];if(a.slot==='optic')return[{text:a
 // Keep old purchase data solely for idempotent migration; it is not in the new shop.
 const feedMap=[{extended:'box',fast:'sprint',drum:'box'},{extended:'extended',fast:'speed',deep:'extended'},{extended:'drum',fast:'quick',drum:'drum'},{extended:'battery',fast:'quick',reserve:'battery'},{extended:'cassette',fast:'quick'},{extended:'carrier',fast:'speed',balanced:'carrier'}];
 export function migrateLoadoutSave(saved){
- if(!saved||saved.attachmentVersion===2||saved.builds?.version===2)return saved;
+ if(!saved)return saved;
+ // Retired gear is stripped and refunded once; the cleaned save is idempotent.
+ const retired={frag:0,impact:180,quick:160},gear=saved.equipment||{},oldOwned=Array.isArray(gear.owned)?gear.owned:[];
+ if('throwable' in gear||oldOwned.some(id=>id in retired)||'frags' in (saved.perks||{})){
+  const refund=[...new Set(oldOwned)].reduce((sum,id)=>sum+(retired[id]||0),0)+(saved.perks?.frags?160:0),perks={...saved.perks};delete perks.frags;
+  saved={...saved,perks,equipment:normalizeEquipment(gear),credits:(saved.credits||0)+refund,shopOffers:null,migrationRefund:(saved.migrationRefund||0)+refund};
+ }
+ if(saved.attachmentVersion===2||saved.builds?.version===2)return saved;
  const raw=saved.builds||{},out=normalizeBuilds(raw);let refund=0;
  for(let g=0;g<6;g++){const b=raw[g]||{},owned=[...new Set(Array.isArray(b.owned)?b.owned:[])];for(const id of owned){const old=legacyAttachment(g,id);if(!old)continue;const k=id.split('-').at(-1),mapped=feedMap[g][k],isFeed=['magazine','loader','tube'].includes(old.slot);
    if(isFeed&&mapped){const a=WEAPON_SLOTS[g].feed.find(x=>x.key===mapped);if(a&&!out[g].owned.includes(a.id))out[g].owned.push(a.id);if(b.slots?.[old.slot]===id)out[g].slots.feed=a.id;}

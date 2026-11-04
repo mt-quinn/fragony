@@ -50,7 +50,7 @@ export function synthesize(name,sampleRate=32000,seed=17){
   else if(name==='reload-out'){clack(0,.6);noise(.025,.07,.38,1800)}
   else if(name==='reload-in'){body(0,.06,.5,240,75);clack(.004,.9);clack(.043,.35)}
   else if(name==='bolt'){clack(0,.6);clack(.04,.8);body(.04,.06,.35,210,70)}
-  else if(name==='equip'||name==='frag'){clack(0,.5);noise(.02,.07,.28,1600)}
+  else if(name==='equip'){clack(0,.5);noise(.02,.07,.28,1600)}
   else if(name==='hit'){noise(0,.035,.5,3200);body(0,.04,.16,900,550)}
   else if(name==='kill'){body(0,.1,.3,300,290);body(.07,.13,.24,450,440);clack(0,.18)}
   else if(name==='pickup'){body(0,.16,.28,350,345);body(.065,.18,.25,525,520)}

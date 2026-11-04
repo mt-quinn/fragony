@@ -9,7 +9,7 @@ for(const [index,s]of spawnPoints.slice(0,12).entries()){
  b.hp=100000;explode(floor,null);assert.ok(b.hp<100000,'legacy splash damages floor-adjacent target '+index);scene.remove(b.group);bots=[];
  // Both projectile paths stop on the raised floor instead of entering it.
  for(const attachment of [false,true]){
-  const origin=floor.clone().add(new THREE.Vector3(0,2,0));launchRocket(origin,new THREE.Vector3(0,-1,0),null,false,1,attachment?{spec:{...weaponStats(weapons[4],4,normalizeBuilds()),weapon:'TEST'}}:{});
+  const origin=floor.clone().add(new THREE.Vector3(0,2,0));launchRocket(origin,new THREE.Vector3(0,-1,0),null,1,attachment?{spec:{...weaponStats(weapons[4],4,normalizeBuilds()),weapon:'TEST'}}:{});
   const r=rockets.at(-1);r.origin=origin.clone();r.bounces=0;let detonated=false;
   for(let i=0;i<60;i++){if((attachment?stepAttachmentRocket:stepLegacyRocket)(r,1/120)){detonated=true;break;}}
   assert.ok(detonated,'floor contact detonates '+index);assert.ok(r.mesh.position.y>s[1]-.25,'rocket does not sink into Reservoir floor');scene.remove(r.mesh);rockets.pop();
