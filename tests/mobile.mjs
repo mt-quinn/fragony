@@ -31,7 +31,7 @@ const layout=normalizeLayout({stick:{x:-9,y:9,hidden:true},fire:{scale:.01}});as
 for(const preset of ['thumbs','claw','left'])for(const id of Object.keys(layout)){
  const r=controlRect(id,presetLayout(preset),{x:52,y:8,w:564,h:304},.7);assert.ok(r.width>=44);assert.ok(r.x-r.width/2>=52&&r.x+r.width/2<=616);assert.ok(r.y-r.height/2>=8&&r.y+r.height/2<=312);
 }
-const normal=touchLook(100,10,844,settings),aimed=touchLook(100,10,844,settings,{ads:true});assert.ok(Math.abs(aimed.yaw)<Math.abs(normal.yaw));assert.ok(MOBILE_QUALITY.battery.pixels<MOBILE_QUALITY.high.pixels);
+const normal=touchLook(100,10,844,settings),aimed=touchLook(100,10,844,settings,{ads:true});assert.ok(Math.abs(aimed.yaw)<Math.abs(normal.yaw));assert.equal(MOBILE_QUALITY.battery.shadows,false);assert.equal(MOBILE_QUALITY.high.ao,true);assert.ok(!('pixels' in MOBILE_QUALITY.balanced),'effects presets leave resolution independent');
 const h=createGameHarness(32);h.setup();h.context.TouchState=TouchState;h.context.AutoFire=AutoFire;h.context.nearbyAutoTarget=nearbyAutoTarget;
 h.run(`
 mode='play';locked=true;respawnTime=0;reloading=0;shotTimer=0;equipped=0;yaw=0;pitch=0;playerPos.set(0,1.7,0);recoil=0;recoilX=0;bots=[];worldMeshes=[];

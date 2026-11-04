@@ -75,4 +75,4 @@ export function touchLook(dx,dy,width,settings,{ads=false,zoom=1,assisted=false}
  const gain=Math.PI*1.25/Math.max(320,width)*settings.sensitivity*context*(assisted?.6:1);
  return {yaw:-dx*gain,pitch:-dy*gain*settings.vertical*(settings.invertY?-1:1)};
 }
-export const MOBILE_QUALITY={battery:{pixels:550000,ratio:1,shadows:false,bloom:false,ao:false},balanced:{pixels:950000,ratio:1.5,shadows:true,bloom:true,ao:false},high:{pixels:1500000,ratio:1.75,shadows:true,bloom:true,ao:true}};
+export const MOBILE_QUALITY={battery:{shadows:false,bloom:false,ao:false},balanced:{shadows:true,bloom:true,ao:false},high:{shadows:true,bloom:true,ao:true}};
