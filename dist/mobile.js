@@ -52,7 +52,7 @@ export class MobileController{
  get area(){const s=getComputedStyle(this.root),left=parseFloat(s.paddingLeft)||0,right=parseFloat(s.paddingRight)||0,top=parseFloat(s.paddingTop)||0,bottom=parseFloat(s.paddingBottom)||0;return{x:left+8,y:top+8,w:this.viewport.width-left-right-16,h:this.viewport.height-top-bottom-16};}
  applyLayout(layout=this.layout){
   const area=this.area;
-  for(const [id,node]of Object.entries(this.buttons)){const d=layout[id],r=controlRect(id,layout,area,this.settings.controlScale);node.style.left=r.x+'px';node.style.top=r.y+'px';node.style.setProperty('--control-size',r.size+'px');node.style.setProperty('--control-opacity',d.opacity*(id==='minimap'?1:this.settings.controlOpacity));node.hidden=id==='fire'?(this.settings.fireMode==='simple'&&(d.hidden||!this.settings.manualFire)):d.hidden||id==='minimap'&&this.api.read().minimapEnabled===false;}
+  for(const [id,node]of Object.entries(this.buttons)){const d=layout[id],r=controlRect(id,layout,area,this.settings.controlScale);node.style.left=r.x+'px';node.style.top=r.y+'px';node.style.setProperty('--control-size',r.size+'px');node.style.setProperty('--control-opacity',d.opacity*(id==='minimap'?1:this.settings.controlOpacity));node.hidden=id==='fire'?(this.settings.fireMode==='simple'&&(d.hidden||!this.settings.manualFire)):d.hidden||id==='minimap'&&this.api.read().minimapEnabled===false||id==='streak'&&(!this.api.read().streakReady||!this.api.read().alive);}
  }
  settleResize(){
   this.resize();clearTimeout(this.resizeTimer);clearTimeout(this.resizeTimerLate);const settled=()=>{const size=this.viewport;if(size.width!==this.layoutWidth||size.height!==this.layoutHeight)this.resize();};this.resizeTimer=setTimeout(settled,80);this.resizeTimerLate=setTimeout(settled,300);
@@ -98,6 +98,7 @@ export class MobileController{
  update(dt){
   if(this.feedbackTime>0){this.feedbackTime-=dt;if(this.feedbackTime<=0)this.setFeedback('');}
   const g=this.api.read(),visible=g.mode==='play'&&!this.editor;
+  this.buttons.streak.hidden=this.layout.streak.hidden||!g.streakReady||!g.alive;
   this.controls.hidden=!visible;this.active=visible&&g.active&&g.alive&&this.landscape&&!this.overlay;
   this.controls.classList.toggle('inactive',!this.active);document.body.classList.toggle('touch-playing',g.mode==='play');
   if(g.mode!==this.lastMode){this.clear();this.lastMode=g.mode;if(g.mode!=='play'){this.closeOverlay();this.releaseWake();}}

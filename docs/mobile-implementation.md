@@ -83,3 +83,5 @@ Focused tests cover956×440 with stale378 window height, portrait440×956, empty
 
 ### Slow-time aiming (2026-11-04)
 The ADS control and its mobile-only settings are removed from every preset and the layout editor. Existing layouts preserve all remaining control positions. Slow time always allows drag-to-aim, including when an old saved ADS-drag preference is disabled. Toggle stays active after release; hold releases with the finger. Cancellation and lifecycle cleanup clear focus. A retired ADS-only gyro preference falls back to Off; players can explicitly enable Always-on gyro.
+
+The mobile Streak control appears only while a streak is ready and the player is alive, and hides immediately after use. Its position remains editable in the HUD editor.
