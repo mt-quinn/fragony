@@ -91,3 +91,7 @@ Final production build and 20-map production-only loading checks passed. All 65 
 3. Verify camera/combat isolation, saved campaign/rotation, phone/desktop framing, reduced motion, production build, then push to authorized GitHub main — pending.
 
 Main menu completion: approved Shoot House central-corridor duel and action strip implemented. No tagline; FRAG underline uses the actual span. All 66 test commands passed, plus final focused load-failure/retry checks; all 20 maps loaded from the production package. Desktop/phone saved and fresh layouts, Settings/Arsenal return, and touch Practice→menu flow verified. Temporary QA files removed. Final publication to authorized GitHub main remains.
+
+# Startup loading screen — 2026-11-04
+Replace the unloaded disabled menu with an immediate loading screen and progress bar; reveal the menu only after its first rendered frame. Track actual archive/initialization milestones, preserve failure/retry. User also requested removal of the main-menu Shoot House label and FRAG underline altogether. Implement, verify loader/retry and browser states, build and push to authorized main.
+Startup loading screen complete: actual archive-part and initialization progress, first-render menu reveal, Retry, benchmark visibility, hidden initial menu/audio. Map caption and underline removed. Focused native/browser checks and final build passed; all 20 production maps passed in the completed package. Publishing to main as requested.

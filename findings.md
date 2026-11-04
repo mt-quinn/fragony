@@ -69,3 +69,10 @@ Approved balance implementation details: Frangible retains stock accuracy and ra
 - Final user-approved character composition: sliding shooter right; closer crouched opponent left, lower body intentionally cropped by footer, head below the wordmark. User then requested Shoot House's central corridor as the background.
 - Moved the entire local composition (camera and actors together) into Shoot House's central firing lane at [0, 1.56365, 0], oriented along the lane. Both actors/camera fit actual collision there. Initial load and menu return now load the menu map before rendering when it was evicted. No saved run/map bag changes.
 - Camera uses a consistent horizontal field of view in landscape to preserve the approved framing across screen ratios. Portrait camera is separately framed to avoid a nearby cover wall.
+
+## Startup loading screen — 2026-11-04
+- Loading screen is present in initial HTML; the menu and audio control remain hidden through module/map loading and scene construction. Menu reveal happens after the first rendered frame, not just after asset promises resolve.
+- Before module execution, progress is indeterminate. During initialization, completed archive parts feed weighted physics/render/navigation progress, followed by graphics/arena/scene milestones. No timer-generated percentages; progress is accessible and monotonic within an attempt.
+- Load failure stays on the loading screen with Retry; unsupported WebGL uses a reload retry. Benchmark startup preserves its hidden menu. Portrait touch can render its menu and finish boot.
+- Removed the main-menu Shoot House label and the wordmark underline. Fresh browser verified loading-only initial accessibility state, progress from 5 to preparing arena, then enabled complete menu; 1280×720 loading/ready states verified; 320×640 touch startup completed into the existing rotation prompt.
+- Native archive integrity, browser-style streamed reconstruction/progress, menu/campaign continuity, settings, viewport, mobile menu and graphics checks passed; production map loading/build validation in progress.

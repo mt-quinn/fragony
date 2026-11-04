@@ -6,10 +6,11 @@ import {healthPickup} from '../pickups.js';
 // available to practice, saved games and the map bag without decoding it all.
 export const SOURCE_ARENAS=specs.map(spec=>{
  const entry={...spec,spawns:spec.starts.map(s=>s.position),pickups:spec.resources.map(p=>healthPickup(spec.id+'-'+p.id,p.x,p.y,p.z,p.amount)),ready:false};let pending=null;
- entry.load=({raw=false,navigation=true}={})=>pending||(pending=(async()=>{
-  const compiled=spec.precompiled&&!raw;const [data,chunks]=await Promise.all([readSourceData(new URL('./'+spec.id+(compiled?'-physics':'-data')+'.json.gz',import.meta.url)),compiled?readSourceRender(new URL('./'+spec.id+'-render.json.gz',import.meta.url)):Promise.resolve(null)]);data.renderChunks=chunks;
+ entry.load=({raw=false,navigation=true,onProgress}={})=>pending||(pending=(async()=>{
+  const progress={physics:0,render:0,navigation:0},report=(key,value)=>{progress[key]=value;onProgress?.(progress.physics*.25+progress.render*.65+progress.navigation*.10);};
+  const compiled=spec.precompiled&&!raw;const [data,chunks]=await Promise.all([readSourceData(new URL('./'+spec.id+(compiled?'-physics':'-data')+'.json.gz',import.meta.url),value=>report('physics',value)),compiled?readSourceRender(new URL('./'+spec.id+'-render.json.gz',import.meta.url),value=>report('render',value)):Promise.resolve(null)]);data.renderChunks=chunks;report('physics',1);report('render',1);
   const baked=navigation?(await import('./'+spec.id+'-nav.js')).default:null;
-  Object.assign(entry,createSourceArena(spec,data,baked),{ready:navigation});return entry;
+  Object.assign(entry,createSourceArena(spec,data,baked),{ready:navigation});report('navigation',1);return entry;
  })().finally(()=>{pending=null}));
  entry.unload=()=>{for(const key of ['brushes','groups','renderChunks','navigation','anchors','source'])delete entry[key];entry.ready=false};
  return entry;

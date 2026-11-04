@@ -1,26 +1,27 @@
 import {TriangleCollision} from './triangle-collision.js';
 // Source archives are fetched only for the selected arena. Browsers use native
 // streaming decompression; offline navigation and QA use the same data in Node.
-export async function readCompressedJSON(url){
+export async function readCompressedJSON(url,onProgress){
+ onProgress?.(0);
  let data;
  if(typeof process!=='undefined'&&process.versions?.node){
   const [{readFile},{gunzipSync}]=await Promise.all([import('node:fs/promises'),import('node:zlib')]);data=JSON.parse(gunzipSync(await readFile(url)).toString());
-  if(data.codec==='source-chunks-v1')data=JSON.parse(gunzipSync(Buffer.concat(await Promise.all(data.parts.map(part=>readFile(new URL(part,url)))))).toString());
+  let completed=0;if(data.codec==='source-chunks-v1')data=JSON.parse(gunzipSync(Buffer.concat(await Promise.all(data.parts.map(async part=>{const bytes=await readFile(new URL(part,url));onProgress?.(++completed/data.parts.length);return bytes;})))).toString());
  }else{
   const response=await fetch(url);if(!response.ok)throw Error('Could not load map geometry ('+response.status+').');
   data=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).json();
   if(data.codec==='source-chunks-v1'){
    const parts=data.parts;let index=0,reader=null;
    // Stream compressed parts in order, without retaining a second map-sized buffer.
-   const stream=new ReadableStream({async pull(controller){try{while(true){if(!reader){if(index===parts.length){controller.close();return;}const part=await fetch(new URL(parts[index++],url));if(!part.ok)throw Error('Could not load map data ('+part.status+').');reader=part.body.getReader();}const next=await reader.read();if(next.done){reader=null;continue;}controller.enqueue(next.value);return;}}catch(error){controller.error(error);}},cancel(){return reader?.cancel();}});
+   const stream=new ReadableStream({async pull(controller){try{while(true){if(!reader){if(index===parts.length){controller.close();return;}const part=await fetch(new URL(parts[index++],url));if(!part.ok)throw Error('Could not load map data ('+part.status+').');reader=part.body.getReader();}const next=await reader.read();if(next.done){onProgress?.(index/parts.length);reader=null;continue;}controller.enqueue(next.value);return;}}catch(error){controller.error(error);}},cancel(){return reader?.cancel();}});
    data=await new Response(stream.pipeThrough(new DecompressionStream('gzip'))).json();
   }
  }
- return data;
+ onProgress?.(1);return data;
 }
 export function decodeSourceBuffer(s,T){if(typeof Buffer!=='undefined'){const b=Buffer.from(s,'base64');return new T(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength));}const raw=atob(s),bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);return new T(bytes.buffer);}
-export async function readSourceData(url){
- const data=await readCompressedJSON(url),decode=decodeSourceBuffer;
+export async function readSourceData(url,onProgress){
+ const data=await readCompressedJSON(url,onProgress),decode=decodeSourceBuffer;
 
  if(data.collision){
   const c=data.collision,b=decode(c.bounds,Float32Array),planes=decode(c.planes,Float32Array),offsets=decode(c.offsets,Uint32Array);
