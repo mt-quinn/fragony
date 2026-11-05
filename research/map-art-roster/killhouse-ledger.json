@@ -1,0 +1,253 @@
+{
+  "id": "killhouse",
+  "palette": "Workshop amber & ink blue",
+  "views": [
+    {
+      "id": "west",
+      "name": "West drill bays",
+      "area": "west",
+      "p": [
+        -12,
+        2.025,
+        7
+      ],
+      "t": [
+        -7.407798811618923,
+        1.7249999999999999,
+        18.08655439013544
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East drill bays",
+      "area": "east",
+      "p": [
+        13,
+        2.025,
+        -8
+      ],
+      "t": [
+        17.592201188381075,
+        1.7249999999999999,
+        3.08655439013544
+      ]
+    },
+    {
+      "id": "tower",
+      "name": "Observation",
+      "area": "tower",
+      "p": [
+        0,
+        2.025,
+        1
+      ],
+      "t": [
+        -4.592201188381075,
+        1.7249999999999999,
+        -10.086554390135442
+      ]
+    },
+    {
+      "id": "briefing",
+      "name": "Briefing apron",
+      "area": "briefing",
+      "p": [
+        8,
+        2.025,
+        -30
+      ],
+      "t": [
+        -4,
+        1.7249999999999999,
+        -30.000000000000004
+      ]
+    },
+    {
+      "id": "entry",
+      "name": "Range entry",
+      "area": "entry",
+      "p": [
+        -10,
+        2.025,
+        30
+      ],
+      "t": [
+        2,
+        1.7249999999999999,
+        30
+      ]
+    }
+  ],
+  "colors": [
+    "#B68C52",
+    "#3F586F",
+    "#A26150",
+    "#CEC2A6"
+  ],
+  "floor": "#706F6C",
+  "ink": "#283D4A",
+  "areas": [
+    {
+      "id": "west",
+      "wallArea": 3024.2936493968755,
+      "accentArea": 350.9355240047012,
+      "assemblies": 1156
+    },
+    {
+      "id": "east",
+      "wallArea": 3664.8464974553035,
+      "accentArea": 471.4898096768951,
+      "assemblies": 1333
+    },
+    {
+      "id": "tower",
+      "wallArea": 1861.4751988134817,
+      "accentArea": 820.5635563890291,
+      "assemblies": 2159
+    },
+    {
+      "id": "briefing",
+      "wallArea": 2713.17820308687,
+      "accentArea": 340.32882048944487,
+      "assemblies": 2199
+    },
+    {
+      "id": "entry",
+      "wallArea": 2673.3491043305876,
+      "accentArea": 313.44271733557764,
+      "assemblies": 3113
+    }
+  ],
+  "seeds": [
+    {
+      "area": "west",
+      "requested": [
+        -12,
+        0.375,
+        7
+      ],
+      "node": [
+        -12,
+        0.375,
+        7
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -13,
+        0.375,
+        -10
+      ],
+      "node": [
+        -13,
+        0.375,
+        -10
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        13,
+        0.375,
+        -8
+      ],
+      "node": [
+        13,
+        0.375,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        13,
+        0.375,
+        12
+      ],
+      "node": [
+        13,
+        0.375,
+        12
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        0,
+        0.375,
+        1
+      ],
+      "node": [
+        0,
+        0.375,
+        1
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        -1,
+        1.808,
+        0
+      ],
+      "node": [
+        -1,
+        1.808,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "briefing",
+      "requested": [
+        8,
+        0.375,
+        -30
+      ],
+      "node": [
+        8,
+        0.375,
+        -30
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "entry",
+      "requested": [
+        -10,
+        0.375,
+        30
+      ],
+      "node": [
+        -10,
+        0.375,
+        30
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 9960,
+  "triangles": 135855,
+  "vertices": 298895,
+  "batches": 43,
+  "bytes": 3298384,
+  "sha256": "375bdb47e24d96f804dbb9de0b4ef2a97dfa9e3ce99f6a7bdef2ae30db5c272e",
+  "seconds": 4,
+  "review": "reviewed",
+  "reviewNotes": "Native review of all five areas at5/50/100HP. Amber west, ink-blue east, oxide observation/briefing, linen entry. Roof trusses and wall frames distribute light trim; horizontal double lines follow original wall surfaces and stop at apertures. Quiet gray range floor; light columns separate bays. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/killhouse-final.jpg"
+}

@@ -1,0 +1,268 @@
+{
+  "id": "ef-showdown",
+  "palette": "Apricot plaster, periwinkle & peacock",
+  "views": [
+    {
+      "id": "north",
+      "name": "North workshops",
+      "area": "north",
+      "p": [
+        -4,
+        5.505,
+        -11
+      ],
+      "t": [
+        -4,
+        5.205,
+        1
+      ]
+    },
+    {
+      "id": "north-1",
+      "name": "North workshops / upper",
+      "area": "north",
+      "p": [
+        -20,
+        11.15,
+        -11
+      ],
+      "t": [
+        -8,
+        10.85,
+        -11
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South stores",
+      "area": "south",
+      "p": [
+        -4,
+        5.3420000000000005,
+        10
+      ],
+      "t": [
+        4.485281374238571,
+        5.042000000000001,
+        1.5147186257614305
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West arcade",
+      "area": "west",
+      "p": [
+        -17,
+        5.525,
+        -2
+      ],
+      "t": [
+        -8.51471862576143,
+        5.2250000000000005,
+        6.485281374238571
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East operations",
+      "area": "east",
+      "p": [
+        15,
+        5.366,
+        2
+      ],
+      "t": [
+        3.913445609864562,
+        5.066,
+        -2.5922011883810843
+      ]
+    },
+    {
+      "id": "street",
+      "name": "Main transfer",
+      "area": "street",
+      "p": [
+        0,
+        5.442,
+        0
+      ],
+      "t": [
+        8.48528137423857,
+        5.142,
+        8.485281374238571
+      ]
+    }
+  ],
+  "colors": [
+    "#C28C6A",
+    "#7B88B1",
+    "#437B82",
+    "#CCBBA0"
+  ],
+  "floor": "#7D797B",
+  "ink": "#394257",
+  "areas": [
+    {
+      "id": "north",
+      "wallArea": 2382.5142564644634,
+      "accentArea": 183.34848351840088,
+      "assemblies": 789
+    },
+    {
+      "id": "south",
+      "wallArea": 3207.350493743711,
+      "accentArea": 230.8924326267682,
+      "assemblies": 802
+    },
+    {
+      "id": "west",
+      "wallArea": 2758.3838374111847,
+      "accentArea": 217.85235180638705,
+      "assemblies": 640
+    },
+    {
+      "id": "east",
+      "wallArea": 1082.9282738975137,
+      "accentArea": 195.7708504776161,
+      "assemblies": 428
+    },
+    {
+      "id": "street",
+      "wallArea": 505.68456754263656,
+      "accentArea": 15.408088235294118,
+      "assemblies": 56
+    }
+  ],
+  "seeds": [
+    {
+      "area": "north",
+      "requested": [
+        -4,
+        3.855,
+        -11
+      ],
+      "node": [
+        -4,
+        3.855,
+        -11
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        -20,
+        9.5,
+        -11
+      ],
+      "node": [
+        -20,
+        9.5,
+        -11
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -4,
+        3.692,
+        10
+      ],
+      "node": [
+        -4,
+        3.692,
+        10
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        15,
+        4.034,
+        8
+      ],
+      "node": [
+        15,
+        4.034,
+        8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -17,
+        3.875,
+        -2
+      ],
+      "node": [
+        -17,
+        3.875,
+        -2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -17,
+        3.796,
+        9
+      ],
+      "node": [
+        -17,
+        3.796,
+        9
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        15,
+        3.716,
+        2
+      ],
+      "node": [
+        15,
+        3.716,
+        2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "street",
+      "requested": [
+        0,
+        3.792,
+        0
+      ],
+      "node": [
+        0,
+        3.792,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 2715,
+  "triangles": 14165,
+  "vertices": 24005,
+  "batches": 64,
+  "bytes": 276539,
+  "sha256": "1376e1d08037bfd19cd2cef45746523b02e470324177c229d641db4cc2dd3464",
+  "seconds": 1,
+  "review": "reviewed",
+  "reviewNotes": "Six native views: both north levels, south stores, west arcade, east operations and central transfer;100/50/5HP. Apricot/peacock workshop, light-stone/apricot south, periwinkle/light-stone west and main transfer, peacock/apricot east. Warm-gray floor supports lavender building volumes and original pale arches; teal reveals and small cornice marks distribute accents without filling the courtyard with stripes. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/ef-showdown-final.jpg"
+}

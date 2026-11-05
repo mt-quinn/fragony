@@ -1,0 +1,223 @@
+{
+  "id": "summit",
+  "palette": "Glacier, spruce & weathered vermilion",
+  "views": [
+    {
+      "id": "north",
+      "name": "North switchyard",
+      "area": "north",
+      "p": [
+        8,
+        8.4,
+        -45
+      ],
+      "t": [
+        12.592201188381077,
+        8.1,
+        -33.91344560986456
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South gantry",
+      "area": "south",
+      "p": [
+        12,
+        12.65,
+        53
+      ],
+      "t": [
+        0.91344560986456,
+        12.35,
+        57.59220118838108
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West service",
+      "area": "west",
+      "p": [
+        -16,
+        8.65,
+        -19
+      ],
+      "t": [
+        -4.91344560986456,
+        8.35,
+        -23.592201188381075
+      ]
+    },
+    {
+      "id": "cable",
+      "name": "Cable station",
+      "area": "cable",
+      "p": [
+        27,
+        8.65,
+        5
+      ],
+      "t": [
+        18.51471862576143,
+        8.35,
+        13.485281374238568
+      ]
+    },
+    {
+      "id": "control",
+      "name": "Control hall",
+      "area": "control",
+      "p": [
+        12,
+        8.65,
+        -9
+      ],
+      "t": [
+        23.08655439013544,
+        8.35,
+        -13.592201188381077
+      ]
+    }
+  ],
+  "colors": [
+    "#7397AA",
+    "#3D6762",
+    "#B46F58",
+    "#BDCBCD"
+  ],
+  "floor": "#91A4AE",
+  "ink": "#2D414E",
+  "areas": [
+    {
+      "id": "north",
+      "wallArea": 3620.779374835095,
+      "accentArea": 1155.5382257784947,
+      "assemblies": 15290
+    },
+    {
+      "id": "south",
+      "wallArea": 5716.156310697413,
+      "accentArea": 3116.370381916756,
+      "assemblies": 26366
+    },
+    {
+      "id": "west",
+      "wallArea": 2528.699972083414,
+      "accentArea": 1001.5008363451844,
+      "assemblies": 10310
+    },
+    {
+      "id": "cable",
+      "wallArea": 1364.6871369212784,
+      "accentArea": 406.98142076330265,
+      "assemblies": 3516
+    },
+    {
+      "id": "control",
+      "wallArea": 1940.2589324355713,
+      "accentArea": 470.284757103434,
+      "assemblies": 6291
+    }
+  ],
+  "seeds": [
+    {
+      "area": "north",
+      "requested": [
+        8,
+        6.75,
+        -45
+      ],
+      "node": [
+        8,
+        6.75,
+        -45
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        12,
+        11,
+        53
+      ],
+      "node": [
+        12,
+        11,
+        53
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -16,
+        7,
+        -19
+      ],
+      "node": [
+        -16,
+        7,
+        -19
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "cable",
+      "requested": [
+        27,
+        7,
+        5
+      ],
+      "node": [
+        27,
+        7,
+        5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "control",
+      "requested": [
+        12,
+        7,
+        -9
+      ],
+      "node": [
+        12,
+        7,
+        -9
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "control",
+      "requested": [
+        9,
+        8.869,
+        10
+      ],
+      "node": [
+        9,
+        8.869,
+        10
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 61773,
+  "triangles": 1022161,
+  "vertices": 2278946,
+  "batches": 148,
+  "bytes": 25770112,
+  "sha256": "71d3d32f94b626d991e9093babeb7c2b9c760667778b5c39b6a4ffdf646e6323",
+  "seconds": 28,
+  "review": "reviewed",
+  "reviewNotes": "All five native views reviewed at100/50/5HP: glacier/vermilion north, vermilion/ice south, ice/spruce west, spruce/vermilion cable interior, glacier/ice control. Snow floor ramps remain pale blue-gray rather than stark white. Deep spruce interiors contrast low-health shell. Fences preserve open holes and real occlusion. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/summit-final.jpg"
+}

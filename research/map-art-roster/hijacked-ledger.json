@@ -1,0 +1,334 @@
+{
+  "id": "hijacked",
+  "palette": "Marine navy, teak & sea glass",
+  "views": [
+    {
+      "id": "service",
+      "name": "Service passage",
+      "area": "service",
+      "p": [
+        -3,
+        5.603,
+        -4
+      ],
+      "t": [
+        8.08655439013544,
+        5.303,
+        0.592201188381078
+      ]
+    },
+    {
+      "id": "aft",
+      "name": "Aft deck",
+      "area": "aft",
+      "p": [
+        -53,
+        8.181,
+        0
+      ],
+      "t": [
+        -61.48528137423857,
+        7.880999999999999,
+        8.485281374238568
+      ]
+    },
+    {
+      "id": "salon",
+      "name": "Aft operations",
+      "area": "salon",
+      "p": [
+        -28,
+        10.554,
+        0
+      ],
+      "t": [
+        -40,
+        10.254,
+        -2.204364238465236e-15
+      ]
+    },
+    {
+      "id": "salon-1",
+      "name": "Aft operations / upper",
+      "area": "salon",
+      "p": [
+        -28,
+        14.878,
+        0
+      ],
+      "t": [
+        -39.08655439013544,
+        14.578,
+        -4.592201188381084
+      ]
+    },
+    {
+      "id": "bow",
+      "name": "Forward deck",
+      "area": "bow",
+      "p": [
+        54,
+        11.666,
+        0
+      ],
+      "t": [
+        58.59220118838108,
+        11.366,
+        -11.08655439013544
+      ]
+    },
+    {
+      "id": "bridge",
+      "name": "Bridge systems",
+      "area": "bridge",
+      "p": [
+        30,
+        12.043000000000001,
+        0
+      ],
+      "t": [
+        41.08655439013544,
+        11.743,
+        4.592201188381078
+      ]
+    },
+    {
+      "id": "bridge-1",
+      "name": "Bridge systems / upper",
+      "area": "bridge",
+      "p": [
+        33,
+        15.963000000000001,
+        0
+      ],
+      "t": [
+        41.48528137423857,
+        15.663,
+        8.485281374238571
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Deck transfer",
+      "area": "crossing",
+      "p": [
+        0,
+        11.921000000000001,
+        0
+      ],
+      "t": [
+        -4.592201188381075,
+        11.621,
+        -11.086554390135442
+      ]
+    }
+  ],
+  "colors": [
+    "#365578",
+    "#AD805D",
+    "#A1BCB3",
+    "#DBD1B7"
+  ],
+  "floor": "#857E73",
+  "ink": "#273B4C",
+  "areas": [
+    {
+      "id": "service",
+      "wallArea": 1779.463523627206,
+      "accentArea": 651.8599242957104,
+      "assemblies": 1723
+    },
+    {
+      "id": "aft",
+      "wallArea": 1947.4431941748644,
+      "accentArea": 1290.4292590033767,
+      "assemblies": 10103
+    },
+    {
+      "id": "salon",
+      "wallArea": 3132.7114795138873,
+      "accentArea": 2022.094778120964,
+      "assemblies": 14791
+    },
+    {
+      "id": "bow",
+      "wallArea": 2746.571980055254,
+      "accentArea": 1571.2867411076122,
+      "assemblies": 19247
+    },
+    {
+      "id": "bridge",
+      "wallArea": 2784.206685147702,
+      "accentArea": 1458.4763882809114,
+      "assemblies": 10958
+    },
+    {
+      "id": "crossing",
+      "wallArea": 1719.9008244020724,
+      "accentArea": 1241.688719047501,
+      "assemblies": 9727
+    }
+  ],
+  "seeds": [
+    {
+      "area": "service",
+      "requested": [
+        -3,
+        3.953,
+        -4
+      ],
+      "node": [
+        -3,
+        3.953,
+        -4
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "service",
+      "requested": [
+        19.5,
+        4.984,
+        0
+      ],
+      "node": [
+        19.5,
+        4.984,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "aft",
+      "requested": [
+        -53,
+        6.531,
+        0
+      ],
+      "node": [
+        -53,
+        6.531,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "salon",
+      "requested": [
+        -28,
+        8.904,
+        0
+      ],
+      "node": [
+        -28,
+        8.904,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "salon",
+      "requested": [
+        -28,
+        13.228,
+        0
+      ],
+      "node": [
+        -28,
+        13.228,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bow",
+      "requested": [
+        54,
+        10.016,
+        0
+      ],
+      "node": [
+        54,
+        10.016,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bridge",
+      "requested": [
+        30,
+        10.393,
+        0
+      ],
+      "node": [
+        30,
+        10.393,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bridge",
+      "requested": [
+        33,
+        14.313,
+        0
+      ],
+      "node": [
+        33,
+        14.313,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        0,
+        10.271,
+        0
+      ],
+      "node": [
+        0,
+        10.271,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        1,
+        10.393,
+        9.5
+      ],
+      "node": [
+        1,
+        10.393,
+        9.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 66549,
+  "triangles": 275813,
+  "vertices": 733418,
+  "batches": 209,
+  "bytes": 8422711,
+  "sha256": "0cbcd972105d6aba070f822ea23b9bfab87785ec7ba2f6913543b1cb4d374480",
+  "seconds": 18,
+  "review": "reviewed",
+  "reviewNotes": "All eight native views reviewed, including engine passage, both aft stories, bow, both bridge stories and deck transfer;100/50/5HP. Navy/ivory salon, sea-glass/teak bridge, teak aft and navy/teak transfer. Continuous ship curves retain broad primary paint; original frames, rails and restrained lines carry accents. Deck and upper floors remain quiet warm gray. Low-health actors distinct against teak as well as navy. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/hijacked-final.jpg"
+}

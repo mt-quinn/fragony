@@ -1,0 +1,322 @@
+{
+  "id": "rust",
+  "palette": "Sienna, violet smoke & lichen",
+  "views": [
+    {
+      "id": "tower",
+      "name": "Process tower",
+      "area": "tower",
+      "p": [
+        2,
+        2.822,
+        -3
+      ],
+      "t": [
+        -6.4852813742385695,
+        2.5220000000000002,
+        -11.485281374238571
+      ]
+    },
+    {
+      "id": "tower-1",
+      "name": "Process tower / mid deck",
+      "area": "tower",
+      "p": [
+        1,
+        9.9,
+        3
+      ],
+      "t": [
+        -7.4852813742385695,
+        9.6,
+        -5.485281374238571
+      ]
+    },
+    {
+      "id": "tower-2",
+      "name": "Process tower / high deck",
+      "area": "tower",
+      "p": [
+        2,
+        16.025,
+        -8
+      ],
+      "t": [
+        10.48528137423857,
+        15.724999999999998,
+        0.4852813742385713
+      ]
+    },
+    {
+      "id": "tower-3",
+      "name": "Process tower / crown",
+      "area": "tower",
+      "p": [
+        6,
+        21.962999999999997,
+        -1
+      ],
+      "t": [
+        6,
+        21.662999999999997,
+        11
+      ]
+    },
+    {
+      "id": "pipes",
+      "name": "Pipe rack",
+      "area": "pipes",
+      "p": [
+        5,
+        2.936,
+        -21
+      ],
+      "t": [
+        -6.08655439013544,
+        2.636,
+        -16.40779881161892
+      ]
+    },
+    {
+      "id": "loading",
+      "name": "Loading apron",
+      "area": "loading",
+      "p": [
+        5,
+        3.002,
+        25
+      ],
+      "t": [
+        2,
+        5,
+        -3
+      ]
+    },
+    {
+      "id": "service",
+      "name": "Service plant",
+      "area": "service",
+      "p": [
+        -25,
+        3.013,
+        0
+      ],
+      "t": [
+        -29.592201188381075,
+        2.713,
+        -11.086554390135442
+      ]
+    },
+    {
+      "id": "service-1",
+      "name": "Service plant / far side",
+      "area": "service",
+      "p": [
+        25,
+        2.7649999999999997,
+        -12
+      ],
+      "t": [
+        13,
+        2.465,
+        -12.000000000000002
+      ]
+    }
+  ],
+  "colors": [
+    "#AB5D40",
+    "#746080",
+    "#C4AB80",
+    "#999B79"
+  ],
+  "floor": "#716B62",
+  "ink": "#34343E",
+  "areas": [
+    {
+      "id": "tower",
+      "wallArea": 1025.528364496899,
+      "accentArea": 401.14219170012683,
+      "assemblies": 1884
+    },
+    {
+      "id": "pipes",
+      "wallArea": 953.0272408887474,
+      "accentArea": 191.26140837316143,
+      "assemblies": 2890
+    },
+    {
+      "id": "loading",
+      "wallArea": 1138.2851899003438,
+      "accentArea": 151.94124640958242,
+      "assemblies": 1341
+    },
+    {
+      "id": "service",
+      "wallArea": 1463.4277681962276,
+      "accentArea": 215.73915881251875,
+      "assemblies": 3740
+    }
+  ],
+  "seeds": [
+    {
+      "area": "tower",
+      "requested": [
+        2,
+        1.172,
+        -3
+      ],
+      "node": [
+        2,
+        1.172,
+        -3
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        1,
+        8.25,
+        3
+      ],
+      "node": [
+        1,
+        8.25,
+        3
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        2,
+        14.375,
+        -8
+      ],
+      "node": [
+        2,
+        14.375,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        6,
+        20.313,
+        -1
+      ],
+      "node": [
+        6,
+        20.313,
+        -1
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "pipes",
+      "requested": [
+        5,
+        1.286,
+        -21
+      ],
+      "node": [
+        5,
+        1.286,
+        -21
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "pipes",
+      "requested": [
+        -8,
+        1.427,
+        -15
+      ],
+      "node": [
+        -8,
+        1.427,
+        -15
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "loading",
+      "requested": [
+        5,
+        1.352,
+        25
+      ],
+      "node": [
+        5,
+        1.352,
+        25
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "loading",
+      "requested": [
+        24,
+        1.461,
+        15
+      ],
+      "node": [
+        24,
+        1.461,
+        15
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "service",
+      "requested": [
+        -25,
+        1.363,
+        0
+      ],
+      "node": [
+        -25,
+        1.363,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "service",
+      "requested": [
+        25,
+        1.115,
+        -12
+      ],
+      "node": [
+        25,
+        1.115,
+        -12
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 9855,
+  "triangles": 31219,
+  "vertices": 69901,
+  "batches": 25,
+  "bytes": 823952,
+  "sha256": "f61e3f5d19c9d1ef6466c5fa55dd8925543c35c24216d1e15cbeaada4df7497f",
+  "seconds": 2,
+  "review": "reviewed",
+  "reviewNotes": "Native review of tower ground, 8.25m mid deck, 14.375m high deck, crown, pipe rack, loading apron, both service angles. Revised teal/patina to violet smoke and lichen to separate Rust from Shoot House. Calm warm-gray floors at all elevations; sienna tower remains focal, wheat frames and violet pipes separate structures. 100HP and 5HP actors legible at near/medium/far where physical space permits; crown has no supported actor placement. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/rust-final.jpg"
+}

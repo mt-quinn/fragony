@@ -3,6 +3,8 @@ import * as THREE from './vendor/three.module.js';
 import {industrialResources} from './testworks.js';
 import {applyIndustrialFinishes} from './industrial-palettes.js';
 import {industrialSurface} from './industrial-surfaces.js';
+import {MAP_ART_PROFILES} from './map-art-profiles.js';
+import {styleMapArtMaterial} from './map-art-materials.js';
 import {shootHouseSurface,styleShootHouseMaterial,SHOOTHOUSE_AREAS,SHOOTHOUSE_COLORS} from './shoothouse-art.js';
 import {sourceDistricts,sourceDistrictIndex,sourceDistrictCuts,sourceFittings} from './maps/source-districts.js';
 const area=(id,name,wall,floor,accent,type='concrete')=>({id,name,wall,floor,accent,type});
@@ -62,6 +64,9 @@ districts.reservoir[1].wallType='coated';districts.reservoir[3].wallType='paint'
 Object.assign(districts,sourceDistricts);
 applyIndustrialFinishes(districts);
 for(const a of districts.shoothouse){const art=SHOOTHOUSE_AREAS[a.id];a.wall=SHOOTHOUSE_COLORS[art.primary];a.floor=SHOOTHOUSE_COLORS.slate;a.accent=SHOOTHOUSE_COLORS[art.accent];a.type='asphalt';a.wallType='paint';}
+// Dressing and fitted signs share the authored gamut; prepared world surfaces
+// carry their geometry-aware ownership directly, rather than using these lookups.
+for(const [id,profile] of Object.entries(MAP_ART_PROFILES))for(const district of districts[id]||[]){const art=profile.areas.find(a=>a.id===district.id);if(!art)throw Error('Missing map art area: '+id+'/'+district.id);district.wall=parseInt(profile.colors[art.primary].slice(1),16);district.accent=parseInt(profile.colors[art.accent].slice(1),16);district.floor=parseInt(profile.floor.slice(1),16);district.wallType='paint';district.type='asphalt';}
 export function industrialDistricts(id){return districts[id]||[];}
 export function industrialDistrict(id,x,y,z){const a=districts[id];if(!a)return null;
  if(sourceDistricts[id])return a[sourceDistrictIndex(id,x,y,z)];
@@ -85,7 +90,7 @@ function material(family,art=false){
  if(family==='fence'){m.alphaMap=chainlink();m.alphaTest=.5;m.roughness=.83;m.userData.alphaAt=fenceAlpha;}
  if(family==='light'){m.emissive.setHex(0xffe1a0);m.emissiveIntensity=.65;}
  if(glass){m.transparent=true;m.opacity=.26;m.depthWrite=false;}
- if(art||recipe)styleShootHouseMaterial(m,recipe||'');
+ if(recipe?.startsWith('roster:'))styleMapArtMaterial(m,recipe);else if(art||recipe)styleShootHouseMaterial(m,recipe||'');
  if(art&&family==='asphalt'){m.map=null;m.bumpMap=null;}
  materialCache.set(cacheKey,m);return m;
 }

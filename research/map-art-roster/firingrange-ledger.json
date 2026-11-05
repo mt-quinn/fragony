@@ -1,0 +1,298 @@
+{
+  "id": "firingrange",
+  "palette": "Field sage, russet & blue steel",
+  "views": [
+    {
+      "id": "timber",
+      "name": "Timber range",
+      "area": "timber",
+      "p": [
+        -28,
+        4.2989999999999995,
+        -10
+      ],
+      "t": [
+        -36.48528137423857,
+        3.9989999999999997,
+        -1.5147186257614322
+      ]
+    },
+    {
+      "id": "containers",
+      "name": "Container lab",
+      "area": "containers",
+      "p": [
+        -13,
+        4.4,
+        -41
+      ],
+      "t": [
+        -25,
+        4.1000000000000005,
+        -41
+      ]
+    },
+    {
+      "id": "workshop",
+      "name": "Range workshop",
+      "area": "workshop",
+      "p": [
+        -10,
+        4.04,
+        2
+      ],
+      "t": [
+        -14.592201188381084,
+        3.74,
+        13.086554390135438
+      ]
+    },
+    {
+      "id": "tower",
+      "name": "Observation range",
+      "area": "tower",
+      "p": [
+        -23,
+        2.056,
+        32
+      ],
+      "t": [
+        -14.51471862576143,
+        1.756,
+        40.48528137423857
+      ]
+    },
+    {
+      "id": "tower-1",
+      "name": "Observation range / upper",
+      "area": "tower",
+      "p": [
+        -27,
+        6.337999999999999,
+        36
+      ],
+      "t": [
+        -15.91344560986456,
+        6.037999999999999,
+        40.592201188381075
+      ]
+    },
+    {
+      "id": "yard",
+      "name": "Drill yard",
+      "area": "yard",
+      "p": [
+        24,
+        4.173,
+        2
+      ],
+      "t": [
+        24,
+        3.873,
+        14
+      ]
+    },
+    {
+      "id": "yard-1",
+      "name": "Drill yard / lower",
+      "area": "yard",
+      "p": [
+        16,
+        2.15,
+        25
+      ],
+      "t": [
+        24.48528137423857,
+        1.8499999999999999,
+        16.514718625761432
+      ]
+    }
+  ],
+  "colors": [
+    "#7D936F",
+    "#AF644A",
+    "#526F8B",
+    "#C6BB98"
+  ],
+  "floor": "#777C6C",
+  "ink": "#35464A",
+  "areas": [
+    {
+      "id": "timber",
+      "wallArea": 2847.47782040921,
+      "accentArea": 1456.8423774298235,
+      "assemblies": 30997
+    },
+    {
+      "id": "containers",
+      "wallArea": 1773.232464749174,
+      "accentArea": 688.1518130010882,
+      "assemblies": 24154
+    },
+    {
+      "id": "workshop",
+      "wallArea": 1286.7286756623241,
+      "accentArea": 306.0256835451422,
+      "assemblies": 46630
+    },
+    {
+      "id": "tower",
+      "wallArea": 1710.8912086561957,
+      "accentArea": 1497.2091210314466,
+      "assemblies": 17335
+    },
+    {
+      "id": "yard",
+      "wallArea": 2805.264722894406,
+      "accentArea": 1105.9532308254004,
+      "assemblies": 44912
+    }
+  ],
+  "seeds": [
+    {
+      "area": "timber",
+      "requested": [
+        -28,
+        2.649,
+        -10
+      ],
+      "node": [
+        -28,
+        2.649,
+        -10
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "timber",
+      "requested": [
+        -35,
+        2.794,
+        -33
+      ],
+      "node": [
+        -35,
+        2.794,
+        -33
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "containers",
+      "requested": [
+        -13,
+        2.75,
+        -41
+      ],
+      "node": [
+        -13,
+        2.75,
+        -41
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "containers",
+      "requested": [
+        7,
+        2.875,
+        -32
+      ],
+      "node": [
+        7,
+        2.875,
+        -32
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "workshop",
+      "requested": [
+        -10,
+        2.39,
+        2
+      ],
+      "node": [
+        -10,
+        2.39,
+        2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        -23,
+        0.406,
+        32
+      ],
+      "node": [
+        -23,
+        0.406,
+        32
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "tower",
+      "requested": [
+        -27,
+        4.688,
+        36
+      ],
+      "node": [
+        -27,
+        4.688,
+        36
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "yard",
+      "requested": [
+        24,
+        2.523,
+        2
+      ],
+      "node": [
+        24,
+        2.523,
+        2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "yard",
+      "requested": [
+        16,
+        0.5,
+        25
+      ],
+      "node": [
+        16,
+        0.5,
+        25
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 164028,
+  "triangles": 751361,
+  "vertices": 1973574,
+  "batches": 374,
+  "bytes": 23225709,
+  "sha256": "42a6e4016b583c1c7ad1993c3f2ef9fe40286b2fd3932357612b8d0cfa64a0b3",
+  "seconds": 24,
+  "review": "reviewed",
+  "reviewNotes": "Seven native range/workshop/container/tower/yard views at100/50/5HP. Field sage/canvas yard, blue-steel containers, russet workshop. Two iterations removed building graphics from exact original rock/foliage/landscape surfaces; final workshop and upper deck repeated at5HP. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/firingrange-final.jpg"
+}

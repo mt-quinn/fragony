@@ -1,1 +1,3 @@
 /build/
+# Regenerable architecture inspection data; authored profiles/ledgers stay tracked.
+research/map-art-roster/*-analysis.json

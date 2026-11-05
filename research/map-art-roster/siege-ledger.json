@@ -1,0 +1,343 @@
+{
+  "id": "siege",
+  "palette": "Heather stone, verdigris & old mortar",
+  "views": [
+    {
+      "id": "west",
+      "name": "West keep",
+      "area": "west",
+      "p": [
+        -33,
+        20.9,
+        -8
+      ],
+      "t": [
+        -28.407798811618925,
+        20.599999999999998,
+        3.08655439013544
+      ]
+    },
+    {
+      "id": "west-1",
+      "name": "West keep / lower",
+      "area": "west",
+      "p": [
+        -28,
+        13.15,
+        2
+      ],
+      "t": [
+        -19.51471862576143,
+        12.85,
+        -6.4852813742385695
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East keep",
+      "area": "east",
+      "p": [
+        33,
+        16.65,
+        -8
+      ],
+      "t": [
+        21.91344560986456,
+        16.349999999999998,
+        -3.40779881161892
+      ]
+    },
+    {
+      "id": "east-1",
+      "name": "East keep / lower",
+      "area": "east",
+      "p": [
+        21,
+        5.65,
+        2
+      ],
+      "t": [
+        33,
+        5.3500000000000005,
+        2.000000000000001
+      ]
+    },
+    {
+      "id": "north",
+      "name": "North rampart",
+      "area": "north",
+      "p": [
+        -13,
+        13.15,
+        -19
+      ],
+      "t": [
+        -1,
+        12.85,
+        -19
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South court",
+      "area": "south",
+      "p": [
+        -17,
+        5.65,
+        19
+      ],
+      "t": [
+        -12.407798811618921,
+        5.3500000000000005,
+        7.91344560986456
+      ]
+    },
+    {
+      "id": "south-1",
+      "name": "South court / far side",
+      "area": "south",
+      "p": [
+        9,
+        5.880000000000001,
+        16.5
+      ],
+      "t": [
+        -3,
+        5.580000000000001,
+        16.499999999999996
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Gate transfer",
+      "area": "crossing",
+      "p": [
+        0,
+        5.65,
+        0
+      ],
+      "t": [
+        -11.08655439013544,
+        5.3500000000000005,
+        4.59220118838108
+      ]
+    },
+    {
+      "id": "crossing-1",
+      "name": "Gate transfer / upper",
+      "area": "crossing",
+      "p": [
+        8.5,
+        13.15,
+        -5.5
+      ],
+      "t": [
+        16.98528137423857,
+        12.85,
+        -13.98528137423857
+      ]
+    }
+  ],
+  "colors": [
+    "#826C83",
+    "#4E8176",
+    "#C0AE80",
+    "#BA9187"
+  ],
+  "floor": "#747485",
+  "ink": "#303849",
+  "areas": [
+    {
+      "id": "west",
+      "wallArea": 4558.998740933759,
+      "accentArea": 154.36073006719204,
+      "assemblies": 1126
+    },
+    {
+      "id": "east",
+      "wallArea": 4562.6687119304515,
+      "accentArea": 596.7120561918945,
+      "assemblies": 1008
+    },
+    {
+      "id": "north",
+      "wallArea": 3537.8193800338686,
+      "accentArea": 140.90079276646276,
+      "assemblies": 653
+    },
+    {
+      "id": "south",
+      "wallArea": 4420.016324976584,
+      "accentArea": 168.36439294453837,
+      "assemblies": 926
+    },
+    {
+      "id": "crossing",
+      "wallArea": 7093.0875028260025,
+      "accentArea": 389.28572998658694,
+      "assemblies": 1719
+    }
+  ],
+  "seeds": [
+    {
+      "area": "west",
+      "requested": [
+        -33,
+        19.25,
+        -8
+      ],
+      "node": [
+        -33,
+        19.25,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -28,
+        11.5,
+        2
+      ],
+      "node": [
+        -28,
+        11.5,
+        2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        33,
+        15,
+        -8
+      ],
+      "node": [
+        33,
+        15,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        21,
+        4,
+        2
+      ],
+      "node": [
+        21,
+        4,
+        2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        -13,
+        11.5,
+        -19
+      ],
+      "node": [
+        -13,
+        11.5,
+        -19
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        11,
+        11.5,
+        -19
+      ],
+      "node": [
+        11,
+        11.5,
+        -19
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -17,
+        4,
+        19
+      ],
+      "node": [
+        -17,
+        4,
+        19
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        9,
+        4.23,
+        16.5
+      ],
+      "node": [
+        9,
+        4.23,
+        16.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        0,
+        4,
+        0
+      ],
+      "node": [
+        0,
+        4,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        8.5,
+        11.5,
+        -5.5
+      ],
+      "node": [
+        8.5,
+        11.5,
+        -5.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 5432,
+  "triangles": 34242,
+  "vertices": 57614,
+  "batches": 60,
+  "bytes": 635848,
+  "sha256": "7b3473c6768aaedca3a8a85801ce044445efa6b82a8e52a69c074746c964e57c",
+  "seconds": 1,
+  "review": "reviewed",
+  "reviewNotes": "Nine native views: both keeps at upper/lower levels, north corridor, south court both sides, gate court and upper gateway.100/50/5HP. Heather/old mortar west; verdigris/old mortar east; mortar/heather north; dusty rose/verdigris court. Broad structural columns and continuous frieze align to doors and arches. Quiet lavender slate decks. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/siege-final.jpg"
+}

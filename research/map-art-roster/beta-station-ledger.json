@@ -1,0 +1,262 @@
+{
+  "id": "beta-station",
+  "palette": "Malachite, amber & lavender smoke",
+  "views": [
+    {
+      "id": "north",
+      "name": "North systems",
+      "area": "north",
+      "p": [
+        -11,
+        7.65,
+        -50
+      ],
+      "t": [
+        -10.999999999999998,
+        7.3500000000000005,
+        -62
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South systems",
+      "area": "south",
+      "p": [
+        -11,
+        7.65,
+        50
+      ],
+      "t": [
+        -11,
+        7.3500000000000005,
+        62
+      ]
+    },
+    {
+      "id": "upper",
+      "name": "Upper gantries",
+      "area": "upper",
+      "p": [
+        -19.5,
+        8.663,
+        -52
+      ],
+      "t": [
+        -8.41344560986456,
+        8.363,
+        -56.592201188381075
+      ]
+    },
+    {
+      "id": "upper-1",
+      "name": "Upper gantries / far side",
+      "area": "upper",
+      "p": [
+        19.5,
+        8.663,
+        52
+      ],
+      "t": [
+        8.41344560986456,
+        8.363,
+        56.59220118838108
+      ]
+    },
+    {
+      "id": "bridge",
+      "name": "Beta crossing",
+      "area": "bridge",
+      "p": [
+        0,
+        7.65,
+        1.5
+      ],
+      "t": [
+        8.48528137423857,
+        7.3500000000000005,
+        9.985281374238571
+      ]
+    },
+    {
+      "id": "bridge-1",
+      "name": "Beta crossing / upper",
+      "area": "bridge",
+      "p": [
+        0,
+        11.65,
+        0
+      ],
+      "t": [
+        8.48528137423857,
+        11.35,
+        8.485281374238571
+      ]
+    }
+  ],
+  "colors": [
+    "#5C8D7E",
+    "#B79655",
+    "#9290B0",
+    "#CEC6AA"
+  ],
+  "floor": "#68756F",
+  "ink": "#303F43",
+  "areas": [
+    {
+      "id": "north",
+      "wallArea": 6603.757082002067,
+      "accentArea": 555.0136035314299,
+      "assemblies": 2088
+    },
+    {
+      "id": "south",
+      "wallArea": 6117.821950752602,
+      "accentArea": 625.2140964661737,
+      "assemblies": 1786
+    },
+    {
+      "id": "upper",
+      "wallArea": 5614.1761053316195,
+      "accentArea": 580.0339156604753,
+      "assemblies": 1101
+    },
+    {
+      "id": "bridge",
+      "wallArea": 4965.546249836634,
+      "accentArea": 567.3003715276726,
+      "assemblies": 755
+    }
+  ],
+  "seeds": [
+    {
+      "area": "north",
+      "requested": [
+        -11,
+        6,
+        -50
+      ],
+      "node": [
+        -11,
+        6,
+        -50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        11,
+        6,
+        -50
+      ],
+      "node": [
+        11,
+        6,
+        -50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -11,
+        6,
+        50
+      ],
+      "node": [
+        -11,
+        6,
+        50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        11,
+        6,
+        50
+      ],
+      "node": [
+        11,
+        6,
+        50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "upper",
+      "requested": [
+        -19.5,
+        7.013,
+        -52
+      ],
+      "node": [
+        -19.5,
+        7.013,
+        -52
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "upper",
+      "requested": [
+        19.5,
+        7.013,
+        52
+      ],
+      "node": [
+        19.5,
+        7.013,
+        52
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bridge",
+      "requested": [
+        0,
+        6,
+        1.5
+      ],
+      "node": [
+        0,
+        6,
+        1.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bridge",
+      "requested": [
+        0,
+        10,
+        0
+      ],
+      "node": [
+        0,
+        10,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 5730,
+  "triangles": 31383,
+  "vertices": 51514,
+  "batches": 23,
+  "bytes": 560899,
+  "sha256": "b95bd14cd7142f2b5252af190f3759bb7d2a59e0d300cabbc8c6ee2f9401a92b",
+  "seconds": 3,
+  "review": "reviewed",
+  "reviewNotes": "Six native views at both crossing levels and both gantries plus north/south,100/50/5HP. Malachite/ivory north, amber/malachite south, lavender/ivory upper gantries, ivory/amber central crossing. Warm amber/green versus cool lavender gives the mirrored stations a different hierarchy from Delta cobalt/rose. Entire sloped buttresses retain area identity and inset trim carries accent. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/beta-station-final.jpg"
+}

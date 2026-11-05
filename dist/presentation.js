@@ -1,6 +1,8 @@
 import {WaterLayer} from './water-layer.js';
 import {PixelForgeMask,PIXEL_FORGE_SIZE,pixelForgeGLSL} from './pixel-forge.js';
 import {shootHousePaletteGLSL} from './shoothouse-palette.js';
+import {mapArtPaletteGLSL} from './map-art-palette.js';
+import {mapArtPalette,displayVector} from './map-art-colors.js';
 import {createWaterState,updateWaterState} from './water.js';
 import * as THREE from './vendor/three.module.js';
 import {antialiasOptions,supportedSamples,TemporalAA,SpatialAA} from './antialias.js';
@@ -58,6 +60,7 @@ void main(){gl_FragColor=vec4(displayAt(vUv),1.);}`;
 const forgeFinal=`varying vec2 vUv;uniform sampler2D image;uniform sampler2D gunTex;uniform sampler2D waterTex;uniform vec2 texel;
 ${pixelForgeGLSL}
 ${shootHousePaletteGLSL}
+${mapArtPaletteGLSL}
 vec3 forgeRead(vec2 uv){return texture2D(image,clamp(uv,texel*.5,vec2(1.)-texel*.5)).rgb;}
 void main(){
  vec3 original=forgeRead(vUv),c=original;
@@ -72,7 +75,8 @@ void main(){
   float block=${PIXEL_FORGE_SIZE.toFixed(2)};
   vec2 grid=floor(vUv/texel/block),q=(grid+.5)*block*texel,d=texel*block;
   if(arenaArt>.5){
-   c=texture2D(worldDepth,q).r>=.99999?shootHouseSky(forgeRead(q)):shootHousePalette(forgeRead(q)+vec3(surfaceValue*.024));
+   if(arenaRoster>.5)c=texture2D(worldDepth,q).r>=.99999?rosterSky(forgeRead(q)):rosterPalette(forgeRead(q)+vec3(surfaceValue*.024));
+   else c=texture2D(worldDepth,q).r>=.99999?shootHouseSky(forgeRead(q)):shootHousePalette(forgeRead(q)+vec3(surfaceValue*.024));
   }else c=forgePalette(forgeRead(q)+vec3(surfaceValue*.085));
   vec3 dx=forgeRead(q+vec2(d.x,0.))-forgeRead(q-vec2(d.x,0.));
   vec3 dy=forgeRead(q+vec2(0.,d.y))-forgeRead(q-vec2(0.,d.y));
@@ -136,14 +140,15 @@ export class FrameRenderer{
   this.blur=new THREE.ShaderMaterial({uniforms:{image:{value:null},direction:{value:new THREE.Vector2()}},vertexShader:vertex,fragmentShader:blur,depthTest:false,depthWrite:false,toneMapped:false});
   this.output=new THREE.ShaderMaterial({uniforms:{...common,cleanActorTex:{value:this.cleanActors.target.texture},pixelForgeAmount:{value:this.pixelForgeIntensity},displayToneMap:{value:1},toneMappingExposure:{value:1},untonemappedExposure:{value:quality.toneMap==='none'?(quality.exposure??1):1},vignetteAmount:{value:quality.vignette??1},grainAmount:{value:quality.grain===false?0:1},gradeAmount:{value:quality.colorGrade===false?0:1},antialias:{value:quality.antialias===false?0:1},underwater:{value:0},bloomAmount:{value:this.bloomEnabled?(quality.bloomStrength??1):0},aoAmount:{value:this.gtao ? (quality.aoStrength??.65) : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false,toneMapped:false});
   this.styledInput=new THREE.WebGLRenderTarget(1,1,{depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
-  this.forge=new THREE.ShaderMaterial({uniforms:{arenaArt:{value:0},waterTex:{value:this.waterLayer.target.texture},worldDepth:{value:this.cleanActors.target.depthTexture},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
+  this.forge=new THREE.ShaderMaterial({uniforms:{arenaArt:{value:0},arenaRoster:{value:0},rosterColors:{value:Array.from({length:18},()=>new THREE.Vector3())},rosterSkyColors:{value:Array.from({length:32},()=>new THREE.Vector3())},rosterSkyCount:{value:0},waterTex:{value:this.waterLayer.target.texture},worldDepth:{value:this.cleanActors.target.depthTexture},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
   this.resize();
  }
  resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*this.aoRatio)),ah=Math.max(1,Math.floor(size.y*this.aoRatio));this.world.setSize(size.x,size.y);this.styledInput.setSize(size.x,size.y);this.cleanActors.resize(size.x,size.y);this.waterLayer.resize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y);this.temporal?.resize(size.x,size.y);this.spatial?.resize(size.x,size.y)}
  pass(material,target){this.quad.material=material;this.renderer.setRenderTarget(target);this.renderer.render(this.scene,this.camera)}
  render(scene,camera,dt,slow=false,waterVolumes=[]){
   const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate;
-  this.forge.uniforms.arenaArt.value=scene.userData.shootHouseArt?1:0;
+  const artId=scene.userData.mapArtId||null;this.forge.uniforms.arenaArt.value=scene.userData.shootHouseArt||artId?1:0;this.forge.uniforms.arenaRoster.value=artId?1:0;
+  if(artId!==this.artProfileId){this.artProfileId=artId;const palette=mapArtPalette(artId);if(palette){this.forge.uniforms.rosterColors.value=palette.world.map(displayVector);const sky=palette.sky.map(displayVector);this.forge.uniforms.rosterSkyCount.value=sky.length;this.forge.uniforms.rosterSkyColors.value=Array.from({length:32},(_,i)=>sky[Math.min(i,sky.length-1)]);}}
   const underwater=updateWaterState(this.waterState,scene,camera,dt,waterVolumes);this.output.uniforms.underwater.value=underwater;
   if(underwater>.001){this.waterState.fog.color.copy(airFog?.color||this.waterState.airColor).lerp(this.waterState.color,underwater);this.waterState.fog.near=THREE.MathUtils.lerp(airFog?.near||38,10,underwater);this.waterState.fog.far=THREE.MathUtils.lerp(airFog?.far||120,90,underwater);scene.fog=this.waterState.fog;}this.slow=THREE.MathUtils.damp(this.slow,slow?1:0,9,dt);this.output.uniforms.slow.value=this.slow;
   this.temporal?.begin(camera,dt);

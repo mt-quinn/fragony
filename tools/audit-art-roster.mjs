@@ -1,0 +1,4 @@
+import {spawnSync} from 'node:child_process';import fs from 'node:fs';import {MAP_ART_PROFILES} from '../dist/map-art-profiles.js';
+const ids=process.argv.slice(2).length?process.argv.slice(2):Object.keys(MAP_ART_PROFILES),summaries=[];
+for(const id of ids){const r=spawnSync(process.execPath,['--max-old-space-size=3072','tools/audit-map-art.mjs',id],{cwd:new URL('../',import.meta.url),encoding:'utf8',maxBuffer:8*1024*1024});if(r.status){console.log(id,'FAILED',r.stderr.slice(-1800));summaries.push({id,error:r.stderr});continue;}const data=JSON.parse(r.stdout.trim().split('\n').at(-1)),issues=data.seeds.filter(s=>s.displacement>3||s.heightDifference>2);summaries.push({...data,issues});console.log(JSON.stringify({id,triangles:data.triangles,assemblies:data.assemblies,seconds:data.seconds,issues}));}
+fs.writeFileSync(new URL('../research/map-art-roster/inventory.json',import.meta.url),JSON.stringify(summaries,null,2));

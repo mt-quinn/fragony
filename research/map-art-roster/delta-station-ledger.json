@@ -1,0 +1,262 @@
+{
+  "id": "delta-station",
+  "palette": "Cobalt ceramic, dusty rose & bronze",
+  "views": [
+    {
+      "id": "north",
+      "name": "North station",
+      "area": "north",
+      "p": [
+        -11,
+        7.65,
+        -50
+      ],
+      "t": [
+        -15.592201188381084,
+        7.3500000000000005,
+        -38.91344560986456
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South station",
+      "area": "south",
+      "p": [
+        -11,
+        7.65,
+        50
+      ],
+      "t": [
+        -15.592201188381075,
+        7.3500000000000005,
+        38.91344560986456
+      ]
+    },
+    {
+      "id": "upper",
+      "name": "Upper transfer",
+      "area": "upper",
+      "p": [
+        -19,
+        10.72,
+        -51
+      ],
+      "t": [
+        -7,
+        10.42,
+        -51
+      ]
+    },
+    {
+      "id": "upper-1",
+      "name": "Upper transfer / far side",
+      "area": "upper",
+      "p": [
+        19,
+        10.72,
+        51
+      ],
+      "t": [
+        7,
+        10.42,
+        51
+      ]
+    },
+    {
+      "id": "bridge",
+      "name": "Station crossing",
+      "area": "bridge",
+      "p": [
+        3,
+        6.65,
+        0
+      ],
+      "t": [
+        -8.086554390135438,
+        6.3500000000000005,
+        -4.592201188381084
+      ]
+    },
+    {
+      "id": "bridge-1",
+      "name": "Station crossing / upper",
+      "area": "bridge",
+      "p": [
+        -2,
+        10.345,
+        8.5
+      ],
+      "t": [
+        9.08655439013544,
+        10.045,
+        3.907798811618923
+      ]
+    }
+  ],
+  "colors": [
+    "#4C6DA0",
+    "#B37D8B",
+    "#C6CED2",
+    "#A89063"
+  ],
+  "floor": "#646E86",
+  "ink": "#29364F",
+  "areas": [
+    {
+      "id": "north",
+      "wallArea": 4145.91900700261,
+      "accentArea": 196.74584174156206,
+      "assemblies": 845
+    },
+    {
+      "id": "south",
+      "wallArea": 4650.828851391113,
+      "accentArea": 619.1080172527605,
+      "assemblies": 1117
+    },
+    {
+      "id": "upper",
+      "wallArea": 5289.033955262209,
+      "accentArea": 572.8287086856456,
+      "assemblies": 1591
+    },
+    {
+      "id": "bridge",
+      "wallArea": 5014.434506768227,
+      "accentArea": 408.2910720109942,
+      "assemblies": 972
+    }
+  ],
+  "seeds": [
+    {
+      "area": "north",
+      "requested": [
+        -11,
+        6,
+        -50
+      ],
+      "node": [
+        -11,
+        6,
+        -50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        11,
+        6,
+        -50
+      ],
+      "node": [
+        11,
+        6,
+        -50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -11,
+        6,
+        50
+      ],
+      "node": [
+        -11,
+        6,
+        50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        11,
+        6,
+        50
+      ],
+      "node": [
+        11,
+        6,
+        50
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "upper",
+      "requested": [
+        -19,
+        9.07,
+        -51
+      ],
+      "node": [
+        -19,
+        9.07,
+        -51
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "upper",
+      "requested": [
+        19,
+        9.07,
+        51
+      ],
+      "node": [
+        19,
+        9.07,
+        51
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bridge",
+      "requested": [
+        3,
+        5,
+        0
+      ],
+      "node": [
+        3,
+        5,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "bridge",
+      "requested": [
+        -2,
+        8.695,
+        8.5
+      ],
+      "node": [
+        -2,
+        8.695,
+        8.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 4525,
+  "triangles": 26555,
+  "vertices": 43339,
+  "batches": 24,
+  "bytes": 480380,
+  "sha256": "7cb357ae486267a676cb290d8fec26ce72be00fcb226bbdad33baca18ef41ade",
+  "seconds": 2,
+  "review": "reviewed",
+  "reviewNotes": "Six native views: north/south, upper bridges both sides and station crossing at both heights;100/50/5HP. Cobalt/ceramic north, dusty-rose/ceramic south, ceramic/bronze upper transfer, cobalt/rose crossing. Opposite wings remain independently recognizable in symmetrical architecture. Calm blue-slate walking planes, pale reveals and bronze accents keep elevations readable. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/delta-station-final.jpg"
+}

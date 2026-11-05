@@ -1,0 +1,298 @@
+{
+  "id": "nuketown",
+  "palette": "Flamingo, pool enamel & vanilla",
+  "views": [
+    {
+      "id": "west-house",
+      "name": "West house",
+      "area": "west-house",
+      "p": [
+        -29,
+        2.3689999999999998,
+        0
+      ],
+      "t": [
+        -33.59220118838108,
+        2.069,
+        11.086554390135438
+      ]
+    },
+    {
+      "id": "west-house-1",
+      "name": "West house / upper",
+      "area": "west-house",
+      "p": [
+        -29,
+        6.619,
+        0
+      ],
+      "t": [
+        -17.91344560986456,
+        6.319,
+        4.592201188381078
+      ]
+    },
+    {
+      "id": "east-house",
+      "name": "East house",
+      "area": "east-house",
+      "p": [
+        30,
+        2.3689999999999998,
+        0
+      ],
+      "t": [
+        34.592201188381075,
+        2.069,
+        11.08655439013544
+      ]
+    },
+    {
+      "id": "east-house-1",
+      "name": "East house / upper",
+      "area": "east-house",
+      "p": [
+        30,
+        6.619,
+        3
+      ],
+      "t": [
+        34.592201188381075,
+        6.319,
+        14.08655439013544
+      ]
+    },
+    {
+      "id": "west-garden",
+      "name": "West garden",
+      "area": "west-garden",
+      "p": [
+        -58,
+        2.1189999999999998,
+        -5
+      ],
+      "t": [
+        -49.51471862576143,
+        1.8189999999999997,
+        3.4852813742385713
+      ]
+    },
+    {
+      "id": "east-garden",
+      "name": "East garden",
+      "area": "east-garden",
+      "p": [
+        59,
+        2.15,
+        6
+      ],
+      "t": [
+        59,
+        1.8499999999999999,
+        -6
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Transit crossing",
+      "area": "crossing",
+      "p": [
+        -1,
+        2.04,
+        0
+      ],
+      "t": [
+        -5.592201188381075,
+        1.74,
+        -11.086554390135442
+      ]
+    }
+  ],
+  "colors": [
+    "#C67E80",
+    "#498D98",
+    "#D9C9A2",
+    "#645565"
+  ],
+  "floor": "#788477",
+  "ink": "#303C45",
+  "areas": [
+    {
+      "id": "west-house",
+      "wallArea": 1870.1525872661057,
+      "accentArea": 708.7695670879905,
+      "assemblies": 4603
+    },
+    {
+      "id": "east-house",
+      "wallArea": 2237.4304445897333,
+      "accentArea": 889.7486691846651,
+      "assemblies": 8850
+    },
+    {
+      "id": "west-garden",
+      "wallArea": 344.8584345137476,
+      "accentArea": 751.815008636918,
+      "assemblies": 3966
+    },
+    {
+      "id": "east-garden",
+      "wallArea": 647.6455743498741,
+      "accentArea": 616.4582133939434,
+      "assemblies": 10907
+    },
+    {
+      "id": "crossing",
+      "wallArea": 1290.4036784537193,
+      "accentArea": 1346.351276503918,
+      "assemblies": 32664
+    }
+  ],
+  "seeds": [
+    {
+      "area": "west-house",
+      "requested": [
+        -29,
+        0.719,
+        0
+      ],
+      "node": [
+        -29,
+        0.719,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west-house",
+      "requested": [
+        -29,
+        4.969,
+        0
+      ],
+      "node": [
+        -29,
+        4.969,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east-house",
+      "requested": [
+        30,
+        0.719,
+        0
+      ],
+      "node": [
+        30,
+        0.719,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east-house",
+      "requested": [
+        30,
+        4.969,
+        3
+      ],
+      "node": [
+        30,
+        4.969,
+        3
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west-garden",
+      "requested": [
+        -58,
+        0.469,
+        -5
+      ],
+      "node": [
+        -58,
+        0.469,
+        -5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west-garden",
+      "requested": [
+        -53,
+        0.5,
+        13
+      ],
+      "node": [
+        -53,
+        0.5,
+        13
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east-garden",
+      "requested": [
+        59,
+        0.5,
+        6
+      ],
+      "node": [
+        59,
+        0.5,
+        6
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east-garden",
+      "requested": [
+        51,
+        0.625,
+        -14
+      ],
+      "node": [
+        51,
+        0.625,
+        -14
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        -1,
+        0.39,
+        0
+      ],
+      "node": [
+        -1,
+        0.39,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 60990,
+  "triangles": 311907,
+  "vertices": 769952,
+  "batches": 233,
+  "bytes": 8855274,
+  "sha256": "582dd0a36f2ac17290c4e232c184d3fe802567fe8fccbd22009f067d7e764ea3",
+  "seconds": 11,
+  "review": "reviewed",
+  "reviewNotes": "Native review: west/east houses at both stories, both gardens, transit crossing.100/50/5HP checked, with explicit5HP repeat against flamingo upper room. Flamingo/vanilla west, pool/vanilla east, plum/pink west garden and vanilla/pool east. Calm sage-gray floors; cornice bands and original cabinet/frame edges distribute secondary paint; interiors remain one space. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/nuketown-final.jpg"
+}

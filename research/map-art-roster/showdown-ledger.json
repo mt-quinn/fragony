@@ -1,0 +1,298 @@
+{
+  "id": "showdown",
+  "palette": "Lapis, pomegranate & travertine",
+  "views": [
+    {
+      "id": "court",
+      "name": "Transfer court",
+      "area": "court",
+      "p": [
+        1,
+        3.15,
+        3
+      ],
+      "t": [
+        12.08655439013544,
+        2.85,
+        -1.5922011883810772
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West arcade",
+      "area": "west",
+      "p": [
+        -27,
+        3.65,
+        0
+      ],
+      "t": [
+        -31.592201188381075,
+        3.35,
+        -11.086554390135442
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East arcade",
+      "area": "east",
+      "p": [
+        27,
+        3.659,
+        0
+      ],
+      "t": [
+        31.592201188381075,
+        3.359,
+        11.08655439013544
+      ]
+    },
+    {
+      "id": "north",
+      "name": "North gallery",
+      "area": "north",
+      "p": [
+        -10,
+        3.088,
+        -46
+      ],
+      "t": [
+        2,
+        2.7880000000000003,
+        -46
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South gallery",
+      "area": "south",
+      "p": [
+        -10,
+        3.65,
+        46
+      ],
+      "t": [
+        -21.08655439013544,
+        3.35,
+        41.40779881161892
+      ]
+    }
+  ],
+  "colors": [
+    "#486C91",
+    "#A96870",
+    "#C2A05D",
+    "#D6C6A4"
+  ],
+  "floor": "#88877C",
+  "ink": "#35404E",
+  "areas": [
+    {
+      "id": "court",
+      "wallArea": 4638.163802431724,
+      "accentArea": 688.3127769819915,
+      "assemblies": 16495
+    },
+    {
+      "id": "west",
+      "wallArea": 2957.121653031622,
+      "accentArea": 280.42377128522264,
+      "assemblies": 8558
+    },
+    {
+      "id": "east",
+      "wallArea": 3469.3756542293136,
+      "accentArea": 550.1872284039508,
+      "assemblies": 17153
+    },
+    {
+      "id": "north",
+      "wallArea": 2689.8235315956817,
+      "accentArea": 605.0698647658529,
+      "assemblies": 21711
+    },
+    {
+      "id": "south",
+      "wallArea": 4365.099886199245,
+      "accentArea": 978.699730436386,
+      "assemblies": 5347
+    }
+  ],
+  "seeds": [
+    {
+      "area": "court",
+      "requested": [
+        1,
+        1.5,
+        3
+      ],
+      "node": [
+        1,
+        1.5,
+        3
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "court",
+      "requested": [
+        -3,
+        1.5,
+        -12
+      ],
+      "node": [
+        -3,
+        1.5,
+        -12
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "court",
+      "requested": [
+        0,
+        2,
+        19
+      ],
+      "node": [
+        0,
+        2,
+        19
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -27,
+        2,
+        0
+      ],
+      "node": [
+        -27,
+        2,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -27,
+        1.918,
+        -21
+      ],
+      "node": [
+        -27,
+        1.918,
+        -21
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        27,
+        2.009,
+        0
+      ],
+      "node": [
+        27,
+        2.009,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        26,
+        2,
+        21
+      ],
+      "node": [
+        26,
+        2,
+        21
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        -10,
+        1.438,
+        -46
+      ],
+      "node": [
+        -10,
+        1.438,
+        -46
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        10,
+        1.19,
+        -47
+      ],
+      "node": [
+        10,
+        1.19,
+        -47
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -10,
+        2,
+        46
+      ],
+      "node": [
+        -10,
+        2,
+        46
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        10,
+        2,
+        46
+      ],
+      "node": [
+        10,
+        2,
+        46
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 69264,
+  "triangles": 342549,
+  "vertices": 808159,
+  "batches": 211,
+  "bytes": 8390604,
+  "sha256": "c7e748177eb91c460c1734c07ab6da39e3e673e3d1d21a9416cb44850e217354",
+  "seconds": 10,
+  "review": "reviewed",
+  "reviewNotes": "Native review of all five courts/arcades,100/50/5HP. Lapis/ochre west arcade, pomegranate/travertine east, ochre/lapis north, travertine/pomegranate south and court. Arches retain their original openings and contrasting light reveals; bands stop at apertures. Calm gray courtyard keeps actors visible. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/showdown-final.jpg"
+}

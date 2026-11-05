@@ -1,0 +1,238 @@
+{
+  "id": "shipment",
+  "palette": "Dock blue, persimmon & canvas",
+  "views": [
+    {
+      "id": "north",
+      "name": "North stacks",
+      "area": "north",
+      "p": [
+        -8,
+        1.751,
+        -11
+      ],
+      "t": [
+        -19.08655439013544,
+        1.4509999999999998,
+        -6.40779881161892
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South stacks",
+      "area": "south",
+      "p": [
+        8,
+        1.664,
+        11
+      ],
+      "t": [
+        20,
+        1.3639999999999999,
+        11
+      ]
+    },
+    {
+      "id": "east",
+      "name": "Power bay",
+      "area": "east",
+      "p": [
+        21,
+        1.65,
+        0
+      ],
+      "t": [
+        21,
+        1.3499999999999999,
+        -12
+      ]
+    },
+    {
+      "id": "west",
+      "name": "Dispatch",
+      "area": "west",
+      "p": [
+        -20,
+        1.65,
+        0
+      ],
+      "t": [
+        -15.407798811618923,
+        1.3499999999999999,
+        11.08655439013544
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Central crossing",
+      "area": "crossing",
+      "p": [
+        0,
+        1.65,
+        0
+      ],
+      "t": [
+        -12,
+        1.3499999999999999,
+        -2.204364238465236e-15
+      ]
+    }
+  ],
+  "colors": [
+    "#385F79",
+    "#BD634B",
+    "#729C91",
+    "#D6C9AE"
+  ],
+  "floor": "#687982",
+  "ink": "#273C48",
+  "areas": [
+    {
+      "id": "north",
+      "wallArea": 964.4639828929056,
+      "accentArea": 223.4755975426216,
+      "assemblies": 841
+    },
+    {
+      "id": "south",
+      "wallArea": 1029.8357648511167,
+      "accentArea": 250.76902213094814,
+      "assemblies": 1050
+    },
+    {
+      "id": "east",
+      "wallArea": 404.3751608916874,
+      "accentArea": 53.71726529547579,
+      "assemblies": 123
+    },
+    {
+      "id": "west",
+      "wallArea": 414.58241706429214,
+      "accentArea": 21.493026784280477,
+      "assemblies": 314
+    },
+    {
+      "id": "crossing",
+      "wallArea": 1199.3971338285808,
+      "accentArea": 106.02915560913229,
+      "assemblies": 1144
+    }
+  ],
+  "seeds": [
+    {
+      "area": "north",
+      "requested": [
+        -8,
+        0.101,
+        -11
+      ],
+      "node": [
+        -8,
+        0.101,
+        -11
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        10,
+        0.065,
+        -13
+      ],
+      "node": [
+        10,
+        0.065,
+        -13
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        8,
+        0.014,
+        11
+      ],
+      "node": [
+        8,
+        0.014,
+        11
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -10,
+        0.201,
+        13
+      ],
+      "node": [
+        -10,
+        0.201,
+        13
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        21,
+        0,
+        0
+      ],
+      "node": [
+        21,
+        0,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -20,
+        0,
+        0
+      ],
+      "node": [
+        -20,
+        0,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        0,
+        0,
+        0
+      ],
+      "node": [
+        0,
+        0,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 3472,
+  "triangles": 150889,
+  "vertices": 354956,
+  "batches": 49,
+  "bytes": 3211478,
+  "sha256": "a908bd172a7a6bd67fc4e6ad7399c148a74151782a9f229bb46a69b0718e433f",
+  "seconds": 5,
+  "review": "reviewed",
+  "reviewNotes": "All five native lanes reviewed: north100HP, south5HP, power50HP, dispatch5HP, central5HP. Dock-blue cargo with persimmon hinges and lower rails; jade power bay, canvas dispatch. Complete container sides stay coherent. Floor stays cool and quiet; all supported near/medium/far actor positions remain distinct. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/shipment-final.jpg"
+}

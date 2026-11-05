@@ -1,0 +1,328 @@
+{
+  "id": "forge2",
+  "palette": "Iron orange, wine slag & furnace teal",
+  "views": [
+    {
+      "id": "lower",
+      "name": "Lower forge",
+      "area": "lower",
+      "p": [
+        -13,
+        8.65,
+        -1
+      ],
+      "t": [
+        -17.592201188381075,
+        8.35,
+        -12.086554390135442
+      ]
+    },
+    {
+      "id": "lower-1",
+      "name": "Lower forge / upper",
+      "area": "lower",
+      "p": [
+        -20.5,
+        11.248000000000001,
+        -2
+      ],
+      "t": [
+        -15.907798811618921,
+        10.948,
+        -13.08655439013544
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West transfer",
+      "area": "west",
+      "p": [
+        -25,
+        17.4,
+        -16.5
+      ],
+      "t": [
+        -16.514718625761432,
+        17.099999999999998,
+        -8.014718625761429
+      ]
+    },
+    {
+      "id": "north",
+      "name": "North core",
+      "area": "north",
+      "p": [
+        20,
+        26.4,
+        -33
+      ],
+      "t": [
+        11.514718625761429,
+        26.099999999999998,
+        -24.514718625761432
+      ]
+    },
+    {
+      "id": "north-1",
+      "name": "North core / far side",
+      "area": "north",
+      "p": [
+        -13,
+        27.65,
+        -45
+      ],
+      "t": [
+        -13,
+        27.349999999999998,
+        -33
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South reactor",
+      "area": "south",
+      "p": [
+        0,
+        15.65,
+        22.5
+      ],
+      "t": [
+        -8.48528137423857,
+        15.35,
+        14.014718625761429
+      ]
+    },
+    {
+      "id": "south-1",
+      "name": "South reactor / upper",
+      "area": "south",
+      "p": [
+        14.5,
+        27.4,
+        20.5
+      ],
+      "t": [
+        3.413445609864562,
+        27.099999999999998,
+        15.907798811618916
+      ]
+    },
+    {
+      "id": "middle",
+      "name": "Core gantry",
+      "area": "middle",
+      "p": [
+        -10,
+        27.4,
+        5
+      ],
+      "t": [
+        -5.407798811618923,
+        27.099999999999998,
+        16.08655439013544
+      ]
+    },
+    {
+      "id": "middle-1",
+      "name": "Core gantry / far side",
+      "area": "middle",
+      "p": [
+        23.5,
+        27.15,
+        -3
+      ],
+      "t": [
+        15.01471862576143,
+        26.849999999999998,
+        -11.485281374238571
+      ]
+    }
+  ],
+  "colors": [
+    "#BB7047",
+    "#487983",
+    "#7F505B",
+    "#C9BDA6"
+  ],
+  "floor": "#666C72",
+  "ink": "#323744",
+  "areas": [
+    {
+      "id": "lower",
+      "wallArea": 6312.785673840564,
+      "accentArea": 775.9804242819555,
+      "assemblies": 1270
+    },
+    {
+      "id": "west",
+      "wallArea": 9109.85775772205,
+      "accentArea": 535.1815720871097,
+      "assemblies": 1245
+    },
+    {
+      "id": "north",
+      "wallArea": 5329.201658409753,
+      "accentArea": 705.565615597862,
+      "assemblies": 1722
+    },
+    {
+      "id": "south",
+      "wallArea": 3119.4884912852517,
+      "accentArea": 365.9255815609124,
+      "assemblies": 1136
+    },
+    {
+      "id": "middle",
+      "wallArea": 8787.390457377196,
+      "accentArea": 1460.9265828309801,
+      "assemblies": 4301
+    }
+  ],
+  "seeds": [
+    {
+      "area": "lower",
+      "requested": [
+        -13,
+        7,
+        -1
+      ],
+      "node": [
+        -13,
+        7,
+        -1
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "lower",
+      "requested": [
+        -20.5,
+        9.598,
+        -2
+      ],
+      "node": [
+        -20.5,
+        9.598,
+        -2
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -25,
+        15.75,
+        -16.5
+      ],
+      "node": [
+        -25,
+        15.75,
+        -16.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        20,
+        24.75,
+        -33
+      ],
+      "node": [
+        20,
+        24.75,
+        -33
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        -13,
+        26,
+        -45
+      ],
+      "node": [
+        -13,
+        26,
+        -45
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        0,
+        14,
+        22.5
+      ],
+      "node": [
+        0,
+        14,
+        22.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        14.5,
+        25.75,
+        20.5
+      ],
+      "node": [
+        14.5,
+        25.75,
+        20.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "middle",
+      "requested": [
+        -10,
+        25.75,
+        5
+      ],
+      "node": [
+        -10,
+        25.75,
+        5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "middle",
+      "requested": [
+        23.5,
+        25.5,
+        -3
+      ],
+      "node": [
+        23.5,
+        25.5,
+        -3
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 9674,
+  "triangles": 56749,
+  "vertices": 93178,
+  "batches": 36,
+  "bytes": 1082055,
+  "sha256": "9ecdea073ba83327bb197947efe513f47e2f9d34dc800cb17e29bdedd67cc706",
+  "seconds": 4,
+  "review": "reviewed",
+  "reviewNotes": "Nine native lower/upper forge, west, both north, both reactor and both gantry views at100/50/5HP. Teal/cream lower, wine/cream west, orange/teal north, teal/orange reactor, orange/cream gantry. Repeated north, gantry and upper reactor after upward steel/rubber floor correction. Gray decks distinguish rails, supports and steps. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/forge2-final.jpg"
+}

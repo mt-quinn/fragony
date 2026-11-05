@@ -1,0 +1,283 @@
+{
+  "id": "mutiny",
+  "palette": "Oxblood, storm enamel & industrial ivory",
+  "views": [
+    {
+      "id": "lower",
+      "name": "Lower process works",
+      "area": "lower",
+      "p": [
+        -9,
+        7.65,
+        4.5
+      ],
+      "t": [
+        -9,
+        7.3500000000000005,
+        16.5
+      ]
+    },
+    {
+      "id": "lower-1",
+      "name": "Lower process works / far side",
+      "area": "lower",
+      "p": [
+        20,
+        7.4,
+        20
+      ],
+      "t": [
+        11.51471862576143,
+        7.1000000000000005,
+        11.514718625761429
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East transfer",
+      "area": "east",
+      "p": [
+        39,
+        12.15,
+        9
+      ],
+      "t": [
+        39,
+        11.85,
+        21
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West transfer",
+      "area": "west",
+      "p": [
+        -38,
+        9.15,
+        -8
+      ],
+      "t": [
+        -33.407798811618925,
+        8.85,
+        3.08655439013544
+      ]
+    },
+    {
+      "id": "loading",
+      "name": "Loading hall",
+      "area": "loading",
+      "p": [
+        20,
+        7.65,
+        26
+      ],
+      "t": [
+        8,
+        7.3500000000000005,
+        25.999999999999996
+      ]
+    },
+    {
+      "id": "core",
+      "name": "Process gantry",
+      "area": "core",
+      "p": [
+        -9,
+        13.525,
+        -9.5
+      ],
+      "t": [
+        -9,
+        13.225,
+        2.5
+      ]
+    },
+    {
+      "id": "core-1",
+      "name": "Process gantry / lower",
+      "area": "core",
+      "p": [
+        2,
+        9.15,
+        -1
+      ],
+      "t": [
+        2.0000000000000013,
+        8.85,
+        -13
+      ]
+    }
+  ],
+  "colors": [
+    "#954E61",
+    "#517695",
+    "#C9C2A8",
+    "#548D83"
+  ],
+  "floor": "#64707D",
+  "ink": "#2E3547",
+  "areas": [
+    {
+      "id": "lower",
+      "wallArea": 7080.4510394049885,
+      "accentArea": 560.9113308492442,
+      "assemblies": 14997
+    },
+    {
+      "id": "east",
+      "wallArea": 3138.649330093078,
+      "accentArea": 1066.2461803485703,
+      "assemblies": 8331
+    },
+    {
+      "id": "west",
+      "wallArea": 3203.2952187143947,
+      "accentArea": 212.45094895614324,
+      "assemblies": 1488
+    },
+    {
+      "id": "loading",
+      "wallArea": 3108.472120728578,
+      "accentArea": 156.5434156656264,
+      "assemblies": 586
+    },
+    {
+      "id": "core",
+      "wallArea": 9814.029459982097,
+      "accentArea": 251.3441034329072,
+      "assemblies": 12206
+    }
+  ],
+  "seeds": [
+    {
+      "area": "lower",
+      "requested": [
+        -9,
+        6,
+        4.5
+      ],
+      "node": [
+        -9,
+        6,
+        4.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "lower",
+      "requested": [
+        20,
+        5.75,
+        20
+      ],
+      "node": [
+        20,
+        5.75,
+        20
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        39,
+        10.5,
+        9
+      ],
+      "node": [
+        39,
+        10.5,
+        9
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        40,
+        11.25,
+        -14
+      ],
+      "node": [
+        40,
+        11.25,
+        -14
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -38,
+        7.5,
+        -8
+      ],
+      "node": [
+        -38,
+        7.5,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "loading",
+      "requested": [
+        20,
+        6,
+        26
+      ],
+      "node": [
+        20,
+        6,
+        26
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "core",
+      "requested": [
+        -9,
+        11.875,
+        -9.5
+      ],
+      "node": [
+        -9,
+        11.875,
+        -9.5
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "core",
+      "requested": [
+        2,
+        7.5,
+        -1
+      ],
+      "node": [
+        2,
+        7.5,
+        -1
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 37608,
+  "triangles": 102628,
+  "vertices": 206769,
+  "batches": 39,
+  "bytes": 2142799,
+  "sha256": "ffc41e2d7a16bac8fb3d7700fb198f967c876ffeddf040a4c65baa9a930f205c",
+  "seconds": 5,
+  "review": "reviewed",
+  "reviewNotes": "Seven native lower/east/west/loading/gantry views at100/50/5HP. Oxblood/ivory lower, storm/ivory east, ivory/green west, green/oxblood loading. Repeated lower works, east and lower gantry after correcting rubber-tagged decks. All floors now blue-gray; structural sides remain ink. Removed unsuccessful emission workaround. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/mutiny-final.jpg"
+}

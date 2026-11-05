@@ -1,0 +1,268 @@
+{
+  "id": "bravery",
+  "palette": "Aubergine, brushed brass & mineral cyan",
+  "views": [
+    {
+      "id": "lower",
+      "name": "Lower engine room",
+      "area": "lower",
+      "p": [
+        3,
+        5.15,
+        7
+      ],
+      "t": [
+        3,
+        4.8500000000000005,
+        19
+      ]
+    },
+    {
+      "id": "service",
+      "name": "Service duct",
+      "area": "service",
+      "p": [
+        -16,
+        7.65,
+        -25
+      ],
+      "t": [
+        -11.407798811618923,
+        7.3500000000000005,
+        -13.91344560986456
+      ]
+    },
+    {
+      "id": "north",
+      "name": "North operations",
+      "area": "north",
+      "p": [
+        3,
+        11.15,
+        -23
+      ],
+      "t": [
+        11.48528137423857,
+        10.85,
+        -14.514718625761429
+      ]
+    },
+    {
+      "id": "north-1",
+      "name": "North operations / upper",
+      "area": "north",
+      "p": [
+        -18.5,
+        17.65,
+        -26
+      ],
+      "t": [
+        -18.5,
+        17.349999999999998,
+        -14
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South maintenance",
+      "area": "south",
+      "p": [
+        3,
+        11.025,
+        18
+      ],
+      "t": [
+        7.592201188381079,
+        10.725,
+        6.91344560986456
+      ]
+    },
+    {
+      "id": "core",
+      "name": "Engine transfer",
+      "area": "core",
+      "p": [
+        -12,
+        19.65,
+        3
+      ],
+      "t": [
+        -16.592201188381075,
+        19.349999999999998,
+        -8.086554390135442
+      ]
+    },
+    {
+      "id": "core-1",
+      "name": "Engine transfer / lower",
+      "area": "core",
+      "p": [
+        0,
+        10.65,
+        0
+      ],
+      "t": [
+        4.592201188381077,
+        10.35,
+        11.08655439013544
+      ]
+    }
+  ],
+  "colors": [
+    "#765D86",
+    "#BE9F61",
+    "#67999E",
+    "#D3C5A3"
+  ],
+  "floor": "#686A7D",
+  "ink": "#353548",
+  "areas": [
+    {
+      "id": "lower",
+      "wallArea": 2406.0119096565954,
+      "accentArea": 34.60660198330879,
+      "assemblies": 285
+    },
+    {
+      "id": "service",
+      "wallArea": 3732.9972667360007,
+      "accentArea": 637.8605831162367,
+      "assemblies": 1179
+    },
+    {
+      "id": "north",
+      "wallArea": 2421.5064242882,
+      "accentArea": 475.28695204854034,
+      "assemblies": 1887
+    },
+    {
+      "id": "south",
+      "wallArea": 2092.54929015804,
+      "accentArea": 136.87713141227152,
+      "assemblies": 4438
+    },
+    {
+      "id": "core",
+      "wallArea": 4041.144551785258,
+      "accentArea": 565.702387406583,
+      "assemblies": 1452
+    }
+  ],
+  "seeds": [
+    {
+      "area": "lower",
+      "requested": [
+        3,
+        3.5,
+        7
+      ],
+      "node": [
+        3,
+        3.5,
+        7
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "service",
+      "requested": [
+        -16,
+        6,
+        -25
+      ],
+      "node": [
+        -16,
+        6,
+        -25
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        3,
+        9.5,
+        -23
+      ],
+      "node": [
+        3,
+        9.5,
+        -23
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        -18.5,
+        16,
+        -26
+      ],
+      "node": [
+        -18.5,
+        16,
+        -26
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        3,
+        9.375,
+        18
+      ],
+      "node": [
+        3,
+        9.375,
+        18
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "core",
+      "requested": [
+        -12,
+        18,
+        3
+      ],
+      "node": [
+        -12,
+        18,
+        3
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "core",
+      "requested": [
+        0,
+        9,
+        0
+      ],
+      "node": [
+        0,
+        9,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 9241,
+  "triangles": 40072,
+  "vertices": 86138,
+  "batches": 38,
+  "bytes": 826669,
+  "sha256": "0de48c4b77b7c143053bdfe7d8ac57ca5b31729b1a945b8fba21f7099f703669",
+  "seconds": 2,
+  "review": "reviewed",
+  "reviewNotes": "Seven native engine/duct/operations/maintenance/transfer views including upper and lower routes,100/50/5HP. Aubergine engine room, cyan duct with cream stripe, ivory/aubergine operations, brass/cyan supports in maintenance, brass/ivory transfer. Original sloping ribs and pipe hardware carry accents; deck edges separate against quiet lavender-gray floors. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/bravery-final.jpg"
+}

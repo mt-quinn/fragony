@@ -1,0 +1,268 @@
+{
+  "id": "vacant",
+  "palette": "Celadon, wine & worn porcelain",
+  "views": [
+    {
+      "id": "yard",
+      "name": "Service yard",
+      "area": "yard",
+      "p": [
+        -46,
+        2.652,
+        0
+      ],
+      "t": [
+        -34,
+        2.3520000000000003,
+        7.347880794884119e-16
+      ]
+    },
+    {
+      "id": "warehouse",
+      "name": "Warehouse",
+      "area": "warehouse",
+      "p": [
+        -29,
+        2.637,
+        -31
+      ],
+      "t": [
+        -20.514718625761432,
+        2.337,
+        -22.51471862576143
+      ]
+    },
+    {
+      "id": "records",
+      "name": "Records & stores",
+      "area": "records",
+      "p": [
+        30,
+        4.65,
+        -9
+      ],
+      "t": [
+        25.407798811618918,
+        4.3500000000000005,
+        2.086554390135438
+      ]
+    },
+    {
+      "id": "maintenance",
+      "name": "Maintenance",
+      "area": "maintenance",
+      "p": [
+        -18,
+        4.65,
+        20
+      ],
+      "t": [
+        -13.407798811618921,
+        4.3500000000000005,
+        8.91344560986456
+      ]
+    },
+    {
+      "id": "maintenance-1",
+      "name": "Maintenance / far side",
+      "area": "maintenance",
+      "p": [
+        35,
+        4.65,
+        28
+      ],
+      "t": [
+        47,
+        4.3500000000000005,
+        28
+      ]
+    },
+    {
+      "id": "offices",
+      "name": "Operations",
+      "area": "offices",
+      "p": [
+        -2,
+        4.65,
+        -12
+      ],
+      "t": [
+        2.592201188381079,
+        4.3500000000000005,
+        -23.08655439013544
+      ]
+    }
+  ],
+  "colors": [
+    "#71988C",
+    "#935C6C",
+    "#B4A580",
+    "#D3D0B7"
+  ],
+  "floor": "#68726D",
+  "ink": "#303B43",
+  "areas": [
+    {
+      "id": "yard",
+      "wallArea": 2281.051564342527,
+      "accentArea": 245.01110176703114,
+      "assemblies": 2028
+    },
+    {
+      "id": "warehouse",
+      "wallArea": 2637.543650670935,
+      "accentArea": 739.6295944979211,
+      "assemblies": 2639
+    },
+    {
+      "id": "records",
+      "wallArea": 1455.2227024474905,
+      "accentArea": 376.2720264108765,
+      "assemblies": 3463
+    },
+    {
+      "id": "maintenance",
+      "wallArea": 7817.6433084809405,
+      "accentArea": 2592.0392939443045,
+      "assemblies": 14500
+    },
+    {
+      "id": "offices",
+      "wallArea": 3230.8840881704236,
+      "accentArea": 1160.2911920560894,
+      "assemblies": 8907
+    }
+  ],
+  "seeds": [
+    {
+      "area": "yard",
+      "requested": [
+        -46,
+        1.002,
+        0
+      ],
+      "node": [
+        -46,
+        1.002,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "warehouse",
+      "requested": [
+        -29,
+        0.987,
+        -31
+      ],
+      "node": [
+        -29,
+        0.987,
+        -31
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "warehouse",
+      "requested": [
+        -8,
+        1.37,
+        -28
+      ],
+      "node": [
+        -8,
+        1.37,
+        -28
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "records",
+      "requested": [
+        30,
+        3,
+        -9
+      ],
+      "node": [
+        30,
+        3,
+        -9
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "maintenance",
+      "requested": [
+        -18,
+        3,
+        20
+      ],
+      "node": [
+        -18,
+        3,
+        20
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "maintenance",
+      "requested": [
+        35,
+        3,
+        28
+      ],
+      "node": [
+        35,
+        3,
+        28
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "offices",
+      "requested": [
+        -2,
+        3,
+        -12
+      ],
+      "node": [
+        -2,
+        3,
+        -12
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "offices",
+      "requested": [
+        5,
+        3,
+        4
+      ],
+      "node": [
+        5,
+        3,
+        4
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 31537,
+  "triangles": 626291,
+  "vertices": 1537293,
+  "batches": 205,
+  "bytes": 15710766,
+  "sha256": "597fc0618123587edce7315157c15a43f67a37773885af758170f750e70d318f",
+  "seconds": 14,
+  "review": "reviewed",
+  "reviewNotes": "Native review of yard, warehouse exterior, records, both maintenance angles and operations,100/50/5HP. Celadon/porcelain warehouse, wine records, taupe maintenance and wine yard dado. Both records wall colors read as complete architectural planes with light shelving/frames, never a coordinate line across a wall. Interior floor and ceiling remain subdued. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/vacant-final.jpg"
+}

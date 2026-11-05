@@ -1,0 +1,424 @@
+{
+  "id": "reservoir",
+  "palette": "Lagoon & aged brass",
+  "views": [
+    {
+      "id": "pumps",
+      "name": "Pump gallery",
+      "area": "pumps",
+      "p": [
+        31,
+        32.65,
+        -8
+      ],
+      "t": [
+        26.407798811618925,
+        32.35,
+        -19.08655439013544
+      ]
+    },
+    {
+      "id": "electrical",
+      "name": "Electrical gallery",
+      "area": "electrical",
+      "p": [
+        -31,
+        32.65,
+        -8
+      ],
+      "t": [
+        -26.40779881161892,
+        32.35,
+        -19.08655439013544
+      ]
+    },
+    {
+      "id": "filtration",
+      "name": "Filtration",
+      "area": "filtration",
+      "p": [
+        0,
+        35.65,
+        -36
+      ],
+      "t": [
+        0,
+        35.35,
+        -24
+      ]
+    },
+    {
+      "id": "filtration-1",
+      "name": "Filtration / lower",
+      "area": "filtration",
+      "p": [
+        0,
+        15.65,
+        -38
+      ],
+      "t": [
+        4.592201188381077,
+        15.35,
+        -26.91344560986456
+      ]
+    },
+    {
+      "id": "valves",
+      "name": "Valve hall",
+      "area": "valves",
+      "p": [
+        0,
+        35.65,
+        36
+      ],
+      "t": [
+        1.4695761589768238e-15,
+        35.35,
+        24
+      ]
+    },
+    {
+      "id": "valves-1",
+      "name": "Valve hall / lower",
+      "area": "valves",
+      "p": [
+        0,
+        15.65,
+        38
+      ],
+      "t": [
+        4.592201188381079,
+        15.35,
+        26.91344560986456
+      ]
+    },
+    {
+      "id": "basin",
+      "name": "Reservoir basin",
+      "area": "basin",
+      "p": [
+        0,
+        3.65,
+        -18
+      ],
+      "t": [
+        12,
+        3.35,
+        -18
+      ]
+    },
+    {
+      "id": "basin-1",
+      "name": "Reservoir basin / far side",
+      "area": "basin",
+      "p": [
+        0,
+        3.65,
+        18
+      ],
+      "t": [
+        12,
+        3.35,
+        18
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Transfer bridge",
+      "area": "crossing",
+      "p": [
+        0,
+        15.65,
+        1
+      ],
+      "t": [
+        -8.485281374238571,
+        15.35,
+        9.485281374238568
+      ]
+    },
+    {
+      "id": "crossing-1",
+      "name": "Transfer bridge / upper west",
+      "area": "crossing",
+      "p": [
+        -3,
+        35.65,
+        -6
+      ],
+      "t": [
+        1.592201188381079,
+        35.35,
+        -17.08655439013544
+      ]
+    },
+    {
+      "id": "crossing-2",
+      "name": "Transfer bridge / upper east",
+      "area": "crossing",
+      "p": [
+        3,
+        35.65,
+        6
+      ],
+      "t": [
+        3,
+        35.35,
+        18
+      ]
+    }
+  ],
+  "colors": [
+    "#397E88",
+    "#B79A59",
+    "#D1C7AA",
+    "#43546E"
+  ],
+  "floor": "#60747B",
+  "ink": "#253941",
+  "areas": [
+    {
+      "id": "pumps",
+      "wallArea": 1425.0066831707954,
+      "accentArea": 20.011169783771003,
+      "assemblies": 125
+    },
+    {
+      "id": "electrical",
+      "wallArea": 1310.9809617996216,
+      "accentArea": 119.96061956882491,
+      "assemblies": 124
+    },
+    {
+      "id": "filtration",
+      "wallArea": 9811.931644805823,
+      "accentArea": 308.67181467158457,
+      "assemblies": 742
+    },
+    {
+      "id": "valves",
+      "wallArea": 9866.031359158418,
+      "accentArea": 266.1325848698616,
+      "assemblies": 725
+    },
+    {
+      "id": "basin",
+      "wallArea": 4928.52900314331,
+      "accentArea": 11.313708305358887,
+      "assemblies": 45
+    },
+    {
+      "id": "crossing",
+      "wallArea": 9883.51278734206,
+      "accentArea": 112.44088194146846,
+      "assemblies": 333
+    }
+  ],
+  "seeds": [
+    {
+      "area": "pumps",
+      "requested": [
+        31,
+        31,
+        -8
+      ],
+      "node": [
+        31,
+        31,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "pumps",
+      "requested": [
+        31,
+        31,
+        8
+      ],
+      "node": [
+        31,
+        31,
+        8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "electrical",
+      "requested": [
+        -31,
+        31,
+        -8
+      ],
+      "node": [
+        -31,
+        31,
+        -8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "electrical",
+      "requested": [
+        -31,
+        31,
+        8
+      ],
+      "node": [
+        -31,
+        31,
+        8
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "filtration",
+      "requested": [
+        0,
+        34,
+        -36
+      ],
+      "node": [
+        0,
+        34,
+        -36
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "filtration",
+      "requested": [
+        0,
+        14,
+        -38
+      ],
+      "node": [
+        0,
+        14,
+        -38
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "valves",
+      "requested": [
+        0,
+        34,
+        36
+      ],
+      "node": [
+        0,
+        34,
+        36
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "valves",
+      "requested": [
+        0,
+        14,
+        38
+      ],
+      "node": [
+        0,
+        14,
+        38
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "basin",
+      "requested": [
+        0,
+        2,
+        -18
+      ],
+      "node": [
+        0,
+        2,
+        -18
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "basin",
+      "requested": [
+        0,
+        2,
+        18
+      ],
+      "node": [
+        0,
+        2,
+        18
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        0,
+        14,
+        1
+      ],
+      "node": [
+        0,
+        14,
+        1
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        -3,
+        34,
+        -6
+      ],
+      "node": [
+        -3,
+        34,
+        -6
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        3,
+        34,
+        6
+      ],
+      "node": [
+        3,
+        34,
+        6
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 2094,
+  "triangles": 7308,
+  "vertices": 12524,
+  "batches": 18,
+  "bytes": 139359,
+  "sha256": "d332cd96938ac99b8787139663b05bde1d6c9b17a363da793db8708d44ed1088",
+  "seconds": 1,
+  "review": "reviewed",
+  "reviewNotes": "Distinct lagoon/cream pumping and filtration spaces; aged brass electrical side; marine/brass valve spaces. Floors calm at2/14/31/34m; original7308triangles retained. Ceiling palette selection corrected to brightest authored paint; painted albedo contrast reduced; shared recipes consolidated258 to18batches. Near/medium/far actor visibility checked; full green, medium yellow and low orange readable. Complete source architecture/independent object recovery verified against touching-frame synthetic regression. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/reservoir-final.jpg"
+}

@@ -1,0 +1,268 @@
+{
+  "id": "forge1",
+  "palette": "Indigo enamel, flame copper & olive ash",
+  "views": [
+    {
+      "id": "north",
+      "name": "North forge",
+      "area": "north",
+      "p": [
+        -13,
+        5.65,
+        -62
+      ],
+      "t": [
+        -13,
+        5.3500000000000005,
+        -50
+      ]
+    },
+    {
+      "id": "north-1",
+      "name": "North forge / far side",
+      "area": "north",
+      "p": [
+        38,
+        5.65,
+        -65
+      ],
+      "t": [
+        33.40779881161892,
+        5.3500000000000005,
+        -53.91344560986456
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South forge",
+      "area": "south",
+      "p": [
+        13,
+        5.65,
+        62
+      ],
+      "t": [
+        17.59220118838108,
+        5.3500000000000005,
+        50.91344560986456
+      ]
+    },
+    {
+      "id": "south-1",
+      "name": "South forge / far side",
+      "area": "south",
+      "p": [
+        -38,
+        5.65,
+        65
+      ],
+      "t": [
+        -33.40779881161892,
+        5.3500000000000005,
+        53.91344560986456
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West power",
+      "area": "west",
+      "p": [
+        -26.5,
+        4.4,
+        -4
+      ],
+      "t": [
+        -15.41344560986456,
+        4.1000000000000005,
+        -8.592201188381077
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East power",
+      "area": "east",
+      "p": [
+        27,
+        4.4,
+        4
+      ],
+      "t": [
+        15.91344560986456,
+        4.1000000000000005,
+        8.592201188381079
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Forge crossing",
+      "area": "crossing",
+      "p": [
+        0,
+        5.65,
+        0
+      ],
+      "t": [
+        12,
+        5.3500000000000005,
+        7.347880794884119e-16
+      ]
+    }
+  ],
+  "colors": [
+    "#52638F",
+    "#BA805B",
+    "#A5AC88",
+    "#C9C5B4"
+  ],
+  "floor": "#68758A",
+  "ink": "#303B50",
+  "areas": [
+    {
+      "id": "north",
+      "wallArea": 15772.494182179154,
+      "accentArea": 326.07134301781844,
+      "assemblies": 22774
+    },
+    {
+      "id": "south",
+      "wallArea": 15162.17406606913,
+      "accentArea": 1155.2717464339307,
+      "assemblies": 15526
+    },
+    {
+      "id": "west",
+      "wallArea": 3459.394732934701,
+      "accentArea": 106.83922586399505,
+      "assemblies": 3092
+    },
+    {
+      "id": "east",
+      "wallArea": 3415.2029219031815,
+      "accentArea": 240.72010062234853,
+      "assemblies": 2304
+    },
+    {
+      "id": "crossing",
+      "wallArea": 1793.7241978108884,
+      "accentArea": 17.84375,
+      "assemblies": 408
+    }
+  ],
+  "seeds": [
+    {
+      "area": "north",
+      "requested": [
+        -13,
+        4,
+        -62
+      ],
+      "node": [
+        -13,
+        4,
+        -62
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "north",
+      "requested": [
+        38,
+        4,
+        -65
+      ],
+      "node": [
+        38,
+        4,
+        -65
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        13,
+        4,
+        62
+      ],
+      "node": [
+        13,
+        4,
+        62
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "south",
+      "requested": [
+        -38,
+        4,
+        65
+      ],
+      "node": [
+        -38,
+        4,
+        65
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "west",
+      "requested": [
+        -26.5,
+        2.75,
+        -4
+      ],
+      "node": [
+        -26.5,
+        2.75,
+        -4
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "east",
+      "requested": [
+        27,
+        2.75,
+        4
+      ],
+      "node": [
+        27,
+        2.75,
+        4
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    },
+    {
+      "area": "crossing",
+      "requested": [
+        0,
+        4,
+        0
+      ],
+      "node": [
+        0,
+        4,
+        0
+      ],
+      "displacement": 0,
+      "heightDifference": 0
+    }
+  ],
+  "assemblies": 44104,
+  "triangles": 110555,
+  "vertices": 243420,
+  "batches": 24,
+  "bytes": 2561614,
+  "sha256": "24f2f51e0ab6646f560fb4a7316631e2262c465031f5e5ac1c6849c51e65da89",
+  "seconds": 8,
+  "review": "reviewed",
+  "reviewNotes": "Seven native north/south rooms and far sides, both power corridors and crossing at100/50/5HP. Indigo/copper north, porcelain/indigo south, olive/indigo west, copper/porcelain east. Repeated north and crossing after floor-role correction; navy sides stay dark while upward decks read blue-gray. Final native representative view repeated after universal upward-facing floor-role correction and shared paint-program uniforms.",
+  "finalEvidence": "docs/qa/map-art/forge1-final.jpg"
+}
