@@ -14,14 +14,14 @@ if(!id){
   const ledger=JSON.parse(fs.readFileSync(new URL(id+'-ledger.json',root)));assert.deepEqual(ledger.colors,p.colors,id+' bake matches final authored gamut');assert.equal(ledger.floor,p.floor);assert.equal(ledger.ink,p.ink);assert.ok(ledger.seeds.every(s=>s.displacement<.001&&s.heightDifference<.001),id+' exact native walk-space anchors');
   const result=spawnSync(process.execPath,['--max-old-space-size=3072',import.meta.filename,id],{stdio:'inherit'});assert.equal(result.status,0,id+' geometry/color acceptance');
  }
- // The final output bank and lighting must switch and reset across cached maps.
+ // Lighting changes by map; the approved final shader must remain identical across cached maps.
  const scene=new THREE.Scene();scene.fog=new THREE.Fog(0,1,2);const hemi=new THREE.HemisphereLight();scene.add(hemi,new THREE.DirectionalLight());
  const renderer={extensions:{has:()=>false},capabilities:{maxSamples:4},getDrawingBufferSize:v=>v.set(320,180),toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1,setRenderTarget(){},setClearColor(){},clear(){},shadowMap:{autoUpdate:true},getRenderTarget:()=>null,getClearColor:c=>c.set(0),getClearAlpha:()=>1,render(){}};
  const camera=new THREE.PerspectiveCamera(),frame=new FrameRenderer(renderer,scene,camera,{ao:false,bloom:false,antialias:false});
  for(const id of ['rust','summit','shoothouse','nuketown','unskinned']){
   const p=MAP_ART_PROFILES[id];setArenaAtmosphere(scene,{id,renderChunks:p?{artProfile:id}:undefined});frame.render(scene,camera,1/60);
-  assert.equal(frame.forge.uniforms.arenaRoster.value,p?1:0);assert.equal(frame.forge.uniforms.arenaArt.value,p||id==='shoothouse'?1:0);
-  if(p){assert.equal(hemi.intensity,p.lighting.hemi);assert.equal(scene.userData.mapArtId,id);const c=frame.forge.uniforms.rosterColors.value[1];const hex=parseInt(p.colors[0].slice(1),16);assert.deepEqual(c.toArray(),[(hex>>16&255)/255,(hex>>8&255)/255,(hex&255)/255]);}
+  assert.equal(frame.forge.fragmentShader,JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url))).fragmentShader);assert.ok(!('arenaRoster' in frame.forge.uniforms));
+  if(p){assert.equal(hemi.intensity,p.lighting.hemi);assert.equal(scene.userData.mapArtId,id);}
   if(id==='shoothouse'){assert.equal(scene.userData.shootHouseArt,true);assert.equal(scene.userData.mapArtId,null);assert.equal(scene.environmentIntensity,.5);}
   if(id==='unskinned'){assert.equal(scene.userData.mapArtId,null);assert.equal(hemi.intensity,1);}
  }

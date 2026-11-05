@@ -24,7 +24,7 @@ const m=new THREE.MeshStandardMaterial({vertexColors:true});styleShootHouseMater
 // Map-specific lighting cannot leak to the next map.
 const scene=new THREE.Scene();scene.fog=new THREE.Fog();const hemi=new THREE.HemisphereLight();scene.add(hemi);setArenaAtmosphere(scene,{id:'shoothouse',source:{}});assert.equal(scene.userData.shootHouseArt,true);assert.equal(hemi.intensity,2.3);assert.equal(scene.environmentIntensity,.5);setArenaAtmosphere(scene,{id:'vacant',source:{}});assert.equal(scene.userData.shootHouseArt,false);assert.equal(hemi.intensity,1.35);assert.equal(scene.environmentIntensity,.34);
 const renderStub={extensions:{has:()=>false},getDrawingBufferSize:v=>v.set(320,180),toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1,setRenderTarget(){},setClearColor(){},clear(){}};
-const f=new FrameRenderer(renderStub,scene,new THREE.PerspectiveCamera(),{antialias:false,ao:false,bloom:false});assert.equal(f.forge.uniforms.arenaArt.value,0);assert.match(f.forge.fragmentShader,/shootHouseSky/);assert.match(f.forge.fragmentShader,/actor\*\(1.-neighbor\)/);assert.match(f.forge.fragmentShader,/else c=forgePalette/);f.dispose();
+const f=new FrameRenderer(renderStub,scene,new THREE.PerspectiveCamera(),{antialias:false,ao:false,bloom:false});assert.equal(f.forge.fragmentShader,JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url))).fragmentShader);f.dispose();
 // Check the uppermost visible source floor, including the thin 5.24658m layer.
 const baked=await readSourceRender(new URL('../dist/maps/shoothouse-render.json.gz',import.meta.url));let topFloor=null;
 for(const chunk of baked){const p=chunk.attributes.position.array,n=chunk.attributes.normal.array,c=chunk.attributes.color.array,ix=chunk.index.array;
@@ -35,4 +35,4 @@ for(const chunk of baked){const p=chunk.attributes.position.array,n=chunk.attrib
  }
 }
 assert.ok(topFloor&&topFloor.y>5.24,'visible upper mezzanine floor layer exists');const slate=new THREE.Color(C.slate);for(const [i,value]of [slate.r,slate.g,slate.b].entries())assert.ok(Math.abs(topFloor.color[i]/255-value)<1/255,'visible mezzanine floor is approved slate');assert.match(topFloor.family,/^asphalt/);
-console.log('Shoot House art: six architecture areas, '+(matched/total*100).toFixed(2)+'% source ownership, connected source batches, complete object colors, approved ramps, physical-surface accents, map isolation and depth-tested actor cues pass.');
+console.log('Shoot House art: six architecture areas, '+(matched/total*100).toFixed(2)+'% source ownership, connected source batches, complete object colors, approved ramps, physical-surface accents, map isolation and historical world-space filter pass.');

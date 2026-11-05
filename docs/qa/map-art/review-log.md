@@ -1,3 +1,5 @@
+> Superseded rendering evidence: the original map-art captures below used shader changes the user did not authorize. The exact historical world-space shader and water composition are restored in the subsequent correction; see [restoration review](pixel-forge-restoration.md). These captures remain an archive of geometry and paint assignments, not evidence of the current final output.
+
 # Per-map art review
 
 Shoot House is retained exactly as approved and published in `aee5ddd`. All nineteen remaining active maps received individually authored palettes and native multi-area review at100/50/5HP. Final representative captures below use the production geometry, materials, lighting and final rendering pipeline. A successful bake alone is never treated as a visual review. Detailed iteration notes and exact source/asset fingerprints are in each map ledger.
