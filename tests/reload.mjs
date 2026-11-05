@@ -1,15 +1,7 @@
-import { createGameHarness } from './harness.mjs';
-const {setup,run}=createGameHarness(19);setup();
-run(`
-mode='play';locked=true;time=10000;opponentAI.brains.clear();bots=[];perks={};owned=[0,1,2,3,4,5];playerPos.set(20,1.7,8);camera.position.copy(playerPos);camera.lookAt(20,50,8);respawnTime=0;
-function finishReload(){let frames=0;while(reloading>0&&frames++<100)update(.037);assert.equal(reloading,0,'reload timer must finish at exactly zero');assert.equal(ammo,weapons[equipped].mag,'magazine refills');}
-for(let gun=0;gun<6;gun++){
- equipped=gun;ammo=weapons[gun].mag;magazines[gun]=ammo;reloading=0;buildWeapon();
- for(let cycle=0;cycle<3;cycle++){
-  while(ammo>0){shotTimer=0;shoot()}assert.equal(ammo,0);assert.ok(reloading>0,'last cartridge starts reload without another trigger attempt');finishReload();
-  shotTimer=0;shoot();assert.equal(ammo,weapons[gun].mag-1,'firing resumes after reload');reload();assert.ok(reloading>0,'manual partial-magazine reload still works');finishReload();
- }
+import {createGameHarness} from './harness.mjs';
+const h=createGameHarness(19);h.setup();h.run(`
+mode='play';locked=true;time=10000;opponentAI=null;bots=[];worldMeshes=[];blocks=[];pickups=[];playerPos.set(0,1.7,0);viewHeight=1.7;mouseDown=false;
+for(const mechanism of ['automatic','semi','burst','charge'])for(const barrel of ['single','double','huge','gatling','rails']){
+ gunCollection.kit.mechanism={id:mechanism,rank:2};gunCollection.kit.barrel={id:barrel,rank:1};playerGunFire.reset(playerWeapon(),playerGunLife.id);const w=playerWeapon();playerGunFire.ammo=1;syncModularAmmo();reload();assert.equal(reloadLength,w.reload);assert.ok(reloading>0);let frames=0;while(reloading>0&&frames++<200)update(.037);assert.equal(reloading,0);assert.equal(ammo,w.mag);assert.equal(playerGunFire.capacitor,1,'reload preserves a ready charge');
 }
-equipped=0;ammo=0;magazines[0]=0;shotTimer=0;reload();update(.1);switchWeapon(1);assert.equal(reloading,0);switchWeapon(0);assert.equal(ammo,0,'cancelled reload cannot refill via switch');shotTimer=0;reload();finishReload();
-console.log('All six weapons: three complete empty/reload/fire/manual-reload cycles pass with uneven frame times. Interrupted reloads preserve empty magazines.');
-`);
+`);console.log('Reload: all mechanisms/barrels finish with uneven frames, correct durations/capacity and retained charge.');

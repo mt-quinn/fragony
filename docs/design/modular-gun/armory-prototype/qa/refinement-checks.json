@@ -1,0 +1,763 @@
+{
+  "date": "2026-11-05",
+  "stateAndTimingChecks": 17,
+  "physicalPreviewBuilds": 480,
+  "layoutChecks": [
+    {
+      "viewport": "956x440",
+      "results": [
+        {
+          "detailFooterOverlap": false,
+          "name": "Automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Semi-automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Burst fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Charge fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Single barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Double barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Large barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Gatling barrels",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Magnetic rails",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Normal rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Shotgun pellets",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Sniper rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Explosive rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Piercing rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Duplex rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Damage boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Reload boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Movement boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Healing",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Slow-time recovery",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Ricochet",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Slowing hits",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Extra shot",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Chain damage",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "name": "Rarity boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        }
+      ]
+    },
+    {
+      "viewport": "667x375",
+      "results": [
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Semi-automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Semi-automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Charge fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Single barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Double barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Large barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Gatling barrels",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Magnetic rails",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Normal rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Shotgun pellets",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Sniper rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Explosive rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Piercing rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Duplex rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Damage boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Reload boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Movement boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Healing",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Slow-time recovery",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Ricochet",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Slowing hits",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Extra shot",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Chain damage",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Rarity boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        }
+      ]
+    },
+    {
+      "viewport": "568x320",
+      "results": [
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Semi-automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Burst fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Charge fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Single barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Double barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Large barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Gatling barrels",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Magnetic rails",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Normal rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Shotgun pellets",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Sniper rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Explosive rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Piercing rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Duplex rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Damage boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Reload boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Movement boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Healing",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Slow-time recovery",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Ricochet",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Slowing hits",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Extra shot",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Chain damage",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "ctaOutside": false,
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Rarity boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        }
+      ]
+    },
+    {
+      "viewport": "390x844",
+      "results": [
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Semi-automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Semi-automatic fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Charge fire",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Single barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Double barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Large barrel",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Gatling barrels",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Magnetic rails",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Normal rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Shotgun pellets",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Sniper rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Explosive rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Piercing rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Duplex rounds",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Damage boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Reload boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Movement boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Healing",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Slow-time recovery",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Ricochet",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Slowing hits",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Extra shot",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Chain damage",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        },
+        {
+          "detailFooterOverlap": false,
+          "horizontalOverflow": false,
+          "name": "Rarity boost",
+          "nameRarityOverlap": false,
+          "valueOverflow": false
+        }
+      ]
+    }
+  ],
+  "narrowReducedMotion": [
+    {
+      "name": "Semi-automatic fire",
+      "overflow": false,
+      "smallTargets": [],
+      "valueOverflow": false
+    },
+    {
+      "name": "Slow-time recovery",
+      "overflow": false,
+      "smallTargets": [],
+      "valueOverflow": false
+    },
+    {
+      "name": "Slowing hits",
+      "overflow": false,
+      "smallTargets": [],
+      "valueOverflow": false
+    },
+    {
+      "name": "Rarity boost",
+      "overflow": false,
+      "smallTargets": [],
+      "valueOverflow": false
+    }
+  ],
+  "manualFlows": [
+    "preview/equipped comparison",
+    "take and equip",
+    "replace choice",
+    "undo choice",
+    "free owned equipment",
+    "Fight and summary focus",
+    "firing and reload"
+  ],
+  "consoleErrors": []
+}

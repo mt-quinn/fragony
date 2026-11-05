@@ -10,7 +10,7 @@ export function mobileSettings(saved={}){
 }
 export const CONTROL_DEFS={
  minimap:{label:'Minimap',size:130,x:.13,y:.30,passive:true},
- stick:{label:'Move',size:112,x:.13,y:.72},fire:{label:'Hip fire',size:72,x:.78,y:.57},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
+ stick:{label:'Move',size:112,x:.13,y:.72},fire:{label:'Hip fire',size:72,x:.78,y:.57},focus:{label:'Slow time',size:56,x:.28,y:.77}
 };
 export function presetLayout(preset='thumbs'){
  const layout=Object.fromEntries(Object.entries(CONTROL_DEFS).map(([id,d])=>[id,{x:d.x,y:d.y,scale:1,opacity:1,hidden:false}]));

@@ -1,0 +1,117 @@
+{
+  "physicalBuilds": 120,
+  "loadouts": 1200,
+  "circuitStatesAudited": 10800,
+  "mechanicalTimingNote": "Excludes acquisition, flight, aim correction, target motion and secondary circuit geometry. A zero denotes a first-ejection kill.",
+  "closeCold": {
+    "min": 0,
+    "max": 1.02
+  },
+  "closeWarm": {
+    "min": 0,
+    "max": 1.02
+  },
+  "closePrepared": {
+    "min": 0,
+    "max": 0.7975
+  },
+  "armoredCold": {
+    "min": 0,
+    "max": 1.224
+  },
+  "missThirdCold": {
+    "min": 0,
+    "max": 1.1
+  },
+  "missFirstCold": {
+    "min": 0.3038,
+    "max": 1.683
+  },
+  "mediumPartial": {
+    "min": 0,
+    "max": 1.6
+  },
+  "longPartial": {
+    "min": 0,
+    "max": 1.6
+  },
+  "warmBodyDPS": {
+    "min": 115.91,
+    "max": 239.32
+  },
+  "maxSequenceInternal": {
+    "min": 14.742,
+    "max": 178.2
+  },
+  "capacityMinCompleteActions": 3,
+  "maxBaseCycle": 1.12,
+  "maxBaseReload": 1.25,
+  "maxBaseEjectionTrajectories": 16,
+  "maxCircuitTrajectoryBundles": 48,
+  "worstClose": [
+    {
+      "build": "charge/single/explosive",
+      "closeCold": 1.02
+    },
+    {
+      "build": "charge/single/piercing",
+      "closeCold": 1.02
+    },
+    {
+      "build": "charge/single/normal",
+      "closeCold": 1
+    },
+    {
+      "build": "charge/gatling/duplex",
+      "closeCold": 0.832
+    },
+    {
+      "build": "charge/gatling/sniper",
+      "closeCold": 0.805
+    }
+  ],
+  "worstMedium": [
+    {
+      "build": "charge/single/pellets",
+      "mediumPartial": 1.6
+    },
+    {
+      "build": "charge/huge/pellets",
+      "mediumPartial": 1.52
+    },
+    {
+      "build": "charge/double/pellets",
+      "mediumPartial": 1.515
+    },
+    {
+      "build": "charge/gatling/pellets",
+      "mediumPartial": 1.42
+    },
+    {
+      "build": "automatic/single/pellets",
+      "mediumPartial": 1.28
+    }
+  ],
+  "worstLong": [
+    {
+      "build": "charge/single/pellets",
+      "longPartial": 1.6
+    },
+    {
+      "build": "charge/huge/piercing",
+      "longPartial": 1.552
+    },
+    {
+      "build": "charge/huge/normal",
+      "longPartial": 1.52
+    },
+    {
+      "build": "charge/huge/pellets",
+      "longPartial": 1.52
+    },
+    {
+      "build": "charge/double/pellets",
+      "longPartial": 1.515
+    }
+  ]
+}

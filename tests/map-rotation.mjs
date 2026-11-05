@@ -8,7 +8,7 @@ const played=[];for(let i=0;i<MAPS.length*2;i++){await $('start').onclick();play
 for(let i=0;i<MAPS.length*2;i+=MAPS.length)assert.equal(new Set(played.slice(i,i+MAPS.length)).size,MAPS.length,'new runs keep the global bag');for(let i=1;i<MAPS.length*2;i++)assert.notEqual(played[i],played[i-1]);
 const bagBefore=localStorage.getItem('dh-map-rotation'),active=MAP.id;saveRun();mainMenu();await $('continue').onclick();assert.equal(MAP.id,active);assert.equal(localStorage.getItem('dh-map-rotation'),bagBefore,'continuing an active match does not draw');
 showShop();saveRun();mainMenu();await $('continue').onclick();assert.equal(mode,'shop');assert.equal(localStorage.getItem('dh-map-rotation'),bagBefore,'continuing the shop does not draw');
-await $('nextmatch').onclick();assert.equal(round,2);assert.notEqual(MAP.id,active);assert.notEqual(localStorage.getItem('dh-map-rotation'),bagBefore,'advancing draws once');
+const pick=armorySession.config.offers[0],kit=clone(gunCollection.kit);kit[PARTS[pick.id].slot]=pick;await armorySession.callbacks.fight({kit,pick});assert.equal(round,2);assert.notEqual(MAP.id,active);assert.notEqual(localStorage.getItem('dh-map-rotation'),bagBefore,'advancing draws once');
 const map=MAP.id;saveRun();mainMenu();await $('continue').onclick();assert.equal(MAP.id,map,'resume the drawn round');
 localStorage.removeItem('dh-map-rotation');saveRun();await $('continue').onclick();const migrated=JSON.parse(localStorage.getItem('dh-map-rotation'));assert.equal(migrated.last,MAP.id);assert.equal(migrated.remaining.length,MAPS.length-1);assert.ok(!migrated.remaining.includes(MAP.id));
 })()` ,{timeout:180000});

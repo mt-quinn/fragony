@@ -13,6 +13,6 @@ h.run(`
 assert.equal(MAP.id,'reservoir');showPracticeMaps();assert.equal($('panel').querySelectorAll('[data-practice-map]').length,MAPS.length);
 for(const id of ['testworks','tidal-lock','parallax','foundry']){assert.ok(!practiceMaps().some(m=>m.id===id));assert.ok(!MAPS.some(m=>m.id===id));}
 practiceMode=false;startMatch(false);saveRun();const baseSave=JSON.parse(localStorage.getItem('dh-run'));
-for(const id of ['testworks','tidal-lock','parallax','foundry']){localStorage.setItem('dh-run',JSON.stringify({...baseSave,mapId:id,round:3,credits:777,phase:'shop'}));mainMenu();$('continue').onclick();assert.equal(MAP.id,'reservoir');assert.equal(round,3);assert.equal(credits,777);assert.equal(mode,'shop');}
+for(const id of ['testworks','tidal-lock','parallax','foundry']){localStorage.setItem('dh-run',JSON.stringify({...baseSave,mapId:id,round:3,credits:777,phase:'shop'}));mainMenu();$('continue').onclick();assert.equal(MAP.id,'reservoir');assert.equal(round,3);assert.equal(credits,0);assert.equal(mode,'shop');}
 `);
 console.log('Production roster: twenty active maps, distinct CoD/Elite Force Showdown identities, retired maps absent from chooser/bag/imports and safe fallback.');

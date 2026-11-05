@@ -1,3 +1,4 @@
+import {botTokenSkill,PARTS} from './modular-gun.js';
 import {AttackCoordinator} from './attack-coordination.js';
 import {toDisplay} from './balance.js';
 import {rivalCombat} from './rivals.js';
@@ -85,7 +86,11 @@ export function nearestNode(navigation,pos){
 }
 // A* with a small binary heap: route costs can discourage moving toward a threat.
 export function findRoute(navigation,from,to,{avoid=null,aggression=1}={}){
-  const start=nearestNode(navigation,from),goal=nearestNode(navigation,to);if(!start||!goal)return [];
+  let start=nearestNode(navigation,from);const goal=nearestNode(navigation,to);if(!start||!goal)return [];
+  // Off-grid landings beside stairs can be closer to a node on top of the
+  // obstacle. Rejoin a supported lower route instead of jumping into its side.
+  const feet=from.y||0,step=navigation.stepHeight??.3;
+  if(navigation.blocks&&start.y>feet+step+.05){const candidates=navigation.nodes.filter(n=>n.y<=feet+step&&n.y>=feet-8.1&&horizontal(n,from)<6).sort((a,b)=>distance(a,from)-distance(b,from));for(const node of candidates.slice(0,24)){const action=node.y<feet-step?'drop':'walk';if(clearSegment(navigation.blocks,from,node,action,null,step)){start=node;break;}}}
   const heap=[],cost=new Map([[start,0]]),parents=new Map(),closed=new Set();
   const push=(n,f)=>{let i=heap.length;heap.push({n,f});while(i){const p=(i-1)>>1;if(heap[p].f<=f)break;heap[i]=heap[p];i=p}heap[i]={n,f}};
   const pop=()=>{const first=heap[0],last=heap.pop();if(heap.length){let i=0;while(true){let c=i*2+1;if(c>=heap.length)break;if(c+1<heap.length&&heap[c+1].f<heap[c].f)c++;if(heap[c].f>=last.f)break;heap[i]=heap[c];i=c}heap[i]=last}return first.n};
@@ -93,13 +98,14 @@ export function findRoute(navigation,from,to,{avoid=null,aggression=1}={}){
     for(const edge of n.edges){const m=edge.node,exposure=avoid?Math.max(0,10-horizontal(m,avoid))*.15/Math.max(.2,aggression):0,next=cost.get(n)+edge.cost+exposure;
       if(next<(cost.get(m)??Infinity)){cost.set(m,next);parents.set(m,{n,edge});push(m,next+distance(m,goal))}}
   }
+  const initial=Math.abs(start.y-(from.y||0))>.35?[{...copy(start),action:start.y>(from.y||0)?'jump':'drop',fine:true}]:[];
   const final=navigation.blocks&&Math.abs(goal.y-(to.y||0))<.35&&clearSegment(navigation.blocks,goal,to,'walk',null,navigation.stepHeight)?[{...copy(to),action:'walk',fine:true}]:[];
-  if(start===goal)return final.length?final:[{...copy(goal),action:'walk',fine:true}];if(!parents.has(goal))return [];
-  const path=[];let n=goal;while(n!==start){const {n:previous,edge}=parents.get(n);path.unshift({...copy(n),action:edge.action,pad:edge.pad,lift:edge.lift,fromY:edge.fromY});n=previous}return path.concat(final);
+  if(start===goal)return initial.concat(final.length?final:[{...copy(goal),action:'walk',fine:true}]);if(!parents.has(goal))return [];
+  const path=[];let n=goal;while(n!==start){const {n:previous,edge}=parents.get(n);path.unshift({...copy(n),action:edge.action,pad:edge.pad,lift:edge.lift,fromY:edge.fromY});n=previous}return initial.concat(path,final);
 }
 export class ArenaAI{
   constructor({navigation,world,round=1,tuning=AI_TUNING,random=Math.random}){
-    Object.assign(this,{navigation,world,tuning,random});this.difficulty=difficultyForRound(round,tuning);this.clock=0;this.brains=new Map();this.attacks=new AttackCoordinator();
+    Object.assign(this,{navigation,world,tuning,random});this.round=round;this.difficulty=difficultyForRound(round,tuning);this.clock=0;this.brains=new Map();this.attacks=new AttackCoordinator();
     // A row of health items represents one patrol destination, not ten votes
     // for the same room. Keep spatially distinct routes at equal weight.
     this.patrolAnchors=[];for(const n of navigation.anchors)if(!this.patrolAnchors.some(p=>distance(p,n)<18))this.patrolAnchors.push(n);
@@ -211,8 +217,19 @@ export class ArenaAI{
     }
     if(choice){this.setGoal(b,'rotate',choice);return true}return false;
   }
+  chooseToken(bot,b){
+    const skill=botTokenSkill(this.round||1);if(bot.rival?.collection&&Object.keys(PARTS).every(id=>bot.rival.collection.owned[id]===3))return null;if(skill.interest<=0||toDisplay(bot.hp,bot.baseHealth||100)<25)return null;
+    const candidates=(this.world.tokens?.()||[]).filter(t=>!t.collected&&this.clock-(t.createdAt||0)>=skill.reaction&&distance(bot.pos,t)<=skill.range).sort((a,c)=>distance(bot.pos,a)-distance(bot.pos,c)).slice(0,3);
+    let best=null,value=0;b.tokenRoutes??=new Map();
+    for(const token of candidates){let cached=b.tokenRoutes.get(token.id);if(!cached||this.clock-cached.at>skill.replan){const path=findRoute(this.navigation,bot.pos,token);if(!path.length&&distance(bot.pos,token)>1.5)continue;let previous=bot.pos,length=0;for(const n of path){length+=distance(previous,n)+(n.action==='elevator'?8:0);previous=n;}cached={at:this.clock,path,length};b.tokenRoutes.set(token.id,cached);}
+      const risk=b.visible?(b.underFire?12:5)*(1-skill.contest):0,score=(14+25*skill.interest)*skill.interest-cached.length/Math.max(1,this.difficulty.speed)*4-risk;
+      if(score>value){value=score;best={token,path:cached.path,skill};}
+    }
+    return best;
+  }
   chooseGoal(bot,b){
     if(b.recover>0)return;
+    const tokenGoal=this.chooseToken(bot,b);if(tokenGoal){const changed=b.goal?.token!==tokenGoal.token;this.setGoal(b,'token',tokenGoal.token,{token:tokenGoal.token,reason:'attachment choice'});if(changed){b.path=[...tokenGoal.path];b.pathIn=tokenGoal.skill.replan;this.stats.tokensChased=(this.stats.tokensChased||0)+1;}return;}
     const memory=b.memory.get(b.target),threat=memory?.pos,injured=toDisplay(bot.hp,bot.baseHealth||100)<this.tuning.navigation.retreatHealth*b.profile.caution;
     // A sustained local exchange can turn into a moving disengagement. Keep its
     // route through ordinary pressure, but allow critical survival to override it.
@@ -300,10 +317,10 @@ export class ArenaAI{
     if(b.dodge){b.dodge.delay-=dt;if(b.dodge.delay<=0){const d=Math.max(.01,Math.hypot(b.dodge.x,b.dodge.z)),step=this.difficulty.speed*1.2*dt,next={x:bot.pos.x+b.dodge.x/d*step*4,y:bot.pos.y,z:bot.pos.z+b.dodge.z/d*step*4};if(this.walkClear(bot.pos,next)){this.setAction(b,'dodge','perceived projectile');this.world.move(bot,b.dodge.x/d*step,b.dodge.z/d*step)}b.dodge.left-=dt;if(b.dodge.left<=0){b.dodge=null;b.thinkIn=0;b.moveX=b.moveZ=0}return}}
     b.pathIn-=dt;
     if(b.detour&&(b.detour.pickup.timer>0||horizontal(bot.pos,b.detour)<.6)){b.detour=null;b.pathIn=0}
-    if(b.pathIn<=0){b.path=findRoute(this.navigation,bot.pos,b.detour||b.goal,{avoid:['retreat','heal','reload','reposition'].includes(b.goal.type)?b.memory.get(b.target)?.pos:null,aggression:b.profile.aggression});b.pathIn=this.tuning.navigation.repath+this.random()*.25;this.stats.repaths++;
+    if(b.pathIn<=0&&(!b.path.length||Math.abs(bot.vy)<.1)){b.path=findRoute(this.navigation,bot.pos,b.detour||b.goal,{avoid:['retreat','heal','reload','reposition'].includes(b.goal.type)?b.memory.get(b.target)?.pos:null,aggression:b.profile.aggression});b.pathIn=b.goal?.type==='token'?botTokenSkill(this.round).replan:this.tuning.navigation.repath+this.random()*.25;this.stats.repaths++;
       if(!b.visible&&!b.detour&&b.detourIn<=0&&['rotate','search'].includes(b.goal.type))this.pickRouteDetour(bot,b);
     }
-    while(b.path.length&&horizontal(bot.pos,b.path[0])<(b.path[0].fine?.15:.55)&&Math.abs(bot.pos.y-b.path[0].y)<.65)b.path.shift();
+    while(b.path.length&&horizontal(bot.pos,b.path[0])<(b.path[0].fine?.15:.55)&&Math.abs(bot.pos.y-b.path[0].y)<(b.path[0].action==='jump'?.2:.65))b.path.shift();
     let destination=b.path[0];const m=b.memory.get(b.target);
     // Strafe in committed legs, never instantaneous direction jitter. Stay on a
     // supported surface and use the route when the enemy is on another level.
@@ -323,7 +340,7 @@ export class ArenaAI{
     }
     if(destination.action==='jump'&&destination.y>bot.pos.y+(this.navigation.stepHeight??.3)&&Math.abs(bot.vy)<.01)bot.vy=8.5;
     const d=horizontal(bot.pos,destination);if(d<.05)return;
-    const speed=this.difficulty.speed*(bot.rival?.perks.speed?1.1:1)*(b.weapon.native?.move||1)*(b.goal.type==='retreat'||b.goal.type==='heal'?1.08:1)*(b.reload>0?.8:1)*(b.recover>0?.28:1),step=Math.min(d,speed*dt),blend=1-Math.exp(-this.tuning.combat.acceleration*dt);
+    const speed=this.difficulty.speed*(b.weapon.native?.move||1)*(this.world.moveScale?.(bot)??1)*(b.goal.type==='retreat'||b.goal.type==='heal'?1.08:1)*(b.reload>0?.8:1)*(b.recover>0?.28:1),step=Math.min(d,speed*dt),blend=1-Math.exp(-this.tuning.combat.acceleration*dt);
     if(!b.slide?.active){b.moveX+=((destination.x-bot.pos.x)/d*speed-b.moveX)*blend;b.moveZ+=((destination.z-bot.pos.z)/d*speed-b.moveZ)*blend;}
     if(this.world.slideMove?.(bot,b,dt,destination,speed))return;
     let mx=b.moveX*dt,mz=b.moveZ*dt;
@@ -375,10 +392,10 @@ export class ArenaAI{
     if(b.burst>=w.burst){b.burst=0;b.rest=w.rest*this.difficulty.rest*(.85+this.random()*.3);b.thinkIn=Math.min(b.thinkIn,.2)}
   }
   update(dt){
-    this.clock+=dt;const actors=this.actors();
-    for(const [bot,b]of this.brains){if(bot.dead)continue;b.goalAge+=dt;b.regionAge+=dt;if(horizontal(bot.pos,b.regionOrigin)>18||Math.abs(bot.pos.y-b.regionOrigin.y)>10){b.regionOrigin=copy(bot.pos);b.regionAge=0}b.weaponHeld+=dt;b.weaponDecisionIn-=dt;b.swapIn=Math.max(0,b.swapIn-dt);b.dodgeCooldown=Math.max(0,b.dodgeCooldown-dt);b.underFire=Math.max(0,b.underFire-dt);b.thinkIn-=dt;b.senseIn-=dt;b.strafeIn-=dt;
+    this.clock+=dt;const actors=this.actors(),worldDt=dt;
+    for(const [bot,b]of this.brains){if(bot.dead)continue;const dt=worldDt*(this.world.actorTimeScale?.(bot)??1);b.goalAge+=dt;b.regionAge+=dt;if(horizontal(bot.pos,b.regionOrigin)>18||Math.abs(bot.pos.y-b.regionOrigin.y)>10){b.regionOrigin=copy(bot.pos);b.regionAge=0}b.weaponHeld+=dt;b.weaponDecisionIn-=dt;b.swapIn=Math.max(0,b.swapIn-dt);b.dodgeCooldown=Math.max(0,b.dodgeCooldown-dt);b.underFire=Math.max(0,b.underFire-dt);b.thinkIn-=dt;b.senseIn-=dt;b.strafeIn-=dt;
       if(b.senseIn<=0){this.perceive(bot,b,actors);this.noticeProjectiles(bot,b);b.senseIn=Math.min(this.tuning.senses.interval,this.difficulty.reaction*.6)*(.85+this.random()*.3)}
-      if(b.thinkIn<=0){this.chooseGoal(bot,b);b.thinkIn=this.difficulty.think*(.8+this.random()*.4)}
+      if(b.thinkIn<=0){this.chooseGoal(bot,b);b.thinkIn=b.goal?.type==='token'?botTokenSkill(this.round).replan:this.difficulty.think*(.8+this.random()*.4)}
       b.pressure*=Math.exp(-dt*1.6);b.exposure=b.visible?b.exposure+dt:Math.max(0,b.exposure-dt*2);b.biasIn-=dt;b.detourIn-=dt;b.recoverCooldown=Math.max(0,b.recoverCooldown-dt);
       if(b.recover>0){b.recover=Math.max(0,b.recover-dt);if(b.recover===0){b.thinkIn=0;this.setAction(b,'reposition','balance regained')}}
       if(b.strafeIn<=0)this.chooseStrafe(bot,b);

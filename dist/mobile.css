@@ -172,3 +172,7 @@ html.installed-app:has(body.touch-device){height:100vh;height:100lvh}
 @media(orientation:landscape){.touch-device .compact-armory .attachment-card.previewed{border:1px dashed var(--orange);background:#d9ef4508}}
 
 .touch-display-report{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.4 monospace;user-select:text;-webkit-user-select:text}
+
+#touch-circuit{display:block;font:500 11px/1.4 Barlow,sans-serif;letter-spacing:0;color:#d8dccc;white-space:nowrap}#touch-gun-name{font-size:12px;letter-spacing:.25px}
+
+#touch-gun-mode:empty{display:none}

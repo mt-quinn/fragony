@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#253e39">
+<title>Fragony — Loadout</title>
+<link rel="preload" href="fonts/condensed-bold.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/barlow-regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="armory.css">
+<script type="importmap">{"imports":{"three":"/dist/vendor/three.module.js","three/addons/":"/dist/vendor/addons/"}}</script>
+</head>
+<body>
+<main id="armory" class="armory">
+ <div id="physical-ui" class="physical-ui" aria-hidden="true"></div>
+ <header><h1>Round 6</h1><button id="sound-toggle" class="sound-toggle" aria-label="Mute sound" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/></svg></button></header>
+ <section class="bench" aria-label="Gun configuration">
+  <nav id="slots" class="fitted-parts" aria-label="Equipped attachments"></nav>
+  <section class="gun-stage" aria-label="Assembled gun">
+   <span id="preview-state" class="view-state">Equipped</span>
+   <div class="gun-shadow" aria-hidden="true"></div>
+   <div id="gun-viewport" class="gun-viewport" aria-label="Gun preview. Drag to rotate.">
+    <svg class="gun-fallback" viewBox="0 0 640 320" role="img" aria-label="Double-barrel gun"><path d="m63 115 104 14 70-29 174 11 28 24 126 5v50l-131 4-33 25-153-15-40 52-42-10 15-73-117-7z" fill="#557bb5" stroke="#202b2b" stroke-width="9"/><path d="m241 106 150 8 32 32-169 3z" fill="#e9dfc9"/><path d="m267 195 60 4-13 81-51-9z" fill="#b4a0d9" stroke="#202b2b" stroke-width="9"/><path d="m437 136 131 7v16l-131-3m0 15 131 1v18l-131 2" fill="#e9dfc9" stroke="#202b2b" stroke-width="8"/></svg>
+   </div>
+   <span id="test-status" class="test-status" hidden>Reloading</span>
+   <span id="fire-feedback" class="visually-hidden" aria-live="polite"></span>
+  </section>
+  <aside id="part-detail" class="part-detail" aria-label="Selected attachment" hidden>
+   <span id="detail-rarity" class="detail-rarity"></span>
+   <h2 id="detail-name"></h2>
+   <p id="detail-copy"></p>
+   <dl id="comparison" class="comparison"></dl>
+   <button id="claim" class="context-action">Take and equip</button>
+  </aside>
+ </section>
+ <footer class="controls">
+  <div class="gun-controls"><button id="test-fire" class="text-action"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="5"/><path d="M10 1v5m0 8v5M1 10h5m8 0h5"/></svg><span>Test fire</span></button><button id="compare-view" class="text-action" hidden>Show equipped</button></div>
+  <section class="choice-zone" aria-label="Attachment selection">
+   <button id="rail-mode" class="picker-back" hidden>← Round choices</button>
+   <button id="previous-option" class="choice-arrow" aria-label="Previous attachment" hidden>‹</button>
+   <div id="options" class="options"></div>
+   <button id="next-options" class="choice-arrow" aria-label="Next attachment" hidden>›</button>
+  </section>
+  <button id="play" class="fight" disabled>Fight <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M2 10h26M20 2l8 8-8 8"/></svg></button>
+ </footer>
+ <div id="screen-status" class="visually-hidden" role="status" aria-live="polite"></div>
+ <section id="launch-state" class="launch-state" role="dialog" aria-modal="true" aria-labelledby="launch-title" hidden><h2 id="launch-title">Round 6</h2><p id="launch-build"></p><button id="back-to-bench">Return to loadout</button></section>
+</main>
+<script type="module" src="armory.js"></script>
+</body>
+</html>

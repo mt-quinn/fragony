@@ -60,7 +60,7 @@ function consolidate(root){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('normal',new THREE.BufferAttribute(n,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.computeBoundingSphere();g.userData.weaponOwned=true;const m=new THREE.Mesh(g,meshes[0].material);m.userData.healthSkin=!!meshes[0].userData.healthSkin;m.receiveShadow=true;root.add(m);
  }
 }
-export function disposeToolModel(root){root?.traverse(m=>{if(m.geometry?.userData.weaponOwned)m.geometry.dispose()})}
+export function disposeToolModel(root){root?.traverse(m=>{if(m.userData.modularDispose){m.userData.modularDispose();delete m.userData.modularDispose;}if(m.geometry?.userData.weaponOwned)m.geometry.dispose()})}
 function finish(h,{world=false,right=[.075,-.23,.10],left=[-.075,-.11,-.45]}={}){
  h.parent.userData.toolWeapon=h;h.emptyReload=false;if(!world)handRig(h,right,left);h.leftReload=h.leftReload||new THREE.Vector3(-.07,-.22,-.18);
  for(const name of ['magazine','bolt','pump','gate','rails','charge','feed'])if(h[name])h[name+'Base']=h[name].position.clone();

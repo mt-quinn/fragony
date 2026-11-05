@@ -14,13 +14,7 @@ damagePlayer(200,null,{weapon:'Grenade'});assert.equal(deathView.killer,null);as
 `);
 console.log('Death recap: actual limb/hit totals, multiple attackers, frozen return damage and killer health, stationary tracking camera, through-wall highlight and unchanged 2.2s respawn cleanup pass.');
 const loadoutHarness=createGameHarness(92);loadoutHarness.setup();loadoutHarness.run(`
-mode='play';spawnPlayer();const killer=bots[0];killer.rival.owned=[0,1];killer.loadout=['rifle','pistol'];killer.rival.builds=normalizeBuilds();
-const parts=[WEAPON_SLOTS[1].action[0],WEAPON_SLOTS[1].ammunition[0],WEAPON_SLOTS[1].feed[0],OPTICS[1]];
-for(const a of parts)assert.ok(fitAttachment(killer.rival.builds,killer.rival.owned,9999,1,a.slot,a.id).ok);
-killer.brain.weaponType='rifle';damagePlayer(200,killer,{weapon:weapons[1].name});
-const kit=deathView.recap.killer.loadout;assert.equal(kit.weapon,weapons[1].name);assert.equal(kit.attachments.length,4);assert.equal(kit.attachments[0].name,parts[0].name);assert.ok($('death-recap').innerHTML.includes(parts[0].name));assert.ok(!$('death-recap').innerHTML.includes('no attachments'));
-const snapshot=JSON.stringify(kit);killer.rival.builds=normalizeBuilds();killer.brain.weaponType='smg';assert.equal(JSON.stringify(deathView.recap.killer.loadout),snapshot,'gun and attachments frozen even after switching or loadout changes');
-spawnPlayer();damagePlayer(200,killer,{weapon:weapons[0].name});assert.ok($('death-recap').innerHTML.includes('Stock · no attachments'));spawnPlayer();damagePlayer(200,null,{weapon:'Grenade'});assert.ok(!$('death-recap').innerHTML.includes('KILLER’S GUN'));
+mode='play';spawnPlayer();const killer=bots[0];killer.rival.collection.owned.duplex=2;killer.rival.collection.kit.ammo={id:'duplex',rank:2};damagePlayer(200,killer,{weapon:'Modular gun'});const kit=deathView.recap.killer.loadout;assert.equal(kit.weapon,'Modular gun');assert.equal(kit.attachments.length,4);assert.ok(kit.attachments.some(p=>p.name==='Duplex rounds'));const snapshot=JSON.stringify(kit);killer.rival.collection.kit.ammo={id:'normal',rank:0};assert.equal(JSON.stringify(deathView.recap.killer.loadout),snapshot);spawnPlayer();damagePlayer(200,null,{weapon:'Fall'});assert.ok(!$('death-recap').innerHTML.includes('KILLER’S GUN'));
 `);
 const escaped=recapHTML({attackers:[],killer:{name:'A',loadout:{weapon:'<gun>',attachments:[{slot:'<slot>',name:'<part>'}]}}});assert.ok(escaped.includes('&lt;part&gt;'));assert.ok(!escaped.includes('<part>'));
 console.log('Killer loadout: killing weapon rather than switched gun, all fitted parts and free optic, frozen snapshot, stock/self fallback and escaped names pass.');

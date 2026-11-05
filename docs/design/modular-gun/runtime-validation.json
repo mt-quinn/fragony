@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-05",
+  "branch": "main",
+  "configured_suites": 78,
+  "passed_suites": 78,
+  "batch": {
+    "passed": 76,
+    "wrapper_timeout_seconds": 120,
+    "timed_out": [
+      "tests/source-arenas.mjs",
+      "tests/source-combat.mjs"
+    ],
+    "independent_reruns": "Both completed successfully without the batch wrapper time limit."
+  },
+  "new_coverage": {
+    "physical_rarity_builds": 7680,
+    "mobile_physical_combinations": 120,
+    "model_variants": 100,
+    "bot_upgrade_rounds": 30,
+    "production_maps_loaded": 20
+  },
+  "browser": [
+    "Live full round completed without console errors",
+    "Live mobile practice armory: charge + double barrel + duplex comparison, equip, firing preview and return to combat",
+    "956 \u00d7 440 landscape and390 \u00d7 844 portrait captures",
+    "Restored selected attachment remains visible after reopening and rotation"
+  ],
+  "limits": [
+    "Physical-phone frame-rate certification and final balance/fun playtesting remain outstanding."
+  ]
+}

@@ -9,8 +9,8 @@ for(const input of ['Touch','Keyboard'])for(const category of SETTINGS_CATEGORIE
  const rows=settingsRows(category,section,input);all.push(...rows);const ids=rows.filter(r=>r.type!=='action').map(settingID);assert.equal(new Set(ids).size,ids.length,`${category}/${section} has unique input IDs`);
 }
 const keys=new Set(all.filter(r=>r.type!=='action').map(r=>r.scope+':'+r.key));
-for(const key of ['fireMode','manualFire','holdSemi','stickMode','focusMode','sensitivity','vertical','aimAssist','invertY','gyro','gyroSensitivity','preset','controlScale','controlOpacity'])assert.ok(keys.has('touch:'+key),'touch '+key);
-for(const key of ['sensitivity','invertY','holdSemi','crouchToggle','hudScale','motion','minimap','minimapNorth','minimapScale','guns','steps','feedback','music'])assert.ok(keys.has('game:'+key),'game '+key);
+for(const key of ['fireMode','manualFire','stickMode','focusMode','sensitivity','vertical','aimAssist','invertY','gyro','gyroSensitivity','preset','controlScale','controlOpacity'])assert.ok(keys.has('touch:'+key),'touch '+key);
+for(const key of ['sensitivity','invertY','crouchToggle','hudScale','motion','minimap','minimapNorth','minimapScale','guns','steps','feedback','music'])assert.ok(keys.has('game:'+key),'game '+key);
 for(const key of ['shadowQuality','shadowFilter','aoQuality','aoStrength','bloomStrength','pixelForge','pixelForgeIntensity','exposure','toneMap','vignette','grain','colorGrade','fov'])assert.ok(keys.has('graphics:'+key),'graphics '+key);
 for(const key of ['resolutionScale','antialias','aaPreset','msaa','aaFilter','taa','aaStats'])assert.ok(keys.has('aa:'+key),'AA '+key);
 assert.equal(Object.keys(SETTINGS_AA_PRESETS).length,6);
@@ -18,7 +18,7 @@ const actions=new Set(all.filter(r=>r.type==='action').map(r=>r.key));for(const 
 const base={category:'Graphics',section:'Smoothing',input:'Touch',settings:graphicsOptions({}),touchSettings:MOBILE_DEFAULTS,touch:true,controls:new ControlBindings(),back:'play'};
 for(const category of SETTINGS_CATEGORIES)for(const section of settingsSections(category,'Keyboard')){const html=settingsWorkspaceHTML({...base,category,section,input:'Keyboard'});assert.ok(html.includes('Settings categories'));assert.ok(html.includes('id="controls-back"'));assert.equal((html.match(/data-settings-category=/g)||[]).length,6);}
 assert.ok(settingsWorkspaceHTML({...base,settings:{...base.settings,antialias:false}}).includes('disabled'));
-assert.ok(settingsWorkspaceHTML({...base,category:'Controls',section:'Weapons',input:'Keyboard'}).includes('Demolisher'));
+assert.ok(!settingsWorkspaceHTML({...base,category:'Controls',section:'Weapons',input:'Keyboard'}).includes('Demolisher'));
 const h=createGameHarness();h.setup();h.run(`renderer=null;showControls('menu');assert.equal(settingsUI.input,'Keyboard');assert.equal(settingsSection(),'General');`);
 await h.run(`(async()=>{
  navigateSettings('Audio','Mix');const range=settingsRows('Audio','Mix').find(r=>r.key==='guns');

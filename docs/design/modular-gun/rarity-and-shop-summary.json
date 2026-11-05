@@ -1,0 +1,62 @@
+{
+  "partIdentities": 25,
+  "identityTierVersions": 100,
+  "identityLoadouts": 1200,
+  "tieredPhysicalGuns": 7680,
+  "tieredLoadouts": 307200,
+  "adjacentPhysicalRarityUpgradesChecked": 17280,
+  "circuitStatesChecked": 2764800,
+  "maxTrajectoryBundles": 48,
+  "shopsChecked": 12000,
+  "selectedUpgradesChecked": 6463,
+  "baseRarityProbabilities": [
+    0.55,
+    0.25,
+    0.15,
+    0.05
+  ],
+  "commonAssayerTables": [
+    {
+      "passes": 0,
+      "probabilities": [
+        0.55,
+        0.25,
+        0.15,
+        0.05
+      ]
+    },
+    {
+      "passes": 1,
+      "probabilities": [
+        0.385,
+        0.33999999999999997,
+        0.18,
+        0.095
+      ]
+    },
+    {
+      "passes": 2,
+      "probabilities": [
+        0.26949999999999996,
+        0.3534999999999999,
+        0.22799999999999998,
+        0.149
+      ]
+    },
+    {
+      "passes": 3,
+      "probabilities": [
+        0.18864999999999996,
+        0.3282999999999999,
+        0.26564999999999994,
+        0.21739999999999998
+      ]
+    }
+  ],
+  "maxReadyClose": 0.7975,
+  "maxUnpreparedClose": 1.02,
+  "maxReady45HalfPellets": 1.28,
+  "maxBodySequenceInternal": 220.32,
+  "maxHeadSequenceInternal": 252.45,
+  "note": "Damage/timing and shop arithmetic only. No simulation of human aim, moving geometry, bot decisions, token pickup or attack-warning readability."
+}

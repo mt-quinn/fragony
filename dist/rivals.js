@@ -1,18 +1,20 @@
+import {createCollection,normalizeCollection,migrateModularRun,chooseBotUpgrade} from './modular-gun.js';
+import {modularRivalCombat} from './modular-rivals.js';
 import {normalizePerks,equipPerk} from './balance.js';
 import {normalizeBuilds,normalizeEquipment,attachment,fitAttachment,gameplayCount} from './loadout.js';
 import {createShopOffers} from './shop.js';
 import {FireControl,FeedSystem} from './weapon-cycle.js';
 export const placementReward=place=>[350,325,300][place-1]||0;
-export function createRivals(names,roll,weaponIds){return names.map(name=>({name,credits:0,owned:roll().map(w=>weaponIds.indexOf(w)),builds:normalizeBuilds(),equipment:normalizeEquipment(),perks:{},settledRound:0,starterConversionUsed:false}));}
+export function createRivals(names,roll,weaponIds){return names.map(name=>({name,collection:createCollection(),credits:0,owned:[0],builds:normalizeBuilds(),equipment:normalizeEquipment(),perks:{},settledRound:0,starterConversionUsed:false}));}
 export function restoreRivals(raw,names,roll,weaponIds){
  const fresh=createRivals(names,roll,weaponIds);
- return fresh.map(r=>{const s=Array.isArray(raw)?raw.find(s=>s?.name===r.name):null;if(!s)return r;const owned=Array.isArray(s.owned)?[...new Set(s.owned.filter(g=>Number.isInteger(g)&&g>=0&&g<6))]:[];return {...r,credits:Math.max(0,Number(s.credits)||0),owned:owned.length?owned:r.owned,builds:normalizeBuilds(s.builds),equipment:normalizeEquipment(s.equipment),perks:normalizePerks(s.perks),settledRound:s.settledRound||0,starterConversionUsed:!!s.starterConversionUsed};});
+ return fresh.map(r=>{const s=Array.isArray(raw)?raw.find(s=>s?.name===r.name):null;if(!s)return r;const owned=Array.isArray(s.owned)?[...new Set(s.owned.filter(g=>Number.isInteger(g)&&g>=0&&g<6))]:[];return {...r,collection:s.collection?normalizeCollection(s.collection):migrateModularRun({...s,round:Math.max(1,s.settledRound||1),equipped:s.owned?.[0]||0}).collection,credits:Math.max(0,Number(s.credits)||0),owned:[0],builds:normalizeBuilds(s.builds),equipment:normalizeEquipment(s.equipment),perks:{},settledRound:s.settledRound||0,starterConversionUsed:!!s.starterConversionUsed};});
 }
-// Same stock, prices, discounts, affordability and fitting rules as the player's shop.
-// Personal preferences make some rivals save for guns while others invest in parts/perks.
+// Modular rivals receive one free upgrade from the same rarity/eligibility rules.
+// Keep legacy settlement below only for old standalone migration fixtures.
 export function settleRivals(roster,standings,round,weapons,upgrades,random=Math.random){
  for(const [index,r] of roster.entries()){
-  if(r.settledRound>=round)continue;
+  if(r.settledRound>=round)continue;if(r.collection){chooseBotUpgrade(r.collection,round,index,random);r.settledRound=round;r.credits=0;r.owned=[0];r.perks={};continue;}
   const place=standings.findIndex(s=>s.name===r.name)+1;r.credits+=placementReward(place);
   const offers=createShopOffers({...r,round,weapons,upgrades},random),choices=[];
   for(const g of offers.weapons)choices.push({kind:'gun',g,price:upgrades.find(u=>u.gun===g).price,weight:(r.owned.length<3?2:1)+(g===[2,0,3,5,4][index%5]?2:0)+random()*2});
@@ -32,6 +34,7 @@ export function settleRivals(roster,standings,round,weapons,upgrades,random=Math
 }
 // A native opponent uses exactly the player's trigger and magazine simulation.
 export function rivalCombat(ai,bot,b,dt,actors){
+ if(bot.rival?.collection)return modularRivalCombat(ai,bot,b,dt,actors);
  const w=b.weapon.native;
  if(b.fireWeapon!==b.weaponType){b.fireControl?.reset();ai.attacks.release(bot);b.fireWeapon=b.weaponType;}
  if(!b.fireControl){b.fireControl=new FireControl();b.feeds=new FeedSystem();b.feeds.reset(b.loadout,type=>ai.world.weapon(bot,type).native);}
