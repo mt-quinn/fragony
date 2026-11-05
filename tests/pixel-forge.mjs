@@ -1,4 +1,4 @@
-import {assertForgeCore,historicalGrainFade} from './pixel-forge-contract.mjs';
+import {assertForgeCore,historicalGrainCore} from './pixel-forge-contract.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from '../dist/vendor/three.module.js';
@@ -49,7 +49,7 @@ console.log('Pixel Forge: desktop/mobile defaults, normalization, fixed scale, l
 const renderStub={extensions:{has:()=>false},getDrawingBufferSize:v=>v.set(320,180),toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1,setRenderTarget(){},setClearColor(){},clear(){}};
 const frame=new FrameRenderer(renderStub,new THREE.Scene(),new THREE.PerspectiveCamera(),{antialias:false,ao:false,bloom:false});
 const historical=JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url)));
-assert.equal(PIXEL_FORGE_SIZE,historical.pixelSize);assert.equal(historicalGrainFade(pixelForgeGLSL),historical.helpers);assertForgeCore(frame.forge.fragmentShader,historical.fragmentShader);
+assert.equal(PIXEL_FORGE_SIZE,historical.pixelSize);assert.equal(historicalGrainCore(pixelForgeGLSL),historical.helpers);assertForgeCore(frame.forge.fragmentShader,historical.fragmentShader);
 assert.equal(frame.forge.uniforms.waterTex.value,frame.waterLayer.target.texture);
 for(const file of ['water.js','water-layer.js'])assert.equal(fs.readFileSync(new URL('../dist/'+file,import.meta.url),'utf8'),historical.waterFiles[file],'historical water handler '+file);
 console.log('Historical world-space core and water handlers match '+historical.revision+'.');

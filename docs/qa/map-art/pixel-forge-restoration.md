@@ -19,3 +19,7 @@ The user reported the grey/rust flattening and explicitly chose to preserve uniq
 ## Softer surface-texture fade — 2026-11-05
 
 The user requested a much more gradual fade near the camera. Grain attenuation now uses a broad reciprocal-square taper after the original close-detail threshold, replacing the short smoothstep cutoff. At the old zero-strength footprint, the new curve retains80% of the grain; it then decays continuously without a hard endpoint. World anchoring, pattern scale, palette, edges, actor protection and water remain unchanged. Pixel Forge/presentation/water/all144 AA checks and before/after WebKit camera movement across Kill House, Nuketown and Reservoir pass. No extra rendering passes or texture samples are introduced.
+
+## Foreground suppression correction — 2026-11-05
+
+The phone recording exposed a separate near-camera defect: unnormalized surface derivatives collapsed the triplanar grain weights below their epsilon, producing a flat dark patch. Normalize their magnitude before sharpening and center the noise before weighting. This removes the unintended foreground cutoff instead of merely widening its transition. See `../pixel-forge-foreground/README.md` for the reproduced Vacant comparison and actual shader measurements.

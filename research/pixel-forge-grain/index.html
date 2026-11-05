@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pixel Forge foreground grain regression</title><style>body{margin:0;background:#172027;color:white;font:14px system-ui}canvas{display:block}output{position:fixed;top:8px;left:8px}</style></head><body><output>Foreground grain test</output><script type="module">
+import * as THREE from '../../dist/vendor/three.module.js';
+import {FrameRenderer} from '../../dist/presentation.js';
+import {pixelForgeGLSL} from '../../dist/pixel-forge.js';
+const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setSize(960,444);document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0);const camera=new THREE.PerspectiveCamera(78,960/444,.07,160);camera.position.set(0,1.7,0);camera.lookAt(0,0,-10);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshBasicMaterial({color:0x777777}));floor.rotation.x=-Math.PI/2;scene.add(floor);
+const frame=new FrameRenderer(renderer,scene,camera,{msaa:0,ao:false,bloom:false,antialias:false});
+frame.forge.fragmentShader='varying vec2 vUv;'+pixelForgeGLSL+'\nvoid main(){gl_FragColor=vec4(vec3(forgeSurfaceGrain(vUv)+.5),1.);}';frame.forge.needsUpdate=true;
+window.grainQA={sample(height=1.7,width=960){renderer.setSize(width,Math.round(width*444/960));renderer.domElement.style.width='960px';renderer.domElement.style.height='444px';camera.aspect=960/444;camera.position.y=height;camera.lookAt(0,0,-10);camera.updateMatrixWorld(true);frame.resize();frame.render(scene,camera,1/60);const gl=renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight,data=new Uint8Array(w*h*4);gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,data);const rows=[];for(const y of [Math.round(h*.05),Math.round(h*.15),Math.round(h*.3)]){let sum=0,square=0,count=0;for(let x=Math.round(w*.25);x<Math.round(w*.75);x++){const v=data[(y*w+x)*4]/255;sum+=v;square+=v*v;count++;}const mean=sum/count;rows.push({y,mean,std:Math.sqrt(Math.max(0,square/count-mean*mean))});}return{height,width,rows,gl:gl.getError()};},renderer,frame,camera};grainQA.sample();
+</script></body></html>

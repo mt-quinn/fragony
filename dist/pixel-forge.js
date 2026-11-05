@@ -15,14 +15,18 @@ vec3 forgeSurfacePosition(vec2 uv){
 }
 float forgeSurfaceGrain(vec2 uv){
  vec3 p=forgeSurfacePosition(uv)*18.;
- vec3 n=abs(cross(dFdx(p),dFdy(p)));n=pow(n,vec3(4.));n/=max(dot(n,vec3(1.)),.00001);
+ vec3 n=abs(cross(dFdx(p),dFdy(p)));
+ // Remove derivative magnitude before sharpening the axis weights. Otherwise
+ // small nearby footprints collapse below the epsilon and erase the grain.
+ n/=max(max(n.x,n.y),max(n.z,.00000001));
+ n=pow(n,vec3(4.));n/=max(dot(n,vec3(1.)),.00001);
  float yz=forgeHash(floor(p.yz)+vec2(17.,31.));
  float xz=forgeHash(floor(p.xz)+vec2(47.,13.));
  float xy=forgeHash(floor(p.xy)+vec2(71.,59.));
  float footprint=max(length(dFdx(p)),length(dFdy(p)));
  // Keep close detail, then taper gently instead of cutting off at footprint 2.
  float grainSpread=max(0.,footprint-.75)*.4;
- return (dot(vec3(yz,xz,xy),n)-.5)/(1.+grainSpread*grainSpread);
+ return dot(vec3(yz,xz,xy)-vec3(.5),n)/(1.+grainSpread*grainSpread);
 }
 vec3 forgePalette(vec3 c){
  vec3 best=vec3(.075,.12,.13);float dst=100.;
