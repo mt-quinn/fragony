@@ -20,7 +20,9 @@ float forgeSurfaceGrain(vec2 uv){
  float xz=forgeHash(floor(p.xz)+vec2(47.,13.));
  float xy=forgeHash(floor(p.xy)+vec2(71.,59.));
  float footprint=max(length(dFdx(p)),length(dFdy(p)));
- return (dot(vec3(yz,xz,xy),n)-.5)*(1.-smoothstep(.75,2.,footprint));
+ // Keep close detail, then taper gently instead of cutting off at footprint 2.
+ float grainSpread=max(0.,footprint-.75)*.4;
+ return (dot(vec3(yz,xz,xy),n)-.5)/(1.+grainSpread*grainSpread);
 }
 vec3 forgePalette(vec3 c){
  vec3 best=vec3(.075,.12,.13);float dst=100.;

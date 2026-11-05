@@ -15,3 +15,7 @@ Validation: exact historical shader/helper/water identity; Pixel Forge settings,
 ## Superseded output palette — 2026-11-05
 
 The user reported the grey/rust flattening and explicitly chose to preserve unique map colours through Pixel Forge. The fixed twelve-colour output search is now replaced for authored maps with their existing world/sky ramps, using a single cached atlas lookup. The historical world-space grain, pixel size, rim treatment, actor protection and water composition remain unchanged; tests strip only the approved lookup addition before comparing with the historical fixture. See `../mobile-close-combat/README.md` for current evidence.
+
+## Softer surface-texture fade — 2026-11-05
+
+The user requested a much more gradual fade near the camera. Grain attenuation now uses a broad reciprocal-square taper after the original close-detail threshold, replacing the short smoothstep cutoff. At the old zero-strength footprint, the new curve retains80% of the grain; it then decays continuously without a hard endpoint. World anchoring, pattern scale, palette, edges, actor protection and water remain unchanged. Pixel Forge/presentation/water/all144 AA checks and before/after WebKit camera movement across Kill House, Nuketown and Reservoir pass. No extra rendering passes or texture samples are introduced.
