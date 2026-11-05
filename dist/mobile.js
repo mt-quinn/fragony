@@ -6,7 +6,6 @@ const paths={
  minimap:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 3v3m0 8v3M5 12h3m8 0h3m-4 2-3-7-3 7 3-1Z',
  ads:'M12 2v5m0 10v5M2 12h5m10 0h5M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z',
  fire:'m9 3 3-2 3 2v12H9ZM9 18h6m-6 3h6',
- reload:'m7 5 7-2 4 14-7 2Zm3 1 3 11m-7 4 7-2M3 9V4h5M3 4l3 2',
  focus:'m13 2-9 12h7l-1 8 10-13h-7Z',
  streak:'m12 2 3 6 7 1-5 5 1 8-6-4-6 4 1-8-5-5 7-1Z',
  swap:'M3 7h16l-4-4m4 14H3l4 4M19 7l-4 4M3 17l4-4',
@@ -78,7 +77,7 @@ export class MobileController{
    const c=this.state.contacts.get(id),r=controlRect('stick',this.layout,this.area,this.settings.controlScale);
    if(this.settings.stickMode==='fixed'){c.originX=r.x;c.originY=r.y;this.state.moveContact(id,e.clientX,e.clientY,r.size*.43);}else{this.buttons.stick.style.left=e.clientX+'px';this.buttons.stick.style.top=e.clientY+'px';}
   }else if(role==='focus'){this.state.focus=this.settings.focusMode==='toggle'?!this.state.focus:true;}
-  else if(['reload','swap','streak'].includes(role))this.api.action(role,true);
+  else if(['swap','streak'].includes(role))this.api.action(role,true);
  }
  move(e){
   if(!this.state.contacts.has(e.pointerId))return;e.preventDefault();const r=controlRect('stick',this.layout,this.area,this.settings.controlScale),d=this.state.moveContact(e.pointerId,e.clientX,e.clientY,r.size*.43);
@@ -187,6 +186,6 @@ export class MobileController{
   this.editorWarning();
  }
  editorWarning(){if(!this.editor)return;const pairs=layoutOverlaps(this.editor.layout,this.area,this.settings.controlScale);this.editRoot.querySelector('.editor-warning').textContent=pairs.length?'Some controls overlap. Leave room for your fingers.':'Positions stay inside the safe area.';}
- selectEditor(id){this.editor.selected=id;this.editRoot.querySelectorAll('[data-edit-control]').forEach(n=>n.classList.toggle('selected',n.dataset.editControl===id));this.editRoot.querySelector('aside h3').textContent=CONTROL_DEFS[id].label;for(const input of this.editRoot.querySelectorAll('[data-edit]')){input.value=this.editor.layout[id][input.dataset.edit];input.previousElementSibling.textContent=Math.round(Number(input.value)*100)+'%';}const hide=this.editRoot.querySelector('[data-hide]');hide.checked=this.editor.layout[id].hidden;hide.disabled=['stick','reload','swap'].includes(id);}
+ selectEditor(id){this.editor.selected=id;this.editRoot.querySelectorAll('[data-edit-control]').forEach(n=>n.classList.toggle('selected',n.dataset.editControl===id));this.editRoot.querySelector('aside h3').textContent=CONTROL_DEFS[id].label;for(const input of this.editRoot.querySelectorAll('[data-edit]')){input.value=this.editor.layout[id][input.dataset.edit];input.previousElementSibling.textContent=Math.round(Number(input.value)*100)+'%';}const hide=this.editRoot.querySelector('[data-hide]');hide.checked=this.editor.layout[id].hidden;hide.disabled=['stick','swap'].includes(id);}
  endEditor(save){const {back,layout}=this.editor;if(save){this.layouts[this.settings.preset]=normalizeLayout(layout,this.settings.preset);this.save();}this.editor=null;this.editRoot.hidden=true;this.applyLayout();if(back==='pause')this.showPause();else this.showSettings(this.settingsBack||'menu');}
 }

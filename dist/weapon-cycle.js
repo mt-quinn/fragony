@@ -25,7 +25,7 @@ export class FireControl{
 }
 export function distanceDamage(w,distance){const bonus=w.closeBonus?1+(w.closeBonus.scale-1)*(1-clamp((distance-w.closeBonus.close)/(w.closeBonus.far-w.closeBonus.close),0,1)):1;if(!w.falloff)return bonus;const f=w.falloff,t=clamp((distance-f.close)/(f.far-f.close),0,1);return (f.near+(f.farScale-f.near)*t)*bonus;}
 export function damagePerCartridge(w){return w.damage*w.pellets+w.splash;}
-export function reloadDuration(w,ammo,fast=true){return w.feedMode==='coupled'&&fast?w.quickReload:ammo===0&&w.emptyReload?w.emptyReload:w.reload;}
+export function reloadDuration(w,ammo,fast=true){if(w.feedMode==='individual')return (w.first||.35)+Math.max(0,w.mag-ammo-1)*(w.insert||.22);return w.feedMode==='coupled'&&fast?w.quickReload:ammo===0&&w.emptyReload?w.emptyReload:w.reload;}
 export class FeedSystem{
  constructor(){this.states={};}
  state(g,ammo=0){return this.states[g]??= {ammo,fast:true,reload:null,holster:0,passive:0};}
@@ -33,7 +33,7 @@ export class FeedSystem{
  phases(){return Object.fromEntries(Object.entries(this.states).map(([g,s])=>[g,{fast:s.fast}]))}
  start(g,w,scale=1){const s=this.state(g);if(s.reload||s.ammo>=w.mag||w.feedMode==='recovery')return false;
   if(s.pausedReload){s.reload=s.pausedReload;s.pausedReload=null;if(s.reload.individual)s.reload.left=s.reload.next+Math.max(0,w.mag-s.ammo-1)*s.reload.insert;return true;}
-  const total=w.feedMode==='individual'?((w.first||.35)+Math.max(0,w.mag-s.ammo-1)*(w.insert||.22))*scale:reloadDuration(w,s.ammo,s.fast)*scale;
+  const total=reloadDuration(w,s.ammo,s.fast)*scale;
   s.reload={left:total,total,next:(w.first||.35)*scale,insert:(w.insert||.22)*scale,individual:w.feedMode==='individual',scale};return true;
  }
  step(g,w,dt,{active=false,trigger=false,scale=1}={}){

@@ -1,3 +1,4 @@
+import {MapPaletteLookup,mapPaletteGLSL} from './map-palette-lookup.js';
 import {ActorBatches} from './actor-batches.js';
 import {WorldMask} from './world-mask.js';
 import {MapShadowCache} from './map-shadows.js';
@@ -59,6 +60,7 @@ void main(){gl_FragColor=vec4(displayAt(vUv),1.);}`;
 // The image is already antialiased, tone mapped, and display encoded here.
 const forgeFinal=`varying vec2 vUv;uniform sampler2D image;uniform sampler2D gunTex;uniform sampler2D waterTex;uniform vec2 texel;
 ${pixelForgeGLSL}
+${mapPaletteGLSL}
 vec3 forgeRead(vec2 uv){return texture2D(image,clamp(uv,texel*.5,vec2(1.)-texel*.5)).rgb;}
 void main(){
  vec3 original=forgeRead(vUv),c=original;
@@ -70,7 +72,7 @@ void main(){
  if(strength>.001){
   float block=${PIXEL_FORGE_SIZE.toFixed(2)};
   vec2 grid=floor(vUv/texel/block),q=(grid+.5)*block*texel,d=texel*block;
-  c=forgePalette(forgeRead(q)+vec3(surfaceValue*.085));
+  c=authoredPalette>.5?forgeMapPalette(forgeRead(q)+vec3(surfaceValue*.085),texture2D(worldDepth,q).r>=.99999):forgePalette(forgeRead(q)+vec3(surfaceValue*.085));
   vec3 dx=forgeRead(q+vec2(d.x,0.))-forgeRead(q-vec2(d.x,0.));
   vec3 dy=forgeRead(q+vec2(0.,d.y))-forgeRead(q-vec2(0.,d.y));
   float rim=clamp((length(dx)+length(dy))*.85,0.,1.);
@@ -122,12 +124,14 @@ export class FrameRenderer{
   this.blur=new THREE.ShaderMaterial({uniforms:{image:{value:null},direction:{value:new THREE.Vector2()}},vertexShader:vertex,fragmentShader:blur,depthTest:false,depthWrite:false,toneMapped:false});
   this.output=new THREE.ShaderMaterial({uniforms:{...common,cleanActorTex:{value:this.cleanActors.target.texture},pixelForgeAmount:{value:this.pixelForgeIntensity},displayToneMap:{value:1},toneMappingExposure:{value:1},untonemappedExposure:{value:quality.toneMap==='none'?(quality.exposure??1):1},vignetteAmount:{value:quality.vignette??1},grainAmount:{value:quality.grain===false?0:1},gradeAmount:{value:quality.colorGrade===false?0:1},antialias:{value:quality.antialias===false?0:1},underwater:{value:0},bloomAmount:{value:this.bloomEnabled?(quality.bloomStrength??1):0},aoAmount:{value:this.gtao ? (quality.aoStrength??.65) : 0},ambientTex:{value:this.ambientTarget.texture},bloomTex:{value:this.bloomA.texture},texel:{value:new THREE.Vector2()},slow:{value:0}},vertexShader:vertex,fragmentShader:final,depthTest:false,depthWrite:false,toneMapped:false});
   this.styledInput=new THREE.WebGLRenderTarget(1,1,{depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
-  this.forge=new THREE.ShaderMaterial({uniforms:{waterTex:{value:this.waterLayer.target.texture},worldDepth:{value:this.cleanActors.target.depthTexture},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
+  this.mapPalette=new MapPaletteLookup();
+  this.forge=new THREE.ShaderMaterial({uniforms:{authoredMapPalette:{value:null},authoredPalette:{value:0},waterTex:{value:this.waterLayer.target.texture},worldDepth:{value:this.cleanActors.target.depthTexture},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},image:{value:this.styledInput.texture},cleanActorTex:this.output.uniforms.cleanActorTex,gunTex:this.output.uniforms.gunTex,pixelForgeAmount:this.output.uniforms.pixelForgeAmount,texel:this.output.uniforms.texel},vertexShader:vertex,fragmentShader:forgeFinal,depthTest:false,depthWrite:false,toneMapped:false});
   this.resize();
  }
  resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*this.aoRatio)),ah=Math.max(1,Math.floor(size.y*this.aoRatio));this.world.setSize(size.x,size.y);this.styledInput.setSize(size.x,size.y);this.cleanActors.resize(size.x,size.y);this.waterLayer.resize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y);this.temporal?.resize(size.x,size.y);this.spatial?.resize(size.x,size.y)}
  pass(material,target){this.quad.material=material;this.renderer.setRenderTarget(target);this.renderer.render(this.scene,this.camera)}
  render(scene,camera,dt,slow=false,waterVolumes=[]){
+  this.syncMapPalette(scene);
   const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate,override=scene.overrideMaterial;
   try{
   const underwater=updateWaterState(this.waterState,scene,camera,dt,waterVolumes);this.output.uniforms.underwater.value=underwater;
@@ -171,8 +175,9 @@ export class FrameRenderer{
  resetHistory(){this.temporal?.reset()}
  aaSummary(){const parts=[];if(this.aa.antialias){if(this.world.samples)parts.push(this.world.samples+'× MSAA');if(this.temporal)parts.push('TAA (experimental)');if(this.spatial)parts.push(this.aa.aaFilter.toUpperCase());}return (parts.join(' + ')||'AA off')+' · '+this.world.width+' × '+this.world.height;}
  configureWorldMask(enabled){if(!this.maskTexture||enabled===(this.world.textures.length===2))return;this.world.dispose();if(enabled)this.world.textures.push(this.maskTexture);else this.world.textures.pop();}
- warmup(arena,scene,camera){return this.worldMask?this.worldMask.warmup(this.renderer,arena,camera,scene):this.renderer.compileAsync(arena,camera,scene);}
- dispose(){this.actorBatches?.dispose();this.maskTexture?.dispose();this.worldMask?.dispose();this.mapShadows?.dispose();this.waterLayer.dispose();this.styledInput.dispose();this.forge.dispose();this.cleanActors.dispose();this.temporal?.dispose();this.spatial?.dispose();this.world.depthTexture?.dispose();for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
+ syncMapPalette(scene){if(this.pixelForgeIntensity<=0){this.forge.uniforms.authoredPalette.value=0;return;}const id=scene.userData.shootHouseArt?'shoothouse':scene.userData.mapArtId||null;const active=this.mapPalette.sync(id);this.forge.uniforms.authoredPalette.value=active?1:0;this.forge.uniforms.authoredMapPalette.value=this.mapPalette.texture;}
+ warmup(arena,scene,camera){this.syncMapPalette(scene);return this.worldMask?this.worldMask.warmup(this.renderer,arena,camera,scene):this.renderer.compileAsync(arena,camera,scene);}
+ dispose(){this.mapPalette.dispose();this.actorBatches?.dispose();this.maskTexture?.dispose();this.worldMask?.dispose();this.mapShadows?.dispose();this.waterLayer.dispose();this.styledInput.dispose();this.forge.dispose();this.cleanActors.dispose();this.temporal?.dispose();this.spatial?.dispose();this.world.depthTexture?.dispose();for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
 }
 
 let contactTexture;

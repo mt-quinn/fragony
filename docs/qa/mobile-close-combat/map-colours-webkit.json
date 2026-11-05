@@ -1,0 +1,685 @@
+{
+  "rows": [
+    {
+      "map": "reservoir",
+      "mode": "play",
+      "ready": true,
+      "meshes": 26,
+      "memory": {
+        "geometries": 141,
+        "textures": 45
+      },
+      "draws": 1899,
+      "counts": {
+        "calls": 273,
+        "triangles": 56020
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 6
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 16.99999999999818,
+        "p95": 20.00000000000182
+      },
+      "frames": 71,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "rust",
+      "mode": "play",
+      "ready": true,
+      "meshes": 25,
+      "memory": {
+        "geometries": 95,
+        "textures": 43
+      },
+      "draws": 1403,
+      "counts": {
+        "calls": 206,
+        "triangles": 68992
+      },
+      "cpu": {
+        "median": 2.000000000001819,
+        "p95": 5
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 16,
+        "p95": 22
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "shipment",
+      "mode": "play",
+      "ready": true,
+      "meshes": 49,
+      "memory": {
+        "geometries": 122,
+        "textures": 48
+      },
+      "draws": 1869,
+      "counts": {
+        "calls": 271,
+        "triangles": 144968
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 4
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 17,
+        "p95": 19
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "nuketown",
+      "mode": "play",
+      "ready": true,
+      "meshes": 233,
+      "memory": {
+        "geometries": 160,
+        "textures": 48
+      },
+      "draws": 2056,
+      "counts": {
+        "calls": 296,
+        "triangles": 268688
+      },
+      "cpu": {
+        "median": 3.999999999996362,
+        "p95": 6.999999999996362
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 18,
+        "p95": 23
+      },
+      "frames": 67,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "killhouse",
+      "mode": "play",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 121,
+        "textures": 49
+      },
+      "draws": 1400,
+      "counts": {
+        "calls": 230,
+        "triangles": 156523
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 6
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 21,
+        "p95": 40.00000000000364
+      },
+      "frames": 50,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "vacant",
+      "mode": "play",
+      "ready": true,
+      "meshes": 205,
+      "memory": {
+        "geometries": 132,
+        "textures": 49
+      },
+      "draws": 1293,
+      "counts": {
+        "calls": 213,
+        "triangles": 401846
+      },
+      "cpu": {
+        "median": 4,
+        "p95": 7
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 18.999999999996362,
+        "p95": 25
+      },
+      "frames": 64,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "showdown",
+      "mode": "play",
+      "ready": true,
+      "meshes": 211,
+      "memory": {
+        "geometries": 149,
+        "textures": 47
+      },
+      "draws": 1310,
+      "counts": {
+        "calls": 262,
+        "triangles": 288888
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 4.000000000003638
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 22,
+        "p95": 29.999999999996362
+      },
+      "frames": 53,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "firingrange",
+      "mode": "play",
+      "ready": true,
+      "meshes": 374,
+      "memory": {
+        "geometries": 206,
+        "textures": 46
+      },
+      "draws": 1140,
+      "counts": {
+        "calls": 285,
+        "triangles": 402381
+      },
+      "cpu": {
+        "median": 5,
+        "p95": 9
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 28,
+        "p95": 37
+      },
+      "frames": 43,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "hijacked",
+      "mode": "play",
+      "ready": true,
+      "meshes": 213,
+      "memory": {
+        "geometries": 173,
+        "textures": 50
+      },
+      "draws": 1236,
+      "counts": {
+        "calls": 309,
+        "triangles": 235441
+      },
+      "cpu": {
+        "median": 4,
+        "p95": 7
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 24,
+        "p95": 41
+      },
+      "frames": 46,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "summit",
+      "mode": "play",
+      "ready": true,
+      "meshes": 148,
+      "memory": {
+        "geometries": 110,
+        "textures": 46
+      },
+      "draws": 596,
+      "counts": {
+        "calls": 199,
+        "triangles": 465575
+      },
+      "cpu": {
+        "median": 7,
+        "p95": 13
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 47.000000000007276,
+        "p95": 88
+      },
+      "frames": 25,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "shoothouse",
+      "mode": "play",
+      "ready": true,
+      "meshes": 142,
+      "memory": {
+        "geometries": 131,
+        "textures": 47
+      },
+      "draws": 1010,
+      "counts": {
+        "calls": 248,
+        "triangles": 1321502
+      },
+      "cpu": {
+        "median": 5,
+        "p95": 6
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 37,
+        "p95": 48
+      },
+      "frames": 33,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "siege",
+      "mode": "play",
+      "ready": true,
+      "meshes": 60,
+      "memory": {
+        "geometries": 138,
+        "textures": 53
+      },
+      "draws": 1235,
+      "counts": {
+        "calls": 243,
+        "triangles": 89414
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 4.000000000007276
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 20.000000000007276,
+        "p95": 28.000000000007276
+      },
+      "frames": 57,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "mutiny",
+      "mode": "play",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 141,
+        "textures": 53
+      },
+      "draws": 1953,
+      "counts": {
+        "calls": 279,
+        "triangles": 167652
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 4
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 16.999999999992724,
+        "p95": 20
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "bravery",
+      "mode": "play",
+      "ready": true,
+      "meshes": 40,
+      "memory": {
+        "geometries": 132,
+        "textures": 51
+      },
+      "draws": 1527,
+      "counts": {
+        "calls": 219,
+        "triangles": 90332
+      },
+      "cpu": {
+        "median": 2.000000000007276,
+        "p95": 3
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 17,
+        "p95": 19.000000000007276
+      },
+      "frames": 73,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "ef-showdown",
+      "mode": "play",
+      "ready": true,
+      "meshes": 64,
+      "memory": {
+        "geometries": 143,
+        "textures": 54
+      },
+      "draws": 1613,
+      "counts": {
+        "calls": 222,
+        "triangles": 60955
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 6
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 17.000000000014552,
+        "p95": 22
+      },
+      "frames": 70,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "delta-station",
+      "mode": "play",
+      "ready": true,
+      "meshes": 32,
+      "memory": {
+        "geometries": 150,
+        "textures": 49
+      },
+      "draws": 1876,
+      "counts": {
+        "calls": 268,
+        "triangles": 86953
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 3
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 17,
+        "p95": 19
+      },
+      "frames": 71,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "beta-station",
+      "mode": "play",
+      "ready": true,
+      "meshes": 23,
+      "memory": {
+        "geometries": 102,
+        "textures": 49
+      },
+      "draws": 1456,
+      "counts": {
+        "calls": 208,
+        "triangles": 96863
+      },
+      "cpu": {
+        "median": 2.000000000014552,
+        "p95": 3
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 17,
+        "p95": 19.000000000014552
+      },
+      "frames": 73,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "forge2",
+      "mode": "play",
+      "ready": true,
+      "meshes": 38,
+      "memory": {
+        "geometries": 123,
+        "textures": 51
+      },
+      "draws": 1750,
+      "counts": {
+        "calls": 250,
+        "triangles": 121253
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 4.999999999985448
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 16,
+        "p95": 20
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "forge1",
+      "mode": "play",
+      "ready": true,
+      "meshes": 32,
+      "memory": {
+        "geometries": 147,
+        "textures": 54
+      },
+      "draws": 1876,
+      "counts": {
+        "calls": 268,
+        "triangles": 174287
+      },
+      "cpu": {
+        "median": 3,
+        "p95": 6
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 17,
+        "p95": 21
+      },
+      "frames": 71,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    },
+    {
+      "map": "blast-radius",
+      "mode": "play",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 199,
+        "textures": 57
+      },
+      "draws": 1648,
+      "counts": {
+        "calls": 409,
+        "triangles": 82253
+      },
+      "cpu": {
+        "median": 4,
+        "p95": 7
+      },
+      "gpu": {
+        "median": null,
+        "p95": null
+      },
+      "interval": {
+        "median": 19,
+        "p95": 25
+      },
+      "frames": 63,
+      "pixels": [
+        1398,
+        645
+      ],
+      "multiDraw": true,
+      "glError": 0
+    }
+  ],
+  "errors": []
+}

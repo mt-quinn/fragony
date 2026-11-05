@@ -1,3 +1,4 @@
+import {assertForgeCore} from './pixel-forge-contract.mjs';
 import assert from 'node:assert/strict';import fs from 'node:fs';import{createHash}from'node:crypto';import{gunzipSync}from'node:zlib';import {spawnSync} from 'node:child_process';
 import * as THREE from '../dist/vendor/three.module.js';
 import {MAP_ART_PROFILES} from '../dist/map-art-profiles.js';import {mapArtPalette} from '../dist/map-art-colors.js';
@@ -20,7 +21,7 @@ if(!id){
  const camera=new THREE.PerspectiveCamera(),frame=new FrameRenderer(renderer,scene,camera,{ao:false,bloom:false,antialias:false});
  for(const id of ['rust','summit','shoothouse','nuketown','unskinned']){
   const p=MAP_ART_PROFILES[id];setArenaAtmosphere(scene,{id,renderChunks:p?{artProfile:id}:undefined});frame.render(scene,camera,1/60);
-  assert.equal(frame.forge.fragmentShader,JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url))).fragmentShader);assert.ok(!('arenaRoster' in frame.forge.uniforms));
+  assertForgeCore(frame.forge.fragmentShader,JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url))).fragmentShader);assert.equal(frame.forge.uniforms.authoredPalette.value,p||id==='shoothouse'?1:0);
   if(p){assert.equal(hemi.intensity,p.lighting.hemi);assert.equal(scene.userData.mapArtId,id);}
   if(id==='shoothouse'){assert.equal(scene.userData.shootHouseArt,true);assert.equal(scene.userData.mapArtId,null);assert.equal(scene.environmentIntensity,.5);}
   if(id==='unskinned'){assert.equal(scene.userData.mapArtId,null);assert.equal(hemi.intensity,1);}

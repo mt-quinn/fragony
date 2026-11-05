@@ -10,7 +10,7 @@ export function mobileSettings(saved={}){
 }
 export const CONTROL_DEFS={
  minimap:{label:'Minimap',size:130,x:.13,y:.30,passive:true},
- stick:{label:'Move',size:112,x:.13,y:.72},fire:{label:'Hip fire',size:72,x:.78,y:.57},reload:{label:'Reload',size:50,x:.79,y:.80},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
+ stick:{label:'Move',size:112,x:.13,y:.72},fire:{label:'Hip fire',size:72,x:.78,y:.57},focus:{label:'Slow time',size:56,x:.28,y:.77},streak:{label:'Streak',size:48,x:.37,y:.82},swap:{label:'Switch',size:48,x:.62,y:.85}
 };
 export function presetLayout(preset='thumbs'){
  const layout=Object.fromEntries(Object.entries(CONTROL_DEFS).map(([id,d])=>[id,{x:d.x,y:d.y,scale:1,opacity:1,hidden:false}]));
@@ -23,7 +23,7 @@ export function normalizeLayout(saved,preset='thumbs'){
  for(const [id,d]of Object.entries(result)){
   const v=saved?.[id];if(!v||typeof v!=='object')continue;
   for(const [k,min,max]of [['x',0,1],['y',0,1],['scale',.65,1.6],['opacity',.2,1]])if(Number.isFinite(v[k]))d[k]=clamp(v[k],min,max);
-  d.hidden=!!v.hidden&&!['stick','reload','swap'].includes(id);
+  d.hidden=!!v.hidden&&!['stick','swap'].includes(id);
  }
  return result;
 }

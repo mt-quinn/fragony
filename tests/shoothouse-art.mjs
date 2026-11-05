@@ -1,3 +1,4 @@
+import {assertForgeCore} from './pixel-forge-contract.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {gunzipSync} from 'node:zlib';
@@ -24,7 +25,7 @@ const m=new THREE.MeshStandardMaterial({vertexColors:true});styleShootHouseMater
 // Map-specific lighting cannot leak to the next map.
 const scene=new THREE.Scene();scene.fog=new THREE.Fog();const hemi=new THREE.HemisphereLight();scene.add(hemi);setArenaAtmosphere(scene,{id:'shoothouse',source:{}});assert.equal(scene.userData.shootHouseArt,true);assert.equal(hemi.intensity,2.3);assert.equal(scene.environmentIntensity,.5);setArenaAtmosphere(scene,{id:'vacant',source:{}});assert.equal(scene.userData.shootHouseArt,false);assert.equal(hemi.intensity,1.35);assert.equal(scene.environmentIntensity,.34);
 const renderStub={extensions:{has:()=>false},getDrawingBufferSize:v=>v.set(320,180),toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1,setRenderTarget(){},setClearColor(){},clear(){}};
-const f=new FrameRenderer(renderStub,scene,new THREE.PerspectiveCamera(),{antialias:false,ao:false,bloom:false});assert.equal(f.forge.fragmentShader,JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url))).fragmentShader);f.dispose();
+const f=new FrameRenderer(renderStub,scene,new THREE.PerspectiveCamera(),{antialias:false,ao:false,bloom:false});assertForgeCore(f.forge.fragmentShader,JSON.parse(fs.readFileSync(new URL('fixtures/pixel-forge-world-space.json',import.meta.url))).fragmentShader);f.dispose();
 // Check the uppermost visible source floor, including the thin 5.24658m layer.
 const baked=await readSourceRender(new URL('../dist/maps/shoothouse-render.json.gz',import.meta.url));let topFloor=null;
 for(const chunk of baked){const p=chunk.attributes.position.array,n=chunk.attributes.normal.array,c=chunk.attributes.color.array,ix=chunk.index.array;

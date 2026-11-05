@@ -11,3 +11,7 @@ Native browser checks cover Beta Station north and Reservoir above/below water. 
 - [Restored water above surface](water-restored.jpg)
 
 Validation: exact historical shader/helper/water identity; Pixel Forge settings, mask and AA ordering; all AA combinations; water movement, fog restoration, layering and render-state restoration; Shoot House art and 19-map geometry/material checks; static production release build/loading.
+
+## Superseded output palette — 2026-11-05
+
+The user reported the grey/rust flattening and explicitly chose to preserve unique map colours through Pixel Forge. The fixed twelve-colour output search is now replaced for authored maps with their existing world/sky ramps, using a single cached atlas lookup. The historical world-space grain, pixel size, rim treatment, actor protection and water composition remain unchanged; tests strip only the approved lookup addition before comparing with the historical fixture. See `../mobile-close-combat/README.md` for current evidence.

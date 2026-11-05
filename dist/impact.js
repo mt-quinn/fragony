@@ -1,6 +1,7 @@
 // Resolved shots, including grouped pellets, produce one physical response.
 // Visual recoil and the short gameplay interruption are deliberately separate.
 export const IMPACT = {
+ melee:{duration:.2,strength:.35,heavy:45},
  pistol:{duration:.18,strength:.30,heavy:28}, rifle:{duration:.12,strength:.13,heavy:65},
  smg:{duration:.095,strength:.085,heavy:85}, shotgun:{duration:.25,strength:.40,heavy:30},
  rail:{duration:.19,strength:.32,heavy:40}, rocket:{duration:.28,strength:.44,heavy:32},

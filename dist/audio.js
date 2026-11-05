@@ -18,7 +18,7 @@ export function attenuation(distance,curve){
   for(let i=1;i<curve.length;i++)if(distance<=curve[i][0]){const t=(distance-curve[i-1][0])/(curve[i][0]-curve[i-1][0]);return curve[i-1][1]+(curve[i][1]-curve[i-1][1])*t}
   return 0;
 }
-const lengths={rifle:.24,pistol:.38,smg:.14,rail:.42,rocket:.5,shotgun:.65,explosion:.85,'step-solid':.15,'step-metal':.21,'land-solid':.25,'land-metal':.3,'reload-out':.12,'reload-in':.14,bolt:.12,equip:.12,frag:.13,hit:.055,kill:.22,pickup:.25,pad:.38,shatter:.2,damage:.14,heartbeat:.34,charge:.5,'slow-on':.26,'slow-off':.22,'confirm-hit':.075,'confirm-head':.105,'confirm-kill':.24,'confirm-headkill':.28,whiz:.14,'low-ammo':.045,impact:.08,stinger:.36};
+const lengths={rifle:.24,pistol:.38,smg:.14,rail:.42,rocket:.5,shotgun:.65,explosion:.85,'step-solid':.15,'step-metal':.21,'land-solid':.25,'land-metal':.3,'reload-out':.12,'reload-in':.14,bolt:.12,equip:.12,frag:.13,hit:.055,kill:.22,pickup:.25,pad:.38,shatter:.2,damage:.14,heartbeat:.34,charge:.5,'slow-on':.26,'slow-off':.22,'confirm-hit':.075,'confirm-head':.105,'confirm-kill':.24,'confirm-headkill':.28,whiz:.14,'low-ammo':.045,impact:.08,melee:.18,stinger:.36};
 // Deterministic, original layered effects. No continuous buzz/sawtooth waveform.
 export function synthesize(name,sampleRate=32000,seed=17){
   const out=new Float32Array(Math.ceil((lengths[name]||.2)*sampleRate));
@@ -37,6 +37,7 @@ export function synthesize(name,sampleRate=32000,seed=17){
   if(name.startsWith('confirm-')){noise(0,.035,.9,4100);body(0,.035,.16,1400,620);if(name.includes('kill'))metallic();if(name.includes('head'))wet()}
   else if(name==='whiz'){noise(0,.13,.55,3700,.014);body(0,.1,.12,620,210,.01)}
   else if(name==='low-ammo'){clack(0,.25)}
+  else if(name==='melee'){noise(0,.16,.5,950,.008);body(.02,.1,.15,180,65)}
   else if(name==='impact'){noise(0,.055,.6,2500);body(0,.065,.25,250,90)}
   else if(name==='stinger'){body(0,.16,.32,290,285);body(.085,.18,.27,435,430);body(.17,.18,.23,580,575)}
   else if(name==='rifle'){noise(0,.047,1.8,5300);body(0,.17,.85,180,65);noise(.018,.16,.55,1600);clack(.065,.22)}
