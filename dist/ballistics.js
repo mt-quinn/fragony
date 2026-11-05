@@ -4,6 +4,9 @@ import {distanceDamage} from './weapon-cycle.js';
 // Return grouped direct-hit packets; a cartridge may supply one payload event, never one per pellet.
 export function traceCartridges(w,origin,forward,targets,{rounds=w.volley,ads=false,spreadScale=1,random=Math.random}={}){
  const ray=new THREE.Raycaster(),right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0)).normalize(),vertical=new THREE.Vector3().crossVectors(right,forward).normalize();
+ // Actors still return all body intersections for penetration. Each world mesh
+ // needs only its nearest solid hit because a wall always stops the cartridge.
+ ray.firstHitOnly=true;
  const hits=new Map(),traces=[],blasts=[],arcs=[];
  for(let round=0;round<rounds;round++){
   const barrel=(round-(rounds-1)/2)*THREE.MathUtils.degToRad(w.separation||0);let primary=null,arcTarget=null;

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "killhouse",
+    "compared": 64,
+    "beforeMedian": 0.16708299999982046,
+    "afterMedian": 0.07554099999993014,
+    "beforeP95": 0.3428750000000491,
+    "afterP95": 0.17162500000017644
+  },
+  {
+    "id": "shoothouse",
+    "compared": 64,
+    "beforeMedian": 0.11683300000004238,
+    "afterMedian": 0.09362500000042928,
+    "beforeP95": 0.14554099999986647,
+    "afterP95": 0.10783400000036636
+  }
+]

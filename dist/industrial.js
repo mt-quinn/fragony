@@ -97,7 +97,7 @@ function material(family,art=false){
 // Exact source triangles, recolored by their physical district and material role.
 // Only visual attributes change; no simplification or shifted original geometry.
 export function industrialGroups(map){
- if(map.renderChunks)return map.renderChunks.map(chunk=>{const geometry=new THREE.BufferGeometry();for(const [name,a]of Object.entries(chunk.attributes))geometry.setAttribute(name,new THREE.BufferAttribute(a.array,a.size,a.normalized));if(chunk.index)geometry.setIndex(new THREE.BufferAttribute(chunk.index.array,1));geometry.computeBoundingSphere();geometry.userData.sourceBVH=chunk.bvh;return{family:chunk.family,geometry,material:material(chunk.family,map.id==='shoothouse')}});
+ if(map.renderChunks)return map.renderChunks.map(chunk=>{const geometry=new THREE.BufferGeometry();for(const [name,a]of Object.entries(chunk.attributes))geometry.setAttribute(name,new THREE.BufferAttribute(a.array,a.size,a.normalized));if(chunk.index)geometry.setIndex(new THREE.BufferAttribute(chunk.index.array,1));geometry.computeBoundingSphere();geometry.userData.sourceBVH=chunk.bvh;geometry.userData.drawIndex=chunk.drawIndex;return{family:chunk.family,geometry,material:material(chunk.family,map.id==='shoothouse')}});
  const buckets=new Map(),color=new THREE.Color(),chunked=!!sourceDistricts[map.id];
  for(const [kind,g]of Object.entries(map.groups)){
   if(kind==='water')continue;

@@ -18696,6 +18696,21 @@ class WebGLRenderer {
 		 */
 		this.copyTextureToTexture = function ( srcTexture, dstTexture, srcRegion = null, dstPosition = null, srcLevel = 0, dstLevel = null ) {
 
+			// Fragony: the native 2D depth blit does not use pixel-unpack state.
+			// Avoid synchronous getParameter calls on every cached-shadow frame.
+			if ( srcTexture.isDepthTexture && dstTexture.isDepthTexture && srcRegion === null && dstPosition === null && srcLevel === 0 && ( dstLevel === null || dstLevel === 0 ) && ! srcTexture.isDataArrayTexture && ! dstTexture.isDataArrayTexture && ! srcTexture.isCubeTexture && ! dstTexture.isCubeTexture && ! srcTexture.isData3DTexture && ! dstTexture.isData3DTexture ) {
+
+				const sourceTarget = properties.get( srcTexture ).__renderTarget;
+				const destinationTarget = properties.get( dstTexture ).__renderTarget;
+				state.bindFramebuffer( _gl.READ_FRAMEBUFFER, properties.get( sourceTarget ).__webglFramebuffer );
+				state.bindFramebuffer( _gl.DRAW_FRAMEBUFFER, properties.get( destinationTarget ).__webglFramebuffer );
+				_gl.blitFramebuffer( 0, 0, srcTexture.image.width, srcTexture.image.height, 0, 0, dstTexture.image.width, dstTexture.image.height, _gl.DEPTH_BUFFER_BIT, _gl.NEAREST );
+				state.bindFramebuffer( _gl.READ_FRAMEBUFFER, null );
+				state.bindFramebuffer( _gl.DRAW_FRAMEBUFFER, null );
+				return;
+
+			}
+
 			// support the previous signature with just a single dst mipmap level
 			if ( dstLevel === null ) {
 

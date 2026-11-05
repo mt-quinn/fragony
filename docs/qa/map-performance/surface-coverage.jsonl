@@ -1,0 +1,10 @@
+{"id":"rust","original":31219,"drawn":25720,"probes":26628,"maxError":0.024229238267763527,"worst":[]}
+{"id":"shipment","original":150889,"drawn":92146,"probes":42934,"maxError":0.022971322167031884,"worst":[]}
+{"id":"nuketown","original":311907,"drawn":226474,"probes":222415,"maxError":0.024640050828498183,"worst":[]}
+{"id":"killhouse","original":135855,"drawn":106587,"probes":50235,"maxError":0.024080998313039666,"worst":[]}
+{"id":"vacant","original":626291,"drawn":405908,"probes":171257,"maxError":0.024879529202326552,"worst":[]}
+{"id":"showdown","original":342549,"drawn":248608,"probes":197763,"maxError":0.024723486308870984,"worst":[]}
+{"id":"firingrange","original":751361,"drawn":484509,"probes":312298,"maxError":0.024973539067795248,"worst":[]}
+{"id":"hijacked","original":275813,"drawn":193271,"probes":199234,"maxError":0.02489995872231619,"worst":[]}
+{"id":"summit","original":1022161,"drawn":634631,"probes":208601,"maxError":0.024521314986845292,"worst":[]}
+{"id":"shoothouse","original":1961899,"drawn":1279345,"probes":222128,"maxError":0.0240968402446911,"worst":[]}

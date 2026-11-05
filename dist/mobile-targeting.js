@@ -1,3 +1,4 @@
+import {occluded} from './world-query.js';
 import * as THREE from './vendor/three.module.js';
 
 // Acquisition-only padding in world meters. Actual shot geometry stays unchanged.
@@ -9,8 +10,9 @@ export function autoFirePadding(weapon){
  return AUTO_AIM_PADDING+blast;
 }
 const inverse=new THREE.Matrix4(),localRay=new THREE.Ray(),box=new THREE.Box3(),point=new THREE.Vector3(),surfacePoint=new THREE.Vector3(),direction=new THREE.Vector3(),sight=new THREE.Raycaster();
+sight.firstHitOnly=true;const candidates=[],pool=[];
 export function nearbyAutoTarget(aimRay,actorMeshes,worldMeshes,padding=AUTO_AIM_PADDING){
- let best=null;
+ candidates.length=0;try{
  for(const mesh of actorMeshes){
   const bot=mesh.userData.bot;if(!bot||bot.dead||bot.hp<=0||!mesh.geometry)continue;
   const geometry=mesh.geometry;if(!geometry.boundingBox)geometry.computeBoundingBox();if(!geometry.boundingBox||geometry.boundingBox.isEmpty())continue;
@@ -22,12 +24,17 @@ export function nearbyAutoTarget(aimRay,actorMeshes,worldMeshes,padding=AUTO_AIM
   // Large blast margins must remain round rather than acquiring the diagonal
   // corners of the expanded box, which can lie outside the actual blast radius.
   if(aimRay.ray.distanceToPoint(surfacePoint)>padding+1e-6)continue;
-  const distance=surfacePoint.distanceTo(aimRay.ray.origin);if(distance<aimRay.near||distance>aimRay.far||best&&distance>=best.distance)continue;
-  // Check the real surface, not the enlarged shell: padding must never reach through a wall.
-  direction.copy(surfacePoint).sub(aimRay.ray.origin).normalize();sight.set(aimRay.ray.origin,direction);sight.near=0;sight.far=Math.max(0,distance-.002);
-  if(sight.intersectObjects(worldMeshes,false).length)continue;
-  const obstruction=sight.intersectObjects(actorMeshes,false).find(hit=>hit.object.userData.bot!==bot);if(obstruction)continue;
-  best={bot,distance};
+  const distance=surfacePoint.distanceTo(aimRay.ray.origin);if(distance<aimRay.near||distance>aimRay.far)continue;
+  let candidate=pool[candidates.length];if(!candidate){candidate={point:new THREE.Vector3(),bot:null,distance:0};pool.push(candidate);}candidate.point.copy(surfacePoint);candidate.bot=bot;candidate.distance=distance;candidates.push(candidate);
  }
- return best;
+ // Test nearest candidates first. Once one is visible, no farther body part
+ // can replace it; dense inward views no longer cast redundant visibility rays.
+ candidates.sort((a,b)=>a.distance-b.distance);
+ for(const candidate of candidates){
+  direction.copy(candidate.point).sub(aimRay.ray.origin).normalize();sight.set(aimRay.ray.origin,direction);sight.near=0;sight.far=Math.max(0,candidate.distance-.002);
+  if(occluded(sight,worldMeshes)||occluded(sight,actorMeshes,candidate.bot))continue;
+  return {bot:candidate.bot,distance:candidate.distance};
+ }
+ return null;
+ }finally{for(const candidate of candidates)candidate.bot=null;candidates.length=0;}
 }

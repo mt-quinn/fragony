@@ -1,0 +1,285 @@
+{
+  "rows": [
+    {
+      "id": "killhouse",
+      "enabled": true,
+      "map": "killhouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 109,
+        "textures": 40
+      },
+      "draws": 1421,
+      "counts": {
+        "calls": 203,
+        "triangles": 151801
+      },
+      "cpu": {
+        "median": 2.5,
+        "p95": 2.8000001907348633
+      },
+      "gpu": {
+        "median": 12.351916,
+        "p95": 19.537874
+      },
+      "interval": {
+        "median": 16.700000047683716,
+        "p95": 18.699999809265137
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "killhouse",
+      "enabled": false,
+      "map": "killhouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 109,
+        "textures": 40
+      },
+      "draws": 3576,
+      "counts": {
+        "calls": 447,
+        "triangles": 149593
+      },
+      "cpu": {
+        "median": 2.799999952316284,
+        "p95": 3.0999999046325684
+      },
+      "gpu": {
+        "median": 12.326749,
+        "p95": 19.063291
+      },
+      "interval": {
+        "median": 16.600000143051147,
+        "p95": 18.700000047683716
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "killhouse",
+      "enabled": false,
+      "map": "killhouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 109,
+        "textures": 40
+      },
+      "draws": 3129,
+      "counts": {
+        "calls": 447,
+        "triangles": 149593
+      },
+      "cpu": {
+        "median": 4.299999952316284,
+        "p95": 4.599999904632568
+      },
+      "gpu": {
+        "median": 12.810874,
+        "p95": 17.717833
+      },
+      "interval": {
+        "median": 16.700000047683716,
+        "p95": 18.5
+      },
+      "frames": 73,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "killhouse",
+      "enabled": true,
+      "map": "killhouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 43,
+      "memory": {
+        "geometries": 109,
+        "textures": 40
+      },
+      "draws": 1421,
+      "counts": {
+        "calls": 203,
+        "triangles": 151801
+      },
+      "cpu": {
+        "median": 3.9000000953674316,
+        "p95": 4.400000095367432
+      },
+      "gpu": {
+        "median": 13.025749,
+        "p95": 19.533416
+      },
+      "interval": {
+        "median": 16.700000047683716,
+        "p95": 18.59999990463257
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "shoothouse",
+      "enabled": true,
+      "map": "shoothouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 142,
+      "memory": {
+        "geometries": 119,
+        "textures": 40
+      },
+      "draws": 1603,
+      "counts": {
+        "calls": 229,
+        "triangles": 1298437
+      },
+      "cpu": {
+        "median": 4.200000047683716,
+        "p95": 4.699999809265137
+      },
+      "gpu": {
+        "median": 21.189833,
+        "p95": 22.944791
+      },
+      "interval": {
+        "median": 16.700000047683716,
+        "p95": 18.399999856948853
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "shoothouse",
+      "enabled": false,
+      "map": "shoothouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 142,
+      "memory": {
+        "geometries": 119,
+        "textures": 40
+      },
+      "draws": 3591,
+      "counts": {
+        "calls": 513,
+        "triangles": 1298437
+      },
+      "cpu": {
+        "median": 4.200000047683716,
+        "p95": 5
+      },
+      "gpu": {
+        "median": 21.600499,
+        "p95": 22.933874
+      },
+      "interval": {
+        "median": 16.799999952316284,
+        "p95": 18.5
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "shoothouse",
+      "enabled": false,
+      "map": "shoothouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 142,
+      "memory": {
+        "geometries": 119,
+        "textures": 40
+      },
+      "draws": 3591,
+      "counts": {
+        "calls": 513,
+        "triangles": 1298437
+      },
+      "cpu": {
+        "median": 4.599999904632568,
+        "p95": 5
+      },
+      "gpu": {
+        "median": 20.881541,
+        "p95": 22.417916
+      },
+      "interval": {
+        "median": 16.700000047683716,
+        "p95": 18.59999990463257
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    },
+    {
+      "id": "shoothouse",
+      "enabled": true,
+      "map": "shoothouse",
+      "mode": "probe",
+      "ready": true,
+      "meshes": 142,
+      "memory": {
+        "geometries": 119,
+        "textures": 40
+      },
+      "draws": 1603,
+      "counts": {
+        "calls": 229,
+        "triangles": 1298437
+      },
+      "cpu": {
+        "median": 4.400000095367432,
+        "p95": 4.800000190734863
+      },
+      "gpu": {
+        "median": 21.121583,
+        "p95": 22.279375
+      },
+      "interval": {
+        "median": 16.700000047683716,
+        "p95": 17.799999952316284
+      },
+      "frames": 72,
+      "pixels": [
+        1398,
+        645
+      ],
+      "glError": 0
+    }
+  ],
+  "errors": []
+}

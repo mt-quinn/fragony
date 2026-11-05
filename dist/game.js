@@ -14,6 +14,7 @@ import {FireControl,FeedSystem,distanceDamage,reloadDuration} from './weapon-cyc
 import {traceCartridges} from './ballistics.js';
 import {nearbyAutoTarget,autoFirePadding,AUTO_AIM_PADDING} from './mobile-targeting.js';
 import {MobileController,wantsTouch,MOBILE_DEFAULTS} from './mobile.js';
+import {closestHit,occluded} from './world-query.js';
 import {BenchmarkRunner,openBenchmark,benchmarkReportHTML} from './graphics-benchmark.js';
 import {graphicsOptions,graphicsRenderOptions,graphicsControlsHTML,EFFECT_PRESETS} from './graphics.js';
 import {drawMapFromBag,validMapRotation,rotationAfterPlayedMap} from './map-rotation.js';
@@ -83,6 +84,7 @@ let shotsFired=0;
 let health=BALANCE.playerHP,focus=100,focusRest=0,specialAttacks=[],ammo=30,reloading=0,shotTimer=0,slow=false,locked=false,mouseDown=false,yaw=0,pitch=0,vy=0,grounded=true,recoil=0,moveClock=0,elapsed=0,hitTime=0,respawnTime=0,toastTime=0,streakReady=false;
 for(const [key,fallback]of [['minimap',true],['minimapNorth',false]])if(typeof settings[key]!=='boolean')settings[key]=fallback;
 const playerPos=new THREE.Vector3(0,1.7,15),vel=new THREE.Vector3(),keys=new Set(),up=new THREE.Vector3(0,1,0),ray=new THREE.Raycaster(),aim=new THREE.Vector3(),tmp=new THREE.Vector3(),tmp2=new THREE.Vector3();
+ray.firstHitOnly=true;
 const gameAudio=new GameAudio();let muted=false,lastHUD=0,dragLook=false,stepDistance=0,reloadStage=0,reloadLength=0,hurtSoundCooldown=0,lastPointer=null;
 let spawnPoints=MAP.spawns,elevatorSystem;const arenaCache=new Map(),spawnHistory=new Map();
 const botNames=['CINDER','ROOK','VESPER','STATIC','BRICK'];
@@ -132,7 +134,7 @@ async function init(){
  scene.add(new THREE.HemisphereLight(0xf7f8f0,0x65717c,1.0));const sun=new THREE.DirectionalLight(0xfff2d6,2.8);sun.position.set(-24,52,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-57,right:57,top:57,bottom:-57,near:1,far:125});renderSun=sun;sun.shadow.mapSize.set(shadowSize(),shadowSize());sun.shadow.bias=-.003;sun.shadow.normalBias=.08;scene.add(sun);scene.traverse(o=>{if(o.isLight)o.layers.enable(1)});const weaponFill=new THREE.DirectionalLight(0xdde9ef,1.5);weaponFill.position.set(-2,3,1);weaponFill.layers.set(1);camera.add(weaponFill);camera.add(weaponFill.target);weaponFill.target.position.set(0,0,-1);arena=new THREE.Group();scene.add(arena);buildArena();buildNav();buildWeapon();previewRig=createDummy();previewDummy=previewRig.group;menuStage=new MenuStage(scene,previewRig,createDummy('smg'));prepareMenuStage();
  let last=performance.now();renderer.setAnimationLoop(now=>{if(benchmarkOverlay)return;if(benchmarkChild&&(!benchmarkRunner||!benchmarkRunner.frame(now)))return;updateAAStats(now);const dt=Math.min((now-last)/1000,.1);last=now;elapsed+=dt;mobile?.update(dt);if(document.hidden||mobile?.enabled&&!mobile.landscape&&mode!=='menu')return;if(mode==='inspect'){presentInspection(dt);return;}if(mode==='shop')return;if(mode==='play'&&locked)update(dt);else if(mode==='menu'){menuStage.present(camera,gameViewportSize().width,gameViewportSize().height,dt,settings.motion)}updateEffects(dt*(slow?BALANCE.worldSlow:1));arena.userData.healthBatches?.sync();frameRenderer.render(scene,camera,dt,slow,MAP.water||[]);drawSettingsPreview();if(bootPending)finishBoot();});
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();if(mode==='play')pause();mobile?.setFeedback('GRAPHICS PAUSED · RESTORING');});
- setBootProgress(96,'Preparing scene');bootPending=true;
+ setBootProgress(96,'Preparing scene');if(arena.userData.shaderWarmup)await arena.userData.shaderWarmup;bootPending=true;
  if(benchmarkChild)startBenchmarkChild();
  renderer.domElement.addEventListener('webglcontextrestored',()=>{frameRenderer?.dispose();frameRenderer=new FrameRenderer(renderer,scene,camera,renderOptions());if(mobile?.overlay==='pause')mobile.showPause();});
 }
@@ -145,7 +147,7 @@ function sizeRenderer(){
 function shadowSize(){return {off:512,low:512,medium:1024,high:2048}[settings.shadowQuality]||1024;}
 function applyGraphicsRendererSettings(){
  if(!renderer)return;renderer.shadowMap.enabled=settings.shadowQuality!=='off';const filter={hard:THREE.BasicShadowMap,pcf:THREE.PCFShadowMap,soft:THREE.PCFSoftShadowMap}[settings.shadowFilter];
- const changed=renderer.shadowMap.type!==filter;renderer.shadowMap.type=filter;renderer.toneMapping={cinematic:THREE.ACESFilmicToneMapping,neutral:THREE.NeutralToneMapping,none:THREE.NoToneMapping}[settings.toneMap];renderer.toneMappingExposure=settings.exposure;
+ const changed=renderer.shadowMap.type!==filter;if(changed&&scene)scene.traverse(o=>{for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])m.needsUpdate=true;});renderer.shadowMap.type=filter;renderer.toneMapping={cinematic:THREE.ACESFilmicToneMapping,neutral:THREE.NeutralToneMapping,none:THREE.NoToneMapping}[settings.toneMap];renderer.toneMappingExposure=settings.exposure;
  if(renderSun&&(changed||renderSun.shadow.mapSize.x!==shadowSize())){renderSun.shadow.mapSize.set(shadowSize(),shadowSize());renderSun.shadow.map?.dispose();renderSun.shadow.map=null;renderer.shadowMap.needsUpdate=true;}
  document.body.classList.toggle('graphics-no-grain',!settings.grain||(settings.pixelForge&&settings.pixelForgeIntensity>0));
 }
@@ -194,7 +196,7 @@ function syncTouchInputs(dt){
  if(mobileTargetClock<=0){
   mobileTargetClock=1/60;mobileTarget=null;mobileDistance=Infinity;mobileOnTarget=false;mobileAssisted=false;
   syncAimCamera();scene.updateMatrixWorld(true);camera.getWorldDirection(aim);ray.set(camera.position,aim);ray.far=90;
-  const actorMeshes=botHitMeshes(),hit=ray.intersectObjects([...worldMeshes,...actorMeshes],false)[0],b=hit?.object.userData.bot;
+  const actorMeshes=botHitMeshes(),hit=closestHit(ray,worldMeshes,actorMeshes),b=hit?.object.userData.bot;
   if(b&&!b.dead&&b.hp>0){mobileTarget=b.name+':'+b.lifeId;mobileDistance=hit.distance;mobileOnTarget=true;mobileAssisted=true;}
   if(!mobileTarget){const w=playerWeapon(),padding=autoFirePadding(w),nearby=nearbyAutoTarget(ray,actorMeshes,worldMeshes,padding);const proximity=nearby&&w.proximity&&nearby.distance>=w.arming&&ray.ray.distanceToPoint(nearby.bot.pos.clone().add(new THREE.Vector3(0,1,0)))<=w.proximity&&(!hit||hit.distance>=nearby.distance);const detonation=nearby&&padding>AUTO_AIM_PADDING?proximity||hit&&(!hit.object.userData.bot)&&hit.point.distanceTo(nearby.bot.pos.clone().add(new THREE.Vector3(0,1,0)))<w.blast&&blastVisible(hit.point.clone().addScaledVector(aim,-.025),nearby.bot.pos.clone().add(new THREE.Vector3(0,1,0))):true;if(nearby&&detonation){mobileTarget=nearby.bot.name+':'+nearby.bot.lifeId;mobileDistance=nearby.distance;mobileOnTarget=padding>AUTO_AIM_PADDING;}}
   // Slowdown only; never rotate aim or reveal a target through cover.
@@ -207,7 +209,7 @@ function syncTouchInputs(dt){
 
 function buildArena(){mobileAutoJump.reset();frameRenderer?.resetHistory();
  setArenaAtmosphere(scene,MAP);
- if(MAP.brushes)buildBrushMap(arena,MAP,blocks,worldMeshes);else buildTestworks(arena,MAP,blocks,worldMeshes);
+ if(MAP.brushes)buildBrushMap(arena,MAP,blocks,worldMeshes,renderer);else buildTestworks(arena,MAP,blocks,worldMeshes);
 
  for(const p of MAP.pads){const y=p.y||0,size=p.size||2.7;cube(p.x,y+.045,p.z,size,.09,size,0x182127);cube(p.x,y+.11,p.z,size*.815,.08,size*.815,0xd9ef45);const triangle=new THREE.Mesh(new THREE.ConeGeometry(.65,.07,3),mat(0x182127));triangle.position.set(p.x,y+.2,p.z);triangle.rotation.y=Math.atan2(p.landing.x-p.x,p.landing.z-p.z);arena.add(triangle);pickups.push({...p,kind:'pad',mesh:triangle,timer:0})}
  elevatorSystem=new ElevatorSystem(MAP.elevators||[],blocks);dressElevators(arena,elevatorSystem,worldMeshes);
@@ -223,14 +225,15 @@ function buildArena(){mobileAutoJump.reset();frameRenderer?.resetHistory();
 function changeArena(id){
  minimap?.reset();
  if(id===MAP.id&&arena.children.length)return;
- clearDeathView();for(const r of rockets)scene.remove(r.mesh);rockets=[];for(const e of effects)retireEffect(e);effects=[];
+ clearDeathView();frameRenderer?.actorBatches?.clear();for(const r of rockets)scene.remove(r.mesh);rockets=[];for(const e of effects)retireEffect(e);effects=[];
  if(arena.children.length){arenaCache.set(MAP.id,{arena,blocks,worldMeshes,pickups,elevatorSystem,navigation});scene.remove(arena)}
  // Bound retained GPU and source data as the larger roster is explored.
- while(arenaCache.size>(mobile?.enabled?0:1)){const key=[...arenaCache.keys()].find(k=>k!==id);if(!key)break;const old=arenaCache.get(key),geometries=new Set();old.arena.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==worldBoxGeo&&o.geometry!==sphereGeo)geometries.add(o.geometry);if(o.userData.arenaOwnedMaterial||o.material?.userData.arenaOwnedMaterial){o.material.map?.dispose();o.material.dispose();}});for(const g of geometries)g.dispose();arenaCache.delete(key);MAPS.find(m=>m.id===key)?.unload?.();}
+ while(arenaCache.size>(mobile?.enabled?0:1)){const key=[...arenaCache.keys()].find(k=>k!==id);if(!key)break;const old=arenaCache.get(key),geometries=new Set();old.arena.userData.staticShadowCache?.dispose();for(const m of old.arena.userData.mapOwnedMaterials||[])m.dispose();old.arena.traverse(o=>{if(o.isInstancedMesh||o.isBatchedMesh)o.dispose();if(o.geometry&&o.geometry!==boxGeo&&o.geometry!==worldBoxGeo&&o.geometry!==sphereGeo)geometries.add(o.geometry);if(o.userData.arenaOwnedMaterial||o.material?.userData.arenaOwnedMaterial){o.material.map?.dispose();o.material.dispose();}});for(const g of old.arena.userData.raycastGeometries||[])geometries.add(g);for(const g of geometries)g.dispose();arenaCache.delete(key);MAPS.find(m=>m.id===key)?.unload?.();}
  for(const b of bots){disposeToolModel(b.group);scene.remove(b.group)}bots=[];spawnHistory.clear();selectMap(id);spawnPoints=MAP.spawns;
  const cached=arenaCache.get(MAP.id);if(cached){arenaCache.delete(MAP.id);({arena,blocks,worldMeshes,pickups,elevatorSystem,navigation}=cached);navNodes=navigation.nodes;scene.add(arena)}
  else{arena=new THREE.Group();scene.add(arena);blocks=[];worldMeshes=[];pickups=[];buildArena();buildNav()}
  setArenaAtmosphere(scene,MAP);elevatorSystem.reset();scene.updateMatrixWorld(true);
+ if(renderer?.compileAsync&&!arena.userData.shaderWarmup)arena.userData.shaderWarmup=(frameRenderer?.warmup?frameRenderer.warmup(arena,scene,camera):renderer.compileAsync(arena,camera,scene)).catch(error=>console.warn('Map shader preparation failed',error));
  if(MAP.loadRender&&MAP.id!=='reservoir'){delete MAP.renderChunks;delete MAPS.find(m=>m.id===MAP.id).renderChunks;}
  if(MAP.load){MAP.groups={};const entry=MAPS.find(m=>m.id===MAP.id);if(entry){entry.groups={};delete entry.renderChunks;}delete MAP.renderChunks;}
 }
@@ -360,7 +363,7 @@ function findPath(from,to){return findRoute(navigation,from,to)}
 
 function move(pos,dx,dz,feet,r=.4,height=1.7){if(!blocked(pos.x+dx,pos.z,feet,r,height))pos.x+=dx;if(!blocked(pos.x,pos.z+dz,feet,r,height))pos.z+=dz}
 function floorAt(x,z,feet){return surfaceAt(blocks,x,z,feet)}
-function visible(a,b){tmp2.copy(b).sub(a);const distance=tmp2.length();ray.set(a,tmp2.normalize());ray.far=distance;return ray.intersectObjects(worldMeshes,false).length===0}
+function visible(a,b){tmp2.copy(b).sub(a);const distance=tmp2.length();ray.set(a,tmp2.normalize());ray.far=distance;return !occluded(ray,worldMeshes)}
 function surfaceNormal(hit){
  const normal=new THREE.Vector3(),attribute=hit.object.geometry?.attributes.normal;
  // Imported BSP winding is reversed; its authored vertex normals point out of the solid.
@@ -369,7 +372,7 @@ function surfaceNormal(hit){
 }
 function blastVisible(a,b){
  tmp2.copy(b).sub(a);const distance=tmp2.length();if(distance<.001)return true;ray.set(a,tmp2.normalize());ray.near=0;ray.far=Math.max(0,distance-.001);
- return !ray.intersectObjects(worldMeshes,false).some(hit=>hit.distance>.003||surfaceNormal(hit).dot(ray.ray.direction)<-1e-5);
+ ray.firstHitOnly=false;try{return !ray.intersectObjects(worldMeshes,false).some(hit=>hit.distance>.003||surfaceNormal(hit).dot(ray.ray.direction)<-1e-5);}finally{ray.firstHitOnly=true;}
 }
 
 function readMapRotation(){try{return JSON.parse(localStorage.getItem('dh-map-rotation'))}catch{return null}}
@@ -519,7 +522,7 @@ function arcTrail(start,end,player=false){
 function burst(pos,c,n){for(let i=0;i<n;i++){const m=new THREE.Mesh(sphereGeo,mat(c));m.position.copy(pos);m.scale.setScalar(.05+Math.random()*.08);scene.add(m);addEffect({mesh:m,life:.25+Math.random()*.3,max:.55,vel:new THREE.Vector3((Math.random()-.5)*6,Math.random()*5,(Math.random()-.5)*6)})}}
 function stepAttachmentRocket(r,dt){
  const w=r.mods.spec,old=r.firstStep?r.launchOrigin.clone():r.mesh.position.clone();r.firstStep=false;r.life-=dt;r.mesh.position.addScaledVector(r.vel,dt);const pos=r.mesh.position,delta=pos.clone().sub(old),length=delta.length();
- ray.set(old,delta.normalize());ray.near=0;ray.far=length+.005;const actors=r.owner?rivalTargets(r.owner):botHitMeshes().filter(m=>!m.userData.bot?.dead&&m.userData.bot?.hp>0),hit=length>0?ray.intersectObjects([...worldMeshes,...actors],false)[0]:null;
+ ray.set(old,delta.normalize());ray.near=0;ray.far=length+.005;const actors=r.owner?rivalTargets(r.owner):botHitMeshes().filter(m=>!m.userData.bot?.dead&&m.userData.bot?.hp>0),hit=length>0?closestHit(ray,worldMeshes,actors):null;
  let proximity=false;if(w.proximity&&pos.distanceTo(r.origin)>=w.arming)proximity=[...bots,...(r.owner&&respawnTime<=0?[playerCombatActor()]:[])].some(b=>b!==r.owner&&!b.dead&&b.hp>0&&b.pos.clone().add(new THREE.Vector3(0,1,0)).distanceTo(pos)<=w.proximity&&visible(pos,b.pos.clone().add(new THREE.Vector3(0,1,0))));
  const wall=hit&&!hit.object.userData.bot;
  if(wall&&r.bounces>0&&r.life>0){const normal=surfaceNormal(hit);r.vel.reflect(normal);pos.copy(hit.point).addScaledVector(normal,.04);r.bounces--;playSfx('bolt',{pos,volume:.25});return false;}
@@ -534,7 +537,7 @@ function stepAttachmentRocket(r,dt){
 function stepLegacyRocket(r,dt){
  const old=r.firstStep?r.launchOrigin.clone():r.mesh.position.clone();r.firstStep=false;r.life-=dt;r.mesh.position.addScaledVector(r.vel,dt);
  const pos=r.mesh.position,delta=pos.clone().sub(old),length=delta.length();ray.set(old,delta.normalize());ray.near=0;ray.far=length+.002;
- const actors=botHitMeshes().filter(m=>m.userData.bot!==r.owner&&!m.userData.bot?.dead&&m.userData.bot?.hp>0),hit=length>0?ray.intersectObjects([...worldMeshes,...actors],false)[0]:null;
+ const actors=botHitMeshes().filter(m=>m.userData.bot!==r.owner&&!m.userData.bot?.dead&&m.userData.bot?.hp>0),hit=length>0?closestHit(ray,worldMeshes,actors):null;
  let point=hit?hit.point.clone():null,normal=hit?surfaceNormal(hit):null;
  if(r.owner&&respawnTime<=0){const playerBox=new THREE.Box3(new THREE.Vector3(playerPos.x-.35,playerPos.y-eyeHeight+.15,playerPos.z-.35),new THREE.Vector3(playerPos.x+.35,playerPos.y+.12,playerPos.z+.35)),p=ray.ray.intersectBox(playerBox,new THREE.Vector3());if(p&&p.distanceTo(old)<=length&&(!point||p.distanceToSquared(old)<point.distanceToSquared(old))){point=p;normal=r.vel.clone().normalize().negate();}}
  if(point||r.life<=0||pos.y<.1){explode(point?point.addScaledVector(normal,.025):pos,r.owner,r.damageScale,r.mods);return true;}
@@ -560,7 +563,7 @@ function present(dt){
  viewHeight=grounded?THREE.MathUtils.damp(viewHeight,playerPos.y,22,dt):playerPos.y;syncAimCamera();updateDeathView(dt);
  const ads=weaponMotion.ads,k=weaponMotion.kick.x,land=weaponMotion.land.x,m=settings.motion,phase=playerSlide.active?0:moveClock*1.7;
  const reloadP=reloading>0?1-reloading/reloadLength:0,reloadPose=Math.sin(reloadP*Math.PI),pump=equipped===5?Math.sin(clamp((weaponMotion.shotAge-.12)/.25,0,1)*Math.PI):0;
- ray.set(camera.position,camera.getWorldDirection(aim));ray.far=1.4;nearWall=THREE.MathUtils.damp(nearWall,ray.intersectObjects(worldMeshes,false)[0]?1:0,12,dt);
+ ray.set(camera.position,camera.getWorldDirection(aim));ray.far=1.4;nearWall=THREE.MathUtils.damp(nearWall,closestHit(ray,worldMeshes)?1:0,12,dt);
  weaponGroup.position.set(.31*(1-ads)-(weaponGroup.userData.sightX||0)*.85*ads+Math.sin(phase*.5)*.012*m*(1-ads)-weaponMotion.swayX*m,-.3+(.3-weaponGroup.userData.opticY*.85)*ads+Math.abs(Math.cos(phase))*.012*m*(1-ads)-land*.18-k*h.lift-reloadPose*(weaponGroup.userData.nailer?.065:.055)-weaponMotion.equip*.5,-.5+k*h.back+nearWall*.28);
  weaponGroup.rotation.set(k*h.rx-reloadPose*(weaponGroup.userData.nailer?.24:.25)+nearWall*.55+land*.12, k*h.ry+weaponMotion.swayX*m, k*h.roll+reloadPose*h.reloadRoll);
  if(weaponGroup.userData.nailer)animateNailer(weaponGroup.userData.nailer,{reload:reloadP,reloading:reloading>0&&w.feedMode!=='individual',shotAge:weaponMotion.shotAge,ammo});
@@ -633,7 +636,7 @@ function createOpponentAI(){
   },
   fire:fireBotWeapon,
   equip:(b,weapon)=>{const gun=buildDummyGun(b.parts.rightArm,weapon);if(b.rival){const g=ALL_WEAPONS.indexOf(weapon),model=gun.children[0];applyAttachmentModels(model,g,fitted(g,b.rival.builds));}gun.traverse(m=>{m.userData.bot=b;m.userData.part='rightArm'})},
-  telegraph:(b,point,dt)=>{if(opponentAI.clock-(b.telegraphSoundAt??-Infinity)>.7){b.telegraphSoundAt=opponentAI.clock;playSfx('charge',{pos:b.pos.clone().add(new THREE.Vector3(0,1.3,0)),volume:.4,curve:'weapon',bus:'world',priority:3});}b.laserIn=(b.laserIn||0)-dt;if(b.laserIn<=0){const origin=b.pos.clone().add(new THREE.Vector3(0,1.3,0)),end=new THREE.Vector3(point.x,point.y,point.z);const dir=end.clone().sub(origin).normalize();ray.set(origin,dir);ray.far=origin.distanceTo(end);const hit=ray.intersectObjects(worldMeshes,false)[0];trail(origin,hit?.point||end,0xd9ef45,.12,.012);b.laserIn=.1}},
+  telegraph:(b,point,dt)=>{if(opponentAI.clock-(b.telegraphSoundAt??-Infinity)>.7){b.telegraphSoundAt=opponentAI.clock;playSfx('charge',{pos:b.pos.clone().add(new THREE.Vector3(0,1.3,0)),volume:.4,curve:'weapon',bus:'world',priority:3});}b.laserIn=(b.laserIn||0)-dt;if(b.laserIn<=0){const origin=b.pos.clone().add(new THREE.Vector3(0,1.3,0)),end=new THREE.Vector3(point.x,point.y,point.z);const dir=end.clone().sub(origin).normalize();ray.set(origin,dir);ray.far=origin.distanceTo(end);const hit=closestHit(ray,worldMeshes);trail(origin,hit?.point||end,0xd9ef45,.12,.012);b.laserIn=.1}},
   collect:(b,brain)=>{for(const p of pickups){if(p.kind!=='health'||p.timer>0||Math.hypot(b.pos.x-p.x,b.pos.z-p.z)>(p.amount===5?.65:1.1)||Math.abs(b.pos.y-p.y)>1.1)continue;const hp=healthAfterPickup(b.hp,b.maxHealth||BALANCE.botHP,p,BALANCE.botHP);if(hp===b.hp)continue;healBot(b,hp);p.timer=p.respawn;p.mesh.visible=false;brain.thinkIn=0;opponentAI.stats.pickups++}},
   animate:(b,brain,dt)=>{
    animateDummy(b,brain,dt,floorAt);
@@ -682,7 +685,7 @@ function fireBotWeapon(b,point,w){
  const dir=aimPoint.sub(origin).normalize(),hits=new Map();let playerHits=0,playerHead=false,nearShot=null;const playerParts=[];
  for(let i=0;i<(w.pellets||1);i++){
   const shot=dir.clone().add(new THREE.Vector3((Math.random()-.5)*w.spread,(Math.random()-.5)*w.spread,(Math.random()-.5)*w.spread)).normalize();ray.set(origin,shot);ray.far=w.range;
-  const hit=ray.intersectObjects([...worldMeshes,...targets],false)[0],playerPoint=respawnTime<=0&&opponentAI.clock-playerSpawnAt>=opponentAI.tuning.fairness.spawnGrace?ray.ray.intersectBox(playerBox,new THREE.Vector3()):null;
+  const hit=closestHit(ray,worldMeshes,targets),playerPoint=respawnTime<=0&&opponentAI.clock-playerSpawnAt>=opponentAI.tuning.fairness.spawnGrace?ray.ray.intersectBox(playerBox,new THREE.Vector3()):null;
   const pd=playerPoint?origin.distanceTo(playerPoint):Infinity,hitDistance=hit?origin.distanceTo(hit.point):Infinity;let end=origin.clone().addScaledVector(shot,w.range);
   if(pd<=w.range&&pd<hitDistance){playerHits++;const part=bodyPartAt(playerPoint,playerPos,yaw,eyeHeight);playerParts.push({part,damage:bodyDamage(w.damage,part)});playerHead=playerHead||part==='head';end=playerPoint}else if(hit){end=hit.point;const victim=hit.object.userData.bot;if(victim){const head=hit.object.userData.part==='head',entry=hits.get(victim)||{damage:0,headDamage:0,part:hit.object.userData.part,point:hit.point,parts:[]};const damage=bodyDamage(w.damage,hit.object.userData.part);entry.parts.push({part:hit.object.userData.part,damage});entry.damage+=damage;if(head){entry.headDamage+=damage;entry.part='head'}hits.set(victim,entry)}else impactEffect(hit,w.type==='rail'?2:1)}
   if(respawnTime<=0&&opponentAI.clock-playerSpawnAt>=opponentAI.tuning.fairness.spawnGrace){const near=nearMissSegment(origin,end,playerPos,1.5,crouched?.35:.65);if(near&&(!nearShot||near.distance<nearShot.distance))nearShot=near}

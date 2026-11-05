@@ -11,7 +11,7 @@ let complete,prepared=[],shots=0;
 const runner=new BenchmarkRunner({prepare:async scene=>prepared.push(scene.map),progress(){},stage(){shots++;},metrics:()=>({shots,effects:20}),complete:result=>complete=result,error:message=>{throw Error(message);}},{warmup:20,sample:50,scenes:BENCHMARK_SCENES});
 await runner.next();let now=0;
 while(!runner.done){if(runner.loading)await Promise.resolve();else{runner.frame(now);now+=10;}}
-assert.equal(prepared.length,6);assert.equal(complete.length,6);assert.equal(new Set(prepared).size,3);assert.ok(complete.every(r=>r.frames>=4&&r.shots>0&&r.peakEffects===20));
+assert.ok(prepared.includes('killhouse')&&prepared.includes('shoothouse'),'benchmark includes the dense COD maps');assert.equal(prepared.length,6);assert.equal(complete.length,6);assert.equal(new Set(prepared).size,3);assert.ok(complete.every(r=>r.frames>=4&&r.shots>0&&r.peakEffects===20));
 const report=benchmarkReportHTML({date:new Date().toISOString(),summary:'2× MSAA',width:640,height:360,settings:s,results:complete});assert.ok(report.includes('95th'));assert.ok(report.includes('Crossfire'));assert.ok(report.includes('Explosions'));
 const h=createGameHarness();h.run(`
 camera=new THREE.PerspectiveCamera();const old=graphicsOptions(settings);Object.assign(settings,{resolutionScale:.5,shadowQuality:'off',aoQuality:'off',msaa:4,aaFilter:'smaa'});

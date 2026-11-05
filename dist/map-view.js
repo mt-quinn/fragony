@@ -1,13 +1,35 @@
 import {MeshBVH,acceleratedRaycast,CENTER} from './vendor/three-mesh-bvh.module.js';
 import {industrialGroups,dressIndustrialArena,industrialDistricts} from './industrial.js';
+import {optimizeMapMaterial} from './map-material-performance.js';
+import {DETAIL_MAPS} from './maps/map-detail.js';
+import {spatialMapBatches,compactSurface} from './map-batches.js';
 import {createWaterSurface} from './water.js';
 import * as THREE from './vendor/three.module.js';
 // Retained BSP surfaces use our material palette, rather than imported game art.
-export function buildBrushMap(arena,map,blocks,worldMeshes){
+export function buildBrushMap(arena,map,blocks,worldMeshes,renderer=null){
  blocks.push(...map.brushes.map(b=>({...b})));
  if(map.brushes.triangleCollision)blocks.triangleCollision=map.brushes.triangleCollision;
  const industrial=industrialDistricts(map.id).length>0;
- if(industrial){for(const {family,geometry,material}of industrialGroups(map)){const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=!['glass','light','fence'].includes(family.split('~')[0].split('@')[0]);mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh,true);worldMeshes.push(mesh);}}
+ if(industrial){
+  const surfaces=industrialGroups(map),batched=surfaces.length>64&&!renderer?.userData?.legacyMapRendering&&DETAIL_MAPS.has(map.id)&&renderer?.extensions?.has('WEBGL_multi_draw'),visuals=[];
+  arena.userData.raycastGeometries=[];arena.userData.mapOwnedMaterials=new Set();const optimized=new Map();
+  const paint=m=>{if(batched||!DETAIL_MAPS.has(map.id)||renderer?.userData?.legacyMapRendering)return m;if(!optimized.has(m)){const next=optimizeMapMaterial(m);optimized.set(m,next);arena.userData.mapOwnedMaterials.add(next);}return optimized.get(m);};
+  for(const {family,geometry,material}of surfaces){
+   const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=!['glass','light','fence'].includes(family.split('~')[0].split('@')[0]);mesh.receiveShadow=true;mesh.updateMatrix();mesh.matrixAutoUpdate=false;
+   let draw=geometry;
+   if(geometry.userData.drawIndex)draw=batched?geometry:compactSurface(geometry,geometry.userData.drawIndex);
+   if(batched&&geometry.userData.drawIndex){draw=new THREE.BufferGeometry();for(const [name,a]of Object.entries(geometry.attributes))draw.setAttribute(name,a);draw.setIndex(new THREE.BufferAttribute(geometry.userData.drawIndex,1));draw.computeBoundingSphere();}
+   visuals.push({family,geometry:draw,material});
+   if((!batched||material.transparent)&&draw===geometry) {mesh.material=paint(material);arena.add(mesh);}
+   else{mesh.userData.raycastOnly=true;arena.userData.raycastGeometries.push(geometry);if(!batched||material.transparent){const visual=new THREE.Mesh(draw,paint(material));visual.castShadow=mesh.castShadow;visual.receiveShadow=true;visual.updateMatrix();visual.matrixAutoUpdate=false;arena.add(visual);}}
+   spatialRaycast(mesh,true);worldMeshes.push(mesh);
+  }
+  if(batched){arena.add(...spatialMapBatches(visuals));for(let i=0;i<visuals.length;i++)if(visuals[i].geometry!==surfaces[i].geometry&&!visuals[i].material.transparent)visuals[i].geometry.dispose();}
+  // Detached originals are exact ray geometry. Color is visual-only; opaque
+  // hit tests don't need UVs. The game's descriptor drops its source chunks
+  // after construction, so these unused buffers can now be reclaimed.
+  for(const mesh of worldMeshes)if(mesh.userData.raycastOnly){mesh.geometry.deleteAttribute('color');if(!mesh.material.userData.alphaAt)mesh.geometry.deleteAttribute('uv');delete mesh.geometry.userData.drawIndex;}
+ }
  else{
  for(const [kind,g] of Object.entries(map.groups)){
   if(kind==='water')continue;
@@ -18,6 +40,7 @@ export function buildBrushMap(arena,map,blocks,worldMeshes){
   const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=kind!=='glass'&&kind!=='water'&&kind!=='light';mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh);if(kind!=='water')worldMeshes.push(mesh);
  }
  }
+ arena.userData.staticShadowMeshes=arena.children.filter(o=>o.isMesh&&o.castShadow);
  for(const volume of map.water||[])arena.add(createWaterSurface(volume));
  if(industrial){
   const lights=map.id==='reservoir'?[[0,39,-32],[0,39,32]]:(map.lights||[]).slice(0,2).map(l=>[l.x,l.y,l.z]);
@@ -63,7 +86,7 @@ export function dressElevators(arena,system,worldMeshes){
 // Render each material in one draw, but ray-test small spatial leaves. Original
 // BSP rooms should not make every visibility test scan every triangle in the map.
 function spatialRaycast(mesh,accelerated=false){
- if(accelerated){mesh.geometry.boundsTree=mesh.geometry.userData.sourceBVH?MeshBVH.deserialize(mesh.geometry.userData.sourceBVH,mesh.geometry,{setIndex:false}):new MeshBVH(mesh.geometry,{strategy:CENTER,targetLeafSize:12,indirect:true,verbose:false});delete mesh.geometry.userData.sourceBVH;mesh.raycast=(caster,hits)=>{const start=hits.length;acceleratedRaycast.call(mesh,caster,hits);if(mesh.material.userData.alphaAt)for(let i=hits.length-1;i>=start;i--)if(hits[i].uv&&!mesh.material.userData.alphaAt(hits[i].uv))hits.splice(i,1);};return;}
+ if(accelerated){mesh.geometry.boundsTree=mesh.geometry.userData.sourceBVH?MeshBVH.deserialize(mesh.geometry.userData.sourceBVH,mesh.geometry,{setIndex:false}):new MeshBVH(mesh.geometry,{strategy:CENTER,targetLeafSize:12,indirect:true,verbose:false});delete mesh.geometry.userData.sourceBVH;mesh.raycast=(caster,hits)=>{const start=hits.length,first=caster.firstHitOnly;if(mesh.material.userData.alphaAt)caster.firstHitOnly=false;try{acceleratedRaycast.call(mesh,caster,hits);}finally{caster.firstHitOnly=first;}if(mesh.material.userData.alphaAt)for(let i=hits.length-1;i>=start;i--)if(hits[i].uv&&!mesh.material.userData.alphaAt(hits[i].uv))hits.splice(i,1);};return;}
  const position=mesh.geometry.attributes.position,buckets=new Map();
  for(let i=0;i<position.count;i+=3){const x=(position.getX(i)+position.getX(i+1)+position.getX(i+2))/3,z=(position.getZ(i)+position.getZ(i+1)+position.getZ(i+2))/3,key=Math.floor(x/10)+','+Math.floor(z/10);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(i,i+1,i+2)}
  const leaves=[];for(const indices of buckets.values()){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',position);for(const name of ['normal','uv','uv1'])if(mesh.geometry.attributes[name])geometry.setAttribute(name,mesh.geometry.attributes[name]);geometry.setIndex(indices);geometry.boundingBox=new THREE.Box3();const point=new THREE.Vector3();for(const i of indices)geometry.boundingBox.expandByPoint(point.fromBufferAttribute(position,i));geometry.boundingSphere=geometry.boundingBox.getBoundingSphere(new THREE.Sphere());const leaf=new THREE.Mesh(geometry,mesh.material);leaf.matrixWorld=mesh.matrixWorld;leaves.push(leaf)}

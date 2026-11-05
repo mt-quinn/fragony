@@ -13,7 +13,7 @@ for(const quality of [{},...Object.values(MOBILE_QUALITY)])for(const antialias o
  const frame=new FrameRenderer(renderer,new THREE.Scene(),new THREE.PerspectiveCamera(),{...quality,antialias,msaa,aaFilter,taa});
  assert.equal(frame.world.samples,antialias?msaa:0);assert.equal(frame.gun.samples,antialias?msaa:0);
  assert.equal(!!frame.temporal,antialias&&taa);assert.equal(!!frame.spatial,antialias&&aaFilter!=='none');
- assert.equal(!!frame.world.depthTexture,antialias&&taa);
+ assert.ok(frame.world.depthTexture,'opaque world depth is shared with the actor-only surface mask');
  const targets=[frame.waterLayer.target,frame.styledInput,frame.cleanActors.target,frame.world,frame.gun,frame.ambientTarget,frame.bloomA,frame.bloomB,...(frame.temporal?.targets||[]),...(frame.spatial?[frame.spatial.input,frame.spatial.filtered,...(frame.spatial.smaa?[frame.spatial.smaa._edgesRT,frame.spatial.smaa._weightsRT]:[])]:[])];
  
  renderer.getDrawingBufferSize=v=>v.set(800,450);frame.resize();assert.equal(frame.world.width,800);assert.equal(frame.temporal?.targets[0].height??450,450);assert.equal(frame.spatial?.filtered.width??800,800);

@@ -1,3 +1,6 @@
+import {ActorBatches} from './actor-batches.js';
+import {WorldMask} from './world-mask.js';
+import {MapShadowCache} from './map-shadows.js';
 import {WaterLayer} from './water-layer.js';
 import {PixelForgeMask,PIXEL_FORGE_SIZE,pixelForgeGLSL} from './pixel-forge.js';
 import {createWaterState,updateWaterState} from './water.js';
@@ -89,12 +92,15 @@ export function renderWeaponView(renderer,scene,camera){
 export class FrameRenderer{
  constructor(renderer,worldScene,worldCamera,quality={}){
   this.aa=antialiasOptions(quality);
+  this.actorBatches=typeof renderer.getContext?.().createBuffer==='function'?new ActorBatches():null;
+  this.mapShadows=renderer.shadowMap?.render&&renderer.copyTextureToTexture?new MapShadowCache(renderer):null;
   this.bloomEnabled=quality.bloom!==false;
   this.renderer=renderer;this.waterState=createWaterState();this.slow=0;this.scene=new THREE.Scene();this.camera=new THREE.Camera();this.quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),null);this.quad.frustumCulled=false;this.scene.add(this.quad);
   const hdr=renderer.extensions.has('EXT_color_buffer_float'),options={type:hdr?THREE.HalfFloatType:THREE.UnsignedByteType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter};
-  this.world=new THREE.WebGLRenderTarget(1,1,options);this.world.samples=this.aa.antialias?supportedSamples(renderer,options.type,this.aa.msaa):0;
+  this.worldMask=!this.aa.taa&&typeof renderer.getContext?.().clearBufferfv==='function'?new WorldMask():null;
+  this.world=new THREE.WebGLRenderTarget(1,1,{...options,count:this.worldMask?2:1});if(this.worldMask){this.world.textures[1].type=THREE.UnsignedByteType;this.world.textures[1].format=THREE.RedFormat;this.world.textures[1].minFilter=this.world.textures[1].magFilter=THREE.NearestFilter;}this.maskTexture=this.worldMask?this.world.textures[1]:null;this.world.samples=this.aa.antialias?supportedSamples(renderer,options.type,this.aa.msaa):0;
   this.temporal=this.aa.antialias&&this.aa.taa?new TemporalAA(options.type):null;
-  if(this.temporal)this.world.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
+  this.world.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
   this.spatial=this.aa.antialias&&this.aa.aaFilter!=='none'?new SpatialAA(this.aa.aaFilter,options.type):null;
   this.waterLayer=new WaterLayer();
   this.cleanActors=new PixelForgeMask(this.world.samples);this.pixelForgeIntensity=quality.pixelForge===false?0:(quality.pixelForgeIntensity??1);
@@ -105,6 +111,9 @@ export class FrameRenderer{
   if(this.gtao){
    // The AO depth pass must see the same two-sided BSP walls as the color pass.
    this.gtao.normalMaterial.side=THREE.DoubleSide;
+   // Reconstruct AO normals from the already-resolved world depth; avoid
+   // another full environment geometry pass at every contact-shading setting.
+   this.gtao.setGBuffer(this.world.depthTexture);
    this.gtao.output=GTAOPass.OUTPUT.Denoise;
   }
   this.bloomA=new THREE.WebGLRenderTarget(1,1,{...options,depthBuffer:false});this.bloomB=this.bloomA.clone();
@@ -119,12 +128,13 @@ export class FrameRenderer{
  resize(){const size=this.renderer.getDrawingBufferSize(new THREE.Vector2()),aw=Math.max(1,Math.floor(size.x*this.aoRatio)),ah=Math.max(1,Math.floor(size.y*this.aoRatio));this.world.setSize(size.x,size.y);this.styledInput.setSize(size.x,size.y);this.cleanActors.resize(size.x,size.y);this.waterLayer.resize(size.x,size.y);this.gun.setSize(size.x,size.y);this.ambientTarget.setSize(aw,ah);this.gtao?.setSize(aw,ah);this.bloomA.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.bloomB.setSize(Math.max(1,size.x>>2),Math.max(1,size.y>>2));this.output.uniforms.texel.value.set(1/size.x,1/size.y);this.temporal?.resize(size.x,size.y);this.spatial?.resize(size.x,size.y)}
  pass(material,target){this.quad.material=material;this.renderer.setRenderTarget(target);this.renderer.render(this.scene,this.camera)}
  render(scene,camera,dt,slow=false,waterVolumes=[]){
-  const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate;
+  const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate,override=scene.overrideMaterial;
+  try{
   const underwater=updateWaterState(this.waterState,scene,camera,dt,waterVolumes);this.output.uniforms.underwater.value=underwater;
   if(underwater>.001){this.waterState.fog.color.copy(airFog?.color||this.waterState.airColor).lerp(this.waterState.color,underwater);this.waterState.fog.near=THREE.MathUtils.lerp(airFog?.near||38,10,underwater);this.waterState.fog.far=THREE.MathUtils.lerp(airFog?.far||120,90,underwater);scene.fog=this.waterState.fog;}this.slow=THREE.MathUtils.damp(this.slow,slow?1:0,9,dt);this.output.uniforms.slow.value=this.slow;
   this.temporal?.begin(camera,dt);
   try{
-  camera.layers.set(0);camera.layers.enable(2);if(this.pixelForgeIntensity<=0)camera.layers.enable(3);r.setRenderTarget(this.world);r.setClearColor(0x182127,1);r.render(scene,camera);
+  camera.layers.set(0);camera.layers.enable(2);if(this.pixelForgeIntensity<=0)camera.layers.enable(3);const combinedMask=this.worldMask&&this.pixelForgeIntensity>0&&!this.mrtUnsupported;this.configureWorldMask(!!combinedMask);r.setRenderTarget(this.world);r.setClearColor(0x182127,1);this.maskReady=combinedMask?this.worldMask.render(r,scene,camera,this.actorBatches):false;if(!this.maskReady){if(combinedMask){this.mrtUnsupported=true;this.configureWorldMask(false);r.setRenderTarget(this.world);}if(this.actorBatches)this.actorBatches.render(r,scene,camera);else r.render(scene,camera);}
   r.shadowMap.autoUpdate=false;scene.background=null;
   // Water is a transparent interface, not a solid AO occluder.
   camera.layers.set(0);
@@ -134,14 +144,18 @@ export class FrameRenderer{
   if(this.pixelForgeIntensity>0){
    // This mask/depth pass uses the restored, unjittered camera. Surface grain
    // therefore stays attached to geometry even with temporal AA enabled.
-   this.cleanActors.render(r,scene,camera);
-   this.waterLayer.render(r,scene,camera,this.cleanActors.target.depthTexture);
+   const depth=this.temporal||this.depthReuse===false?null:this.world.depthTexture;
+   if(!this.maskReady)this.cleanActors.render(r,scene,camera,depth);
+   this.output.uniforms.cleanActorTex.value=this.maskReady?this.world.textures[1]:this.cleanActors.target.texture;
+   this.forge.uniforms.worldDepth.value=depth||this.cleanActors.target.depthTexture;
+   this.waterLayer.render(r,scene,camera,depth||this.cleanActors.target.depthTexture);
    this.forge.uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);
    this.forge.uniforms.cameraWorld.value.copy(camera.matrixWorld);
   }
   const worldTexture=this.temporal?this.temporal.resolve(camera,this.world,(m,t)=>this.pass(m,t)):this.world.texture;this.output.uniforms.worldTex.value=worldTexture;
   scene.fog=airFog;camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
   this.finish();
+  }finally{scene.background=background;scene.fog=airFog;scene.overrideMaterial=override;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;if(r.getRenderTarget?.()!=null)r.setRenderTarget(null);}
  }
  renderWeaponOnly(scene,camera){
   const r=this.renderer,mask=camera.layers.mask,background=scene.background,autoShadow=r.shadowMap.autoUpdate;
@@ -156,7 +170,9 @@ export class FrameRenderer{
  }
  resetHistory(){this.temporal?.reset()}
  aaSummary(){const parts=[];if(this.aa.antialias){if(this.world.samples)parts.push(this.world.samples+'× MSAA');if(this.temporal)parts.push('TAA (experimental)');if(this.spatial)parts.push(this.aa.aaFilter.toUpperCase());}return (parts.join(' + ')||'AA off')+' · '+this.world.width+' × '+this.world.height;}
- dispose(){this.waterLayer.dispose();this.styledInput.dispose();this.forge.dispose();this.cleanActors.dispose();this.temporal?.dispose();this.spatial?.dispose();this.world.depthTexture?.dispose();for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
+ configureWorldMask(enabled){if(!this.maskTexture||enabled===(this.world.textures.length===2))return;this.world.dispose();if(enabled)this.world.textures.push(this.maskTexture);else this.world.textures.pop();}
+ warmup(arena,scene,camera){return this.worldMask?this.worldMask.warmup(this.renderer,arena,camera,scene):this.renderer.compileAsync(arena,camera,scene);}
+ dispose(){this.actorBatches?.dispose();this.maskTexture?.dispose();this.worldMask?.dispose();this.mapShadows?.dispose();this.waterLayer.dispose();this.styledInput.dispose();this.forge.dispose();this.cleanActors.dispose();this.temporal?.dispose();this.spatial?.dispose();this.world.depthTexture?.dispose();for(const t of [this.world,this.gun,this.bloomA,this.bloomB,this.ambientTarget])t.dispose();for(const m of [this.prefilter,this.blur,this.output])m.dispose();this.gtao?.dispose();this.quad.geometry.dispose()}
 }
 
 let contactTexture;

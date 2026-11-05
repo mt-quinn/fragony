@@ -1,0 +1,26 @@
+[
+  {
+    "health": 100,
+    "pose": "stand",
+    "meanDifference": 0.0000016666666666666667,
+    "largeFraction": 0
+  },
+  {
+    "health": 50,
+    "pose": "crouch",
+    "meanDifference": 0.00006,
+    "largeFraction": 0.0000016666666666666667
+  },
+  {
+    "health": 5,
+    "pose": "slide",
+    "meanDifference": 0,
+    "largeFraction": 0
+  },
+  {
+    "health": 50,
+    "pose": "broken",
+    "meanDifference": 0,
+    "largeFraction": 0
+  }
+]

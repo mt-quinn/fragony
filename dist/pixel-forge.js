@@ -40,25 +40,32 @@ vec3 forgePalette(vec3 c){
 // intersecting actors, and ragdolls without drawing silhouettes through walls.
 export class PixelForgeMask{
  constructor(samples=0){
-  this.target=new THREE.WebGLRenderTarget(1,1,{minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter});this.target.samples=samples;
+  this.target=new THREE.WebGLRenderTarget(1,1,{format:THREE.RedFormat,minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter});this.target.samples=samples;
   this.target.depthTexture=new THREE.DepthTexture(1,1,THREE.UnsignedIntType);
   this.black=new THREE.MeshBasicMaterial({color:0x000000,side:THREE.DoubleSide,fog:false,toneMapped:false});
   this.white=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,fog:false,toneMapped:false});
   this.clearColor=new THREE.Color();
+  // The color pass already resolved opaque-world depth. Draw only clean actors
+  // against it instead of submitting every environment triangle a second time.
+  this.depthUniforms={maskWorldDepth:{value:null},maskSize:{value:new THREE.Vector2(1,1)}};
+  this.whiteDepth=this.white.clone();
+  const depthCompile=shader=>{Object.assign(shader.uniforms,this.depthUniforms);shader.fragmentShader='uniform sampler2D maskWorldDepth;uniform vec2 maskSize;\n'+shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif(gl_FragCoord.z>texture2D(maskWorldDepth,gl_FragCoord.xy/maskSize).r+0.00000012) discard;');};
+  this.whiteDepth.onBeforeCompile=depthCompile;this.whiteDepth.customProgramCacheKey=()=> 'forge-depth-reuse-v1';
   this.meshes=[];this.materials=[];this.hidden=[];this.cutouts=new WeakMap();this.cutoutMaterials=new Set();
  }
- maskMaterial(source,clean){
-  const base=clean?this.white:this.black;
+ maskMaterial(source,clean,depth=false){
+  const base=clean?(depth?this.whiteDepth:this.white):this.black;
   if(!source?.alphaTest||(!source.alphaMap&&!source.map))return base;
   let pair=this.cutouts.get(source);if(!pair){pair={};this.cutouts.set(source,pair);}
-  const key=clean?'white':'black';if(!pair[key]){
-   const material=base.clone();material.alphaTest=source.alphaTest;material.alphaMap=source.alphaMap;material.map=source.map;material.side=source.side;
+  const key=clean?(depth?'whiteDepth':'white'):'black';if(!pair[key]){
+   const material=base.clone();if(clean&&depth){material.onBeforeCompile=base.onBeforeCompile;material.customProgramCacheKey=base.customProgramCacheKey;}material.alphaTest=source.alphaTest;material.alphaMap=source.alphaMap;material.map=source.map;material.side=source.side;
    pair[key]=material;this.cutoutMaterials.add(material);
   }
   return pair[key];
  }
- resize(w,h){this.target.setSize(w,h);}
- render(renderer,scene,camera){
+ resize(w,h){this.target.setSize(w,h);this.depthUniforms.maskSize.value.set(w,h);}
+ render(renderer,scene,camera,worldDepth=null){
+  this.depthUniforms.maskWorldDepth.value=worldDepth;
   const background=scene.background,override=scene.overrideMaterial,layers=camera.layers.mask,shadow=renderer.shadowMap.autoUpdate,target=renderer.getRenderTarget();
   const clearColor=renderer.getClearColor(this.clearColor),clearAlpha=renderer.getClearAlpha();
   const visit=(o,clean)=>{
@@ -66,8 +73,8 @@ export class PixelForgeMask{
    if(o.isMesh){
     const m=o.material,transparent=Array.isArray(m)?m.every(x=>x.transparent&&!x.depthWrite):m?.transparent&&!m.depthWrite;
     // Smoke, tracers and water must not hide the clean actor beneath them.
-    if(transparent){this.hidden.push(o);o.visible=false;return;}
-    this.meshes.push(o);this.materials.push(m);o.material=Array.isArray(m)?m.map(source=>this.maskMaterial(source,clean)):this.maskMaterial(m,clean);
+    if(transparent||worldDepth&&!clean){this.hidden.push(o);o.visible=false;for(const child of o.children)visit(child,clean);return;}
+    this.meshes.push(o);this.materials.push(m);o.material=Array.isArray(m)?m.map(source=>this.maskMaterial(source,clean,!!worldDepth)):this.maskMaterial(m,clean,!!worldDepth);
    }
    for(const child of o.children)visit(child,clean);
   };
@@ -83,5 +90,5 @@ export class PixelForgeMask{
    renderer.setRenderTarget(target);renderer.setClearColor(clearColor,clearAlpha);
   }
  }
- dispose(){for(const m of this.cutoutMaterials)m.dispose();this.cutoutMaterials.clear();this.target.depthTexture.dispose();this.target.dispose();this.black.dispose();this.white.dispose();}
+ dispose(){for(const m of this.cutoutMaterials)m.dispose();this.cutoutMaterials.clear();this.target.depthTexture.dispose();this.target.dispose();this.black.dispose();this.white.dispose();this.whiteDepth.dispose();}
 }

@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import * as THREE from '../dist/vendor/three.module.js';
+import {MapOcclusion} from '../dist/map-occlusion.js';
+import {partitionSurface,spatialMapBatches} from '../dist/map-batches.js';
+import {PixelForgeMask} from '../dist/pixel-forge.js';
+const wall=new THREE.PlaneGeometry(20,20);wall.translate(0,0,-5);const material=new THREE.MeshStandardMaterial({side:THREE.DoubleSide}),surface={geometry:wall,material,family:'concrete'};
+const camera=new THREE.PerspectiveCamera(78,16/9,.07,160);camera.updateMatrixWorld(true);const visibility=new MapOcclusion([surface]);visibility.prepare(camera);
+const box=(x,y,z,s=.2)=>new THREE.Box3(new THREE.Vector3(x-s,y-s,z-s),new THREE.Vector3(x+s,y+s,z+s));
+assert.equal(visibility.visible(box(3,0,-10),camera),false,'fully covered box behind wall');assert.equal(visibility.visible(box(1,0,-2),camera),true,'foreground survives');assert.equal(visibility.visible(box(1,0,-5),camera),true,'wall cannot hide itself');assert.equal(visibility.visible(box(0,0,0),camera),true,'near-plane intersection survives');assert.equal(visibility.visible(box(12,0,-7),camera),true,'uncovered edge survives');
+camera.position.x=20;camera.lookAt(20,0,-10);camera.updateMatrixWorld(true);visibility.prepare(camera);assert.equal(visibility.visible(box(20,0,-10),camera),true,'newly revealed geometry appears in the same frame');
+for(const source of [{...surface,material:new THREE.MeshBasicMaterial({transparent:true})},{...surface,material:new THREE.MeshBasicMaterial({alphaTest:.5})}]){const v=new MapOcclusion([source]);v.prepare(camera);assert.equal(v.triangles.length,0,'transparent surfaces and fence holes cannot occlude');}
+// Dense triangles across cell boundaries retain every indexed attribute verbatim.
+const geometry=new THREE.BoxGeometry(22,8,18,4,2,3);geometry.translate(3,2,-4);const parts=partitionSurface(geometry,4);const fingerprint=g=>{const p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv,ix=g.index.array,tri=[];for(let i=0;i<ix.length;i+=3)tri.push(Array.from(ix.slice(i,i+3)).map(j=>[p.getX(j),p.getY(j),p.getZ(j),n.getX(j),n.getY(j),n.getZ(j),uv.getX(j),uv.getY(j)].join(',')).join('|'));return tri.sort();};assert.deepEqual(parts.flatMap(fingerprint).sort(),fingerprint(geometry));
+const batches=spatialMapBatches([{geometry,material,family:'concrete'}]);assert.equal(batches.length,1);const b=batches[0];assert.equal(b.geometry.index.count,geometry.index.count);let disposed=0;b.material.addEventListener('dispose',()=>disposed++);b.customDepthMaterial.addEventListener('dispose',()=>disposed++);b.dispose();assert.equal(disposed,2);b.geometry.dispose();
+// Depth reuse draws only clean actors; ordinary mask path remains available for TAA.
+const scene=new THREE.Scene(),cover=new THREE.Mesh(wall,material),actor=new THREE.Group();actor.userData.pixelForgeClean=true;const body=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());actor.add(body);scene.add(cover,actor);const mask=new PixelForgeMask(2),depth=new THREE.DepthTexture();let target=null;
+const renderer={shadowMap:{autoUpdate:true},getRenderTarget:()=>target,setRenderTarget:v=>target=v,getClearColor:c=>c.set(0),getClearAlpha:()=>1,setClearColor(){},clear(){},render(){assert.equal(cover.visible,false);assert.equal(body.material,mask.whiteDepth);}};
+mask.render(renderer,scene,camera,depth);assert.equal(cover.visible,true);assert.notEqual(body.material,mask.whiteDepth);assert.equal(mask.depthUniforms.maskWorldDepth.value,depth);renderer.render=()=>{throw Error('failure');};assert.throws(()=>mask.render(renderer,scene,camera,depth));assert.equal(cover.visible,true);assert.equal(renderer.shadowMap.autoUpdate,true);mask.dispose();
+console.log('Map performance: exact spatial attributes, conservative occlusion, same-frame reveals, near-plane/transparent safety, resource disposal and actor-only depth reuse pass.');

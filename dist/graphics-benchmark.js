@@ -1,4 +1,4 @@
-export const BENCHMARK_SCENES=['reservoir','rust','shipment'].flatMap(map=>[{map,view:0,name:'Crossfire',heavy:false},{map,view:1,name:'Explosions',heavy:true}]);
+export const BENCHMARK_SCENES=['reservoir','killhouse','shoothouse'].flatMap(map=>[{map,view:0,name:'Crossfire',heavy:false},{map,view:1,name:'Explosions',heavy:true}]);
 export function frameStatistics(intervals){
  const sorted=intervals.filter(v=>Number.isFinite(v)&&v>0).sort((a,b)=>a-b);if(!sorted.length)throw Error('No frames were sampled.');
  const mean=sorted.reduce((a,b)=>a+b,0)/sorted.length,quantile=p=>sorted[Math.max(0,Math.ceil(sorted.length*p)-1)];
