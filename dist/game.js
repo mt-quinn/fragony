@@ -95,7 +95,7 @@ for(const [key,fallback]of [['minimap',true],['minimapNorth',false]])if(typeof s
 const playerPos=new THREE.Vector3(0,1.7,15),vel=new THREE.Vector3(),keys=new Set(),up=new THREE.Vector3(0,1,0),ray=new THREE.Raycaster(),aim=new THREE.Vector3(),tmp=new THREE.Vector3(),tmp2=new THREE.Vector3();
 ray.firstHitOnly=true;
 const gameAudio=new GameAudio();let muted=false,lastHUD=0,dragLook=false,stepDistance=0,reloadStage=0,reloadLength=0,hurtSoundCooldown=0,lastPointer=null;
-let gunCollection=createCollection(),practiceCollection=null,playerGunLife=createLife(1),playerGunFire=new ModularFire(),modularProjectiles=null,modularOutcomes=[],choiceTokens=[],tokenSerial=0,armoryView=null,botFocusOwner=null,botFocusLeft=0,botFocusCooldown=0;
+let gunCollection=createCollection(),practiceCollection=null,playerGunLife=createLife(1),playerGunFire=new ModularFire(),modularProjectiles=null,modularOutcomes=[],choiceTokens=[],tokenSerial=0,armoryView=null;
 const playerActor={isPlayer:true,name:'YOU',pos:new THREE.Vector3(),get hp(){return health},get dead(){return respawnTime>0||health<=0}};
 const playerProxy=new THREE.Mesh(new THREE.BoxGeometry(1,1,1));
 weapons[0].name='Modular gun';weapons[0].label='Modular gun';
@@ -606,7 +606,6 @@ function createOpponentAI(){
   weapon:(b,type)=>{if(!b.rival?.collection)return null;const native=gunStats(b.rival.collection,b.modularLife||{},b.modularFire?.spool||0);return{...AI_TUNING.weapons.rifle,...weaponEngagement(native,'rifle'),damage:native.damage,interval:native.interval,magazine:native.mag,reload:native.reload,range:90,idealRange:native.idealRange,native};},
   tokens:()=>choiceTokens,
   moveScale:b=>modularMoveScale(b),
-  actorTimeScale:b=>b===botFocusOwner?1/BALANCE.worldSlow:1,
   pickups,
   projectiles:()=>rockets.map(r=>({pos:r.mesh.position,velocity:r.vel,owner:r.owner})),
   actors:()=>[
@@ -707,7 +706,7 @@ function updateStep(dt){
  if(mobile?.enabled&&!benchmarkChild)syncTouchInputs(dt);
  if(mobile?.enabled&&mobile.active&&mobileAutoJump.hold>0)keys.add('Space');
  hurtSoundCooldown=Math.max(0,hurtSoundCooldown-dt);
- const realDt=dt,playerSlow=keys.has('KeyQ')&&focus>0&&respawnTime<=0;stepBotFocus(realDt,playerSlow);slow=playerSlow||!!botFocusOwner;const worldDt=realDt*(slow?BALANCE.worldSlow:1);if(playerSlow)focusRest=BALANCE.focusDelay;else focusRest=Math.max(0,focusRest-dt);focus=clamp(focus+(playerSlow?-BALANCE.focusDrain:focusRest<=0?BALANCE.focusRegen*circuitBonuses(activeGunCollection(),playerGunLife).focusRegen:0)*dt,0,100);if(focus<=0){keys.delete('KeyQ');if(mobile?.state)mobile.state.focus=false;}$('slowTint').style.opacity=slow?1:0;dt=playerSlow?realDt:worldDt;
+ const realDt=dt,playerSlow=keys.has('KeyQ')&&focus>0&&respawnTime<=0;slow=playerSlow;const worldDt=realDt*(slow?BALANCE.worldSlow:1);if(playerSlow)focusRest=BALANCE.focusDelay;else focusRest=Math.max(0,focusRest-dt);focus=clamp(focus+(playerSlow?-BALANCE.focusDrain:focusRest<=0?BALANCE.focusRegen*circuitBonuses(activeGunCollection(),playerGunLife).focusRegen:0)*dt,0,100);if(focus<=0){keys.delete('KeyQ');if(mobile?.state)mobile.state.focus=false;}$('slowTint').style.opacity=slow?1:0;dt=playerSlow?realDt:worldDt;
  stepElevators(worldDt);
  if(respawnTime<=0){yaw+=((keys.has('ArrowLeft')?1:0)-(keys.has('ArrowRight')?1:0))*dt*1.7;pitch=clamp(pitch+((keys.has('ArrowUp')?1:0)-(keys.has('ArrowDown')?1:0))*dt*1.4,-1.5,1.5)}
  time=isPractice()?90:Math.max(0,time-realDt);if(time===0){endMatch();return}shotTimer-=dt;if(!mouseDown)shotTimer=Math.max(0,shotTimer);nearMissCooldown=Math.max(0,nearMissCooldown-dt);stepFeeds(dt);
@@ -1138,21 +1137,8 @@ function stepChoiceTokens(dt){
  }
  choiceTokens=choiceTokens.filter(t=>!t.collected);
 }
-function clearModularRound(){botFocusOwner=null;botFocusLeft=0;botFocusCooldown=0;for(const token of choiceTokens)token.mesh.removeFromParent();choiceTokens=[];modularProjectiles?.clear();modularOutcomes=[];}
+function clearModularRound(){for(const token of choiceTokens)token.mesh.removeFromParent();choiceTokens=[];modularProjectiles?.clear();modularOutcomes=[];}
 function buildModularDummyGun(b){const mount=b.parts.rightArm.userData.weaponMount||b.parts.rightArm,signature=JSON.stringify(b.rival.collection.kit),old=mount.children.find(c=>c.name==='weapon');if(old?.userData.modularSignature===signature)return old;if(old){disposeToolModel(old);mount.remove(old);}const gun=new THREE.Group();gun.name='weapon';gun.userData.modularSignature=signature;const model=createModularGun(b.rival.collection.kit);model.root.rotation.y=-Math.PI/2;model.root.scale.setScalar(.29);model.root.position.set(0,.06,.04);model.root.userData.modularDispose=()=>model.dispose();b.modularModel=model;gun.add(model.root);mount.add(gun);gun.traverse(o=>{o.userData.bot=b;o.userData.part='rightArm';if(o.isMesh)o.userData.gunVisual=true;});return gun;}
 
-// One bot may spend focus at a time. Player activation takes priority. The
-// owner keeps its own action clock; every other actor and projectile slows.
-function stepBotFocus(dt,playerSlow){
- botFocusCooldown=Math.max(0,botFocusCooldown-dt);
- for(const b of bots){if(b.dead||!b.rival?.collection)continue;
-  if(b===botFocusOwner&&!playerSlow){b.focus=Math.max(0,b.focus-BALANCE.focusDrain*dt);b.focusRest=BALANCE.focusDelay;}
-  else{b.focusRest=Math.max(0,(b.focusRest||0)-dt);if(!b.focusRest)b.focus=Math.min(100,(b.focus||0)+BALANCE.focusRegen*circuitBonuses(b.rival.collection,b.modularLife).focusRegen*dt);}
- }
- if(botFocusOwner){botFocusLeft-=dt;if(playerSlow||botFocusOwner.dead||botFocusOwner.focus<=0||botFocusLeft<=0){botFocusOwner=null;botFocusCooldown=6;} }
- if(playerSlow||botFocusOwner||botFocusCooldown||round<3||isPractice())return;
- const candidate=bots.filter(b=>!b.dead&&b.focus>=55&&b.brain?.visible&&b.brain.recover<=0&&(toDisplay(b.hp,BALANCE.botHP)<45||b.rival.collection.kit.circuit.id==='focus'&&b.modularLife.stacks>0)).sort((a,b)=>a.hp-b.hp||a.name.localeCompare(b.name))[0];
- if(candidate){botFocusOwner=candidate;botFocusLeft=1.2;notify(candidate.name+' · Slow time');}
-}
 
 init();

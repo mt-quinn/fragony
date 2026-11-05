@@ -17,8 +17,8 @@ spawns.push([-31,31,-8],[31,31,8],[-31,31,8],[31,31,-8],[-3,34,-6],[3,34,6],[0,1
 const elevators=[
  {id:'north',x:0,z:-51.5,w:5.5,d:2.65,low:14,high:34,entry:{x:0,z:-48.7}},
  {id:'south',x:0,z:51.5,w:5.5,d:2.65,low:14,high:34,entry:{x:0,z:48.7}},
- {id:'center-east',x:7.45,z:-3.5,w:2.65,d:2.5,low:14,high:34,entry:{x:5.4,z:-3.5}},
- {id:'center-west',x:-7.45,z:3.5,w:2.65,d:2.5,low:14,high:34,entry:{x:-5.4,z:3.5}}
+ {id:'center-east',x:7.45,z:-3.5,w:2.65,d:2.5,pit:{w:4,d:4.7},low:14,high:34,entry:{x:5.4,z:-3.5}},
+ {id:'center-west',x:-7.45,z:3.5,w:2.65,d:2.5,pit:{w:4,d:4.7},low:14,high:34,entry:{x:-5.4,z:3.5}}
 ];
 // Single recovery packs sit off the small-health routes. Lower packs give players
 // a reason to use the reservoir passage; neither end inherits a second major.

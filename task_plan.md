@@ -95,3 +95,44 @@ Main menu completion: approved Shoot House central-corridor duel and action stri
 # Startup loading screen — 2026-11-04
 Replace the unloaded disabled menu with an immediate loading screen and progress bar; reveal the menu only after its first rendered frame. Track actual archive/initialization milestones, preserve failure/retry. User also requested removal of the main-menu Shoot House label and FRAG underline altogether. Implement, verify loader/retry and browser states, build and push to authorized main.
 Startup loading screen complete: actual archive-part and initialization progress, first-render menu reveal, Retry, benchmark visibility, hidden initial menu/audio. Map caption and underline removed. Focused native/browser checks and final build passed; all 20 production maps passed in the completed package. Publishing to main as requested.
+
+# Map readability analysis for the new pipeline — 2026-11-04
+User requests analysis/discussion only: adjacent surfaces blend; map color/material/area assignments need a major visual pass with final pipeline in mind; area transitions should follow architecture rather than bisect rooms. Trace source assignments, prepared baking, lighting/Pixel Forge; inspect representative current renders and validate specific failure modes; recommend a concrete geometry-aware art workflow and pilot before any runtime/map changes. No implementation or push authorized for this discussion.
+
+Map readability analysis complete: concrete palette/assignment/role/edge causes traced; live same-view Shoot House A/B and palette coverage diagnostic captured; architecture-respecting saturated art-pass proposal prepared for discussion. No runtime or map changes made.
+
+# Saturated map-art preview — 2026-11-04
+User wants to see the proposed direction. Build an isolated in-engine Shoot House preview with current/proposed comparison and multiple fixed views; demonstrate saturated palette ramps, architecture/object-consistent assignments, deliberate surface value separation and quieter texture. Keep production runtime and prepared assets unchanged while the direction is reviewed; validate actual rendering and provide the working preview plus captures. Do not infer approval for a 20-map rollout.
+
+# Approved Shoot House art pass — 2026-11-04
+Implement approved petrol / fired clay / mulberry / limestone / blue slate / ink palette in Shoot House only. Areas each need a coherent primary and accent, distributed on real architectural pieces and supported graphic treatments; never coordinate planes slicing rooms. Preserve approved sky, source geometry, collision/nav, character health hues and other maps. Integrate production prepared render path plus same-code review preview.
+1. Recover source object identity and author architectural area/surface assignments — complete.
+2. Bake approved paint/accent treatments and map-specific final palette/visibility rendering — complete.
+3. Review multiple gameplay views/interiors and actor health sweep; refine deliberate distribution — complete.
+4. Run geometry/art/render regressions and production packaging; show completed result — complete.
+
+Shoot House art verification complete: final source coverage regression, visible uppermost mezzanine floor fixture, map/health/material/render regressions, real browser exterior/interior/menu checks and final 20-map production-package loading pass. Final geometry: 1,961,899 triangles, 142 batches; collision/navigation unchanged. Push to authorized GitHub main pending.
+
+Shoot House published successfully: aee5ddde752fde24be23f67d93b10012724ce2a3 on GitHub main.
+
+# Individually art-direct all remaining maps — 2026-11-04
+User approved final Shoot House and explicitly authorized sustained, demanding work across every other active map. Each map MUST have its own artistically chosen palette and distinct color hierarchy, with overlaps only when appropriate. Do not reuse Shoot House colors/assignments across roster. Preserve Shoot House. Same quality bar: geometry-faithful whole areas/assemblies, deliberate primary/accent distribution, supported graphics, calm floors at ALL elevations, actors readable at every health, native multi-view review and iteration per map. No deadline/budget requested. No subagent delegation authorized.
+1. Research primary art-direction references, inventory each map geometry/rooms/materials and author unique palettes — complete.
+2. Build geometry-aware reusable authoring/runtime support that preserves existing source coverage, custom per-map areas/recipes and efficient palette selection — complete.
+3. Individually author, render, self-review and iterate all19 remaining active maps, saving named gameplay/interior/health views and an evidence ledger — complete.
+4. Full source geometry/art/visibility/runtime/package checks, production browser verification and scoped commit/push — complete. GitHub main independently verified at7e9d1c9116562614c86d732ae01de6f71db540e2.
+Research: James Gurney's original gamut-mask essays, Riot's Art of VALORANT Map Environments / Creation of Split, Valve's original illustrative rendering paper. Apply restricted, intentional per-map gamuts, relative color/value hierarchy and active gameplay clarity; do not copy layouts or art assets. Active roster20: reservoir/rust/shipment/nuketown +killhouse/vacant/showdown/firingrange/hijacked/summit/shoothouse/siege/mutiny/bravery/ef-showdown/delta-station/beta-station/forge2/forge1/blast-radius. Retired arenas remain excluded. Inspect Testworks training/inspection scene for shared render regression, not a replacement of its separate UX.
+
+# Restore the approved world-space Pixel Forge — 2026-11-04
+User explicitly rejects shader changes made during map art work. Restore the exact world-space shader, not the earlier screen-space version. World-space revision adc2170; c35d332 retains it and includes the water/sky reference. Restore presentation shader exactly, remove map-specific output branches, freeze historical shader fixture, verify native rendering/on-off/camera/clean actors/water/AA, build and push to authorized main. Preserve map geometry and authored material assignments; do not tune the shader to accommodate them.
+
+# Map rendering performance — 2026-11-05
+1. Measure prepared geometry/render costs across COD/EF maps and Kill House inward views — complete.
+2. Implement shared rendering optimizations preserving approved art and gameplay — complete.
+3. Verify geometry, rendering, gameplay and release; document measured gains and device limits — complete locally. All20 production WebKit maps and full regressions pass. Physical iPhone frame-rate certification remains unverified; desktop stress results still below60 FPS in COD heavy scenes. No maps deleted or release published.
+
+# Mobile automation, melee, and approved colour correction — 2026-11-05
+1. Mobile quiet reload with real reload timing; remove touch reload control — complete.
+2. Exact50% max-health melee, rebindable V,2m reach,.5s mobile repeats, cover/lifecycle protection and feedback — complete.
+3. Diagnose grey/rust regression and preserve approved authored colours through historical Pixel Forge core — complete; user explicitly approved palette replacement.
+4. Validate full suite, native browsers,20 maps/graphics toggles, package and push — validations complete; scoped commit/push in progress.
