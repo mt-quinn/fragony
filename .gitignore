@@ -1,3 +1,16 @@
 /build/
 # Regenerable architecture inspection data; authored profiles/ledgers stay tracked.
 research/map-art-roster/*-analysis.json
+
+# Keep local research, recordings, benchmark evidence and agent notes out of commits.
+/research/
+/docs/map-design/
+/docs/maps/
+/docs/play-study/
+/docs/map-pipeline.md
+/docs/performance-engineering.md
+/AGENTS.md
+/HANDOFF-MAP-DESIGN.md
+/tests/map-streaming.mjs
+/tests/play-study.mjs
+/tools/map-planar-tessellation.mjs

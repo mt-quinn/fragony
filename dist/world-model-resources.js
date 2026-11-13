@@ -1,0 +1,11 @@
+// World models borrow immutable resources. Rebuilding one bot's loadout cannot
+// dispose geometry/materials still used by another bot or its render instances.
+const geometries=new Map(),materials=new Map();
+function acquire(pool,key,make,used){let entry=pool.get(key);if(!entry){entry={key,value:make(),refs:0,pool};pool.set(key,entry);}if(!used.has(entry)){used.add(entry);entry.refs++;}return entry.value;}
+function sameGeometry(a,b){const keys=Object.keys(a.attributes).sort();if(keys.join()!==Object.keys(b.attributes).sort().join()||!!a.index!==!!b.index)return false;for(const k of [...keys,'$index']){const x=k==='$index'?a.index:a.attributes[k],y=k==='$index'?b.index:b.attributes[k];if(!x)continue;if(x.itemSize!==y.itemSize||x.normalized!==y.normalized||x.array.constructor!==y.array.constructor||x.array.length!==y.array.length)return false;const av=new Uint8Array(x.array.buffer,x.array.byteOffset,x.array.byteLength),bv=new Uint8Array(y.array.buffer,y.array.byteOffset,y.array.byteLength);for(let i=0;i<av.length;i++)if(av[i]!==bv[i])return false;}return true;}
+function fingerprint(g){let h=2166136261;const mix=v=>{h=Math.imul(h^v,16777619)>>>0;};for(const k of Object.keys(g.attributes).sort()){for(let i=0;i<k.length;i++)mix(k.charCodeAt(i));const a=g.attributes[k];mix(a.itemSize);mix(a.normalized?1:0);const bytes=new Uint8Array(a.array.buffer,a.array.byteOffset,a.array.byteLength);for(const b of bytes)mix(b);}if(g.index)for(const b of new Uint8Array(g.index.array.buffer,g.index.array.byteOffset,g.index.array.byteLength))mix(b);return h.toString(16);}
+export function worldModelLease(){const used=new Set();let released=false;return{
+ geometry:(key,make)=>acquire(geometries,'primitive:'+key,make,used),material:(key,make)=>acquire(materials,key,make,used),
+ intern(g){const hash=fingerprint(g);let key='merged:'+hash,suffix=0;while(geometries.has(key)&&!sameGeometry(geometries.get(key).value,g))key='merged:'+hash+':'+(++suffix);const result=acquire(geometries,key,()=>g,used);if(result!==g)g.dispose();return result;},
+ dispose(){if(released)return;released=true;for(const entry of used)if(--entry.refs===0){entry.pool.delete(entry.key);if(entry.value.userData.worldOwnedTexture)entry.value.map?.dispose();entry.value.dispose();}used.clear();}
+};}

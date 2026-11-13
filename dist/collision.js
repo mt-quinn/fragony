@@ -18,7 +18,8 @@ export function bodyContacts(blocks,p){
   if(b.top<=p.feet+COLLISION.skin*.1||b.bottom>=p.feet+p.height-COLLISION.skin*.1)continue;
   const span=blockSpan(b,p.x,p.z,p.radius);if(!span||span.top<=p.feet+COLLISION.skin*.1||span.bottom>=p.feet+p.height-COLLISION.skin*.1)continue;
   let hit;
-  if(b.planes){let depth=Infinity,nx=0,nz=0,clear=false;for(const [x,y,z,d] of b.planes){const h=Math.hypot(x,z),q=x*p.x+y*(p.feet+p.height/2)+z*p.z-d-p.radius*h-Math.abs(y)*p.height/2;if(q>=-1e-7){clear=true;break}if(h>1e-6&&-q/h<depth){depth=-q/h;nx=x/h;nz=z/h}}if(!clear&&Number.isFinite(depth))hit={nx,nz,depth}}
+  if(b.planes?.contact)hit=b.planes.contact(p.x,p.z,p.feet,p.height,p.radius);
+  else if(b.planes){let depth=Infinity,nx=0,nz=0,clear=false;for(const [x,y,z,d] of b.planes){const h=Math.hypot(x,z),q=x*p.x+y*(p.feet+p.height/2)+z*p.z-d-p.radius*h-Math.abs(y)*p.height/2;if(q>=-1e-7){clear=true;break}if(h>1e-6&&-q/h<depth){depth=-q/h;nx=x/h;nz=z/h}}if(!clear&&Number.isFinite(depth))hit={nx,nz,depth}}
   else hit=footprint(b,p.x,p.z,p.radius);
   if(hit)out.push({...hit,block:b,top:span.top,bottom:span.bottom});
  }return out;

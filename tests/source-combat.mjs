@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {createGameHarness} from './harness.mjs';
-import {SOURCE_ARENAS} from '../dist/maps/source-arenas.js';
+import {MAPS} from '../dist/map.js';
 const h=createGameHarness(742,{legacyFixtures:false});h.setup();
-for(const id of SOURCE_ARENAS.map(m=>m.id).filter(id=>!process.argv.slice(2).length||process.argv.slice(2).includes(id))){
+for(const id of MAPS.filter(m=>m.load).map(m=>m.id).filter(id=>!process.argv.slice(2).length||process.argv.slice(2).includes(id))){
  await h.run(`(async()=>{await beginPractice('${id}');practiceMode=false;startMatch(false);mode='play';locked=true;time=30;health=100000;respawnTime=0;playerPos.set(MAP.spawns[0][0],MAP.spawns[0][1]+1.7,MAP.spawns[0][2]);viewHeight=1.7;vy=0;vel.set(0,0,0);keys.clear();mouseDown=false;for(const bot of bots)bot.hp=bot.maxHealth*.5;
  // With overhealing removed, full actors correctly leave resources untouched.
  // Verify native collection at a real source anchor before the combat simulation.

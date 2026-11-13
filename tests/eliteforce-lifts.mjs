@@ -1,6 +1,6 @@
-import{createGameHarness}from'./harness.mjs';import{SOURCE_ARENAS}from'../dist/maps/source-arenas.js';
+import{createGameHarness}from'./harness.mjs';import{MAPS}from'../dist/map.js';
 const h=createGameHarness(914,{legacyFixtures:false});h.setup();
-for(const id of SOURCE_ARENAS.filter(m=>m.sourceFamily==='eliteforce'&&m.elevators?.length).map(m=>m.id)){
+for(const id of MAPS.filter(m=>m.sourceFamily==='eliteforce'&&m.elevators?.length).map(m=>m.id)){
  await h.run(`(async()=>{await beginPractice(${JSON.stringify(id)});makeBots();mode='play';respawnTime=0;playerPos.set(0,MAP.maxHeight+20,0);
  for(const l of MAP.elevators)for(const ascending of [true,false]){
   elevatorSystem.reset();const low=nearestAINode(navigation,{...(l.entryLow||l.entry),y:l.low}),high=nearestAINode(navigation,{...(l.entryHigh||l.entry),y:l.high}),from=ascending?low:high,to=ascending?high:low,b=bots[0];bots=[b];b.dead=0;b.hp=100;

@@ -1,3 +1,4 @@
+import {PackedPlanes} from './packed-planes.js';
 import {TriangleCollision} from './triangle-collision.js';
 // Source archives are fetched only for the selected arena. Browsers use native
 // streaming decompression; offline navigation and QA use the same data in Node.
@@ -39,11 +40,4 @@ export async function readSourceData(url,onProgress){
   for(let i=0;i<ix.length;i++)for(let k=0;k<3;k++){g.p[i*3+k]=v[ix[i]*6+k];g.n[i*3+k]=v[ix[i]*6+3+k]}delete g.v;delete g.i;
  }
  return data;
-}
-class PackedPlanes{
- constructor(buffer,start,end){this.buffer=buffer;this.start=start;this.end=end;this.length=end-start;}
- // Consumers destructure each plane immediately. One iterator-local value
- // avoids allocating five small arrays for every narrow collision query.
- *[Symbol.iterator](){const p=[0,0,0,0];for(let i=this.start*4;i<this.end*4;i+=4){p[0]=this.buffer[i];p[1]=this.buffer[i+1];p[2]=this.buffer[i+2];p[3]=this.buffer[i+3];yield p;}}
- toJSON(){return Array.from(this,p=>Array.from(p));}
 }

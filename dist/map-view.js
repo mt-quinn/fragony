@@ -1,8 +1,10 @@
+import {prepareMapRays} from './map-ray-index.js';
+import {mapPropBatches} from './map-prop-batches.js';
 import {MeshBVH,acceleratedRaycast,CENTER} from './vendor/three-mesh-bvh.module.js';
 import {industrialGroups,dressIndustrialArena,industrialDistricts} from './industrial.js';
 import {optimizeMapMaterial} from './map-material-performance.js';
 import {DETAIL_MAPS} from './maps/map-detail.js';
-import {spatialMapBatches,compactSurface} from './map-batches.js';
+import {spatialMapBatches,compactSurface,useSpatialMapBatches,useCompiledMapDetails} from './map-batches.js';
 import {createWaterSurface} from './water.js';
 import * as THREE from './vendor/three.module.js';
 // Retained BSP surfaces use our material palette, rather than imported game art.
@@ -11,38 +13,47 @@ export function buildBrushMap(arena,map,blocks,worldMeshes,renderer=null){
  if(map.brushes.triangleCollision)blocks.triangleCollision=map.brushes.triangleCollision;
  const industrial=industrialDistricts(map.id).length>0;
  if(industrial){
-  const surfaces=industrialGroups(map),batched=surfaces.length>64&&!renderer?.userData?.legacyMapRendering&&DETAIL_MAPS.has(map.id)&&renderer?.extensions?.has('WEBGL_multi_draw'),visuals=[];
+  const surfaces=industrialGroups(map),compiledDetail=useCompiledMapDetails(surfaces),batched=useSpatialMapBatches(surfaces)&&!renderer?.userData?.legacyMapRendering&&DETAIL_MAPS.has(map.id)&&renderer?.extensions?.has('WEBGL_multi_draw'),visuals=[];
+  for(const {geometry}of surfaces)if(!compiledDetail){delete geometry.userData.compiledClusters;delete geometry.userData.mapOccluders;delete geometry.userData.projectedUV;geometry.deleteAttribute('mapUvAxis');geometry.deleteAttribute('mapUvOffset');}
+  const props=batched&&compiledDetail?map.renderChunks?.props:null;
+  if(props)for(const{geometry}of surfaces)if(geometry.userData.propStaticIndex)geometry.userData.drawIndex=geometry.userData.propStaticIndex;
   arena.userData.raycastGeometries=[];arena.userData.mapOwnedMaterials=new Set();const optimized=new Map();
   const paint=m=>{if(batched||!DETAIL_MAPS.has(map.id)||renderer?.userData?.legacyMapRendering)return m;if(!optimized.has(m)){const next=optimizeMapMaterial(m);optimized.set(m,next);arena.userData.mapOwnedMaterials.add(next);}return optimized.get(m);};
   for(const {family,geometry,material}of surfaces){
+   if(!batched){geometry.deleteAttribute('mapUvAxis');geometry.deleteAttribute('mapUvOffset');}
    const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=!['glass','light','fence'].includes(family.split('~')[0].split('@')[0]);mesh.receiveShadow=true;mesh.updateMatrix();mesh.matrixAutoUpdate=false;
    let draw=geometry;
    if(geometry.userData.drawIndex)draw=batched?geometry:compactSurface(geometry,geometry.userData.drawIndex);
-   if(batched&&geometry.userData.drawIndex){draw=new THREE.BufferGeometry();for(const [name,a]of Object.entries(geometry.attributes))draw.setAttribute(name,a);draw.setIndex(new THREE.BufferAttribute(geometry.userData.drawIndex,1));draw.computeBoundingSphere();}
+   if(batched&&geometry.userData.drawIndex){draw=new THREE.BufferGeometry();for(const [name,a]of Object.entries(geometry.attributes))draw.setAttribute(name,a);draw.setIndex(new THREE.BufferAttribute(geometry.userData.drawIndex,1));draw.userData.projectedUV=geometry.userData.projectedUV;draw.userData.compiledClusters=geometry.userData.compiledClusters;draw.userData.mapOccluders=geometry.userData.mapOccluders;draw.computeBoundingSphere();}
    visuals.push({family,geometry:draw,material});
    if((!batched||material.transparent)&&draw===geometry) {mesh.material=paint(material);arena.add(mesh);}
    else{mesh.userData.raycastOnly=true;arena.userData.raycastGeometries.push(geometry);if(!batched||material.transparent){const visual=new THREE.Mesh(draw,paint(material));visual.castShadow=mesh.castShadow;visual.receiveShadow=true;visual.updateMatrix();visual.matrixAutoUpdate=false;arena.add(visual);}}
-   spatialRaycast(mesh,true);worldMeshes.push(mesh);
+   spatialRaycast(mesh,true);mesh.userData.staticMapRay=true;worldMeshes.push(mesh);
   }
-  if(batched){arena.add(...spatialMapBatches(visuals));for(let i=0;i<visuals.length;i++)if(visuals[i].geometry!==surfaces[i].geometry&&!visuals[i].material.transparent)visuals[i].geometry.dispose();}
+  if(batched){const batches=spatialMapBatches(visuals);arena.add(...batches);if(props)arena.add(...mapPropBatches(surfaces,props,batches.find(b=>b.userData.clusterVisibility)?.userData.clusterVisibility.occlusion));for(let i=0;i<visuals.length;i++)if(visuals[i].geometry!==surfaces[i].geometry&&!visuals[i].material.transparent)visuals[i].geometry.dispose();}
   // Detached originals are exact ray geometry. Color is visual-only; opaque
   // hit tests don't need UVs. The game's descriptor drops its source chunks
   // after construction, so these unused buffers can now be reclaimed.
-  for(const mesh of worldMeshes)if(mesh.userData.raycastOnly){mesh.geometry.deleteAttribute('color');if(!mesh.material.userData.alphaAt)mesh.geometry.deleteAttribute('uv');delete mesh.geometry.userData.drawIndex;}
+  for(const mesh of worldMeshes)if(mesh.userData.raycastOnly){mesh.geometry.deleteAttribute('color');mesh.geometry.deleteAttribute('mapUvAxis');mesh.geometry.deleteAttribute('mapUvOffset');if(!mesh.material.userData.alphaAt)mesh.geometry.deleteAttribute('uv');delete mesh.geometry.userData.drawIndex;delete mesh.geometry.userData.compiledClusters;delete mesh.geometry.userData.propStaticIndex;delete mesh.geometry.userData.mapOccluders;}
  }
  else{
  for(const [kind,g] of Object.entries(map.groups)){
   if(kind==='water')continue;
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(g.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(g.n,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(g.c,3));geometry.computeBoundingSphere();
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(g.p,3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute(g.n,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(g.c,3));
+  // Authored solids share the industrial world's material scale. Supply UVs
+  // for paint/metal relief without adding seams to collision or ray geometry.
+  if(map.authored){const uv=[];for(let i=0;i<g.p.length;i+=3){const x=g.p[i],y=g.p[i+1],z=g.p[i+2],nx=Math.abs(g.n[i]),ny=Math.abs(g.n[i+1]);uv.push((ny>.5?x:nx>.5?z:x)*.45,(ny>.5?z:y)*.45);}geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));}
+  geometry.computeBoundingSphere();
   const material=new THREE.MeshStandardMaterial({color:kind==='ink'?0x354447:kind==='light'?0xebf5b5:0xffffff,vertexColors:kind!=='ink'&&kind!=='light',roughness:kind==='glass'||kind==='water'?.25:.8,metalness:kind==='ink'?.25:.08,side:THREE.DoubleSide,...map.materials?.[kind]});
   if(kind==='light'){material.emissive.setHex(0xd9ef45);material.emissiveIntensity=.65}
   if(kind==='glass'||kind==='water'){material.transparent=true;material.opacity=kind==='water'?.46:.26;material.color.setHex(kind==='water'?0x70b8a8:0xb5dbd8);material.depthWrite=false}
-  const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=kind!=='glass'&&kind!=='water'&&kind!=='light';mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh);if(kind!=='water')worldMeshes.push(mesh);
+  const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=kind!=='glass'&&kind!=='water'&&kind!=='light';mesh.receiveShadow=true;arena.add(mesh);spatialRaycast(mesh,true);if(kind!=='water')worldMeshes.push(mesh);
  }
  }
  arena.userData.staticShadowMeshes=arena.children.filter(o=>o.isMesh&&o.castShadow);
  for(const volume of map.water||[])arena.add(createWaterSurface(volume));
  if(industrial){
+  prepareMapRays(worldMeshes);
   const lights=map.id==='reservoir'?[[0,39,-32],[0,39,32]]:(map.lights||[]).slice(0,2).map(l=>[l.x,l.y,l.z]);
   for(const [x,y,z]of lights){const light=new THREE.PointLight(0xe3ead7,map.id==='reservoir'?105:65,map.id==='reservoir'?42:34,2);light.position.set(x,y,z);arena.add(light);}
   arena.updateMatrixWorld(true);dressIndustrialArena(arena,map,worldMeshes);

@@ -1,6 +1,7 @@
 # Fragony maps
 
-Eleven maps are active: Reservoir, Rust, Shipment, Nuketown, Killhouse, Vacant, Showdown, Firing Range, Hijacked, Summit and Shoot House. Campaign rounds draw from a persistent shuffled bag; every map plays before the bag refills, with no immediate repeat across bag boundaries. Continuing a match keeps its map. Practice uses the same eleven-map roster. Test Works, Tidal Lock, Parallax and Foundry are absent from production imports, practice and rotation. Unknown or retired map selections fall back to Reservoir.
+Seventeen maps are active: Reservoir, Rust, Shipment, Nuketown, Killhouse, Vacant, Showdown (CoD), Firing Range, Hijacked, Summit, Shoot House, Siege, Mutiny, Showdown · Elite Force, Delta Station, Beta Station and Blast Radius. Campaign rounds draw from a persistent shuffled bag; every map plays before the bag refills, with no immediate repeat across bag boundaries. Continuing a match keeps its map. Practice uses the same roster. Forge1, Forge2 and Bravery are excluded from both; their source assets are retained for research. Unknown or retired saved selections fall back to Reservoir, and stale bags rebuild against the active roster.
+
 
 ## Reservoir
 Geometry conversion of the player-supplied `ctf_reservoir.pk3`, the Elite Force II remake credited to **[SFI]Valix** in its readme. The original Elite Force I layout and other material remain credited to their respective creators. This project retains the supplied architectural geometry and source pickup/spawn coordinates, with Fragony materials and gameplay. Ten additional free-for-all spawns cover the galleries, central crossings and lower reservoir routes. Shared player/bot spawning weighs enemy proximity, sightlines, nearby traffic and recent use of each region. No original game textures, character/item models, sounds, scripts or lightmaps are included.
@@ -35,9 +36,9 @@ Legacy map development notes: [archived roster](docs/retired-maps.md).
 
 ## Health
 - 5 HP: small pale-green crosses, can exceed spawn health.
-- 25 HP: white packs, capped at spawn health (including Juggernaut).
-- 50 HP: one large acid-colored pack per map, can exceed spawn health.
-- Overhealth cap: 200 HP. No decay. Small/standard respawn in 15 seconds; major in 30 seconds. Full or ineligible pickups remain available. Player and bots use the same rules. Any actual healing clears damage/assist history as before.
+- 25 HP: white packs, capped at maximum health (including the armor perk).
+- 50 HP: exactly one major per active map, placed at a contested route or junction; can exceed maximum health. Elite Force source reward metadata is retained separately, with other former majors converted to25HP.
+- Overhealth cap: 150% of each actor’s maximum health, including the armor perk. No decay. Small/standard respawn in 15 seconds; major in 30 seconds. Full or ineligible pickups remain available. Player and bots use the same rules. Any actual healing clears damage/assist history as before.
 
 ## Rebuilding Reservoir
 From the repository root:

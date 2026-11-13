@@ -172,7 +172,7 @@ Six weapon impact profiles give resolved shots distinct local body and limb resp
 
 ### Map roster
 
-The twenty active maps are **Reservoir**, **Rust**, **Shipment**, **Nuketown**, **Killhouse**, **Vacant**, **Showdown** (CoD), **Firing Range**, **Hijacked**, **Summit**, **Shoot House**, **Siege**, **Mutiny**, **Bravery**, **Showdown · Elite Force**, **Delta Station**, **Beta Station**, **Forge2**, **Forge1**, and **Blast Radius**. The nine Elite Force maps preserve source architecture and convert all 788 pickup anchors to health; see [the adaptation notes](docs/imported-maps/eliteforce-nine.md). A persistent shuffled bag plays every map before repeating. Practice offers the same roster. Test Works, Tidal Lock, Parallax and Foundry have been retired from the production build and rotation; their geometry remains in test fixtures for legacy movement checks.
+The seventeen active maps are **Reservoir**, **Rust**, **Shipment**, **Nuketown**, **Killhouse**, **Vacant**, **Showdown** (CoD), **Firing Range**, **Hijacked**, **Summit**, **Shoot House**, **Siege**, **Mutiny**, **Showdown · Elite Force**, **Delta Station**, **Beta Station**, and **Blast Radius**. Every active map has one contested +50 health pickup; +5/+50 can overheal to 150% of actor maximum. Six Elite Force maps remain active; all nine source adaptations are retained for research and preserve their pickup anchors as health; see [the adaptation notes](docs/imported-maps/eliteforce-nine.md). A persistent shuffled bag plays every map before repeating. Practice offers the same roster. Forge1, Forge2 and Bravery are excluded from rotation and practice; their source assets remain available. Test Works, Tidal Lock, Parallax and Foundry have been retired from the production build and rotation; their geometry remains in test fixtures for legacy movement checks.
 
 The seven new source conversions use authored area palettes, native source collision, trimmed playable footprints and prepared rendering files. Killhouse, Firing Range and Summit gain targeted access pads; Hijacked gains two service elevators. Reservoir's four shafts have permanent rendered and physical pit floors, verified with platforms raised. [Map details and provenance](MAPS.md).
 
@@ -190,7 +190,7 @@ Sprinting has been replaced by a generous momentum crouch slide with forgiving u
 
 ### Industrial presentation and imported arenas
 
-All twenty active maps now use industrial and construction finishes across 100 distinct physical districts: brick workshops, blue/green enamel plant rooms, ochre loading areas, timber partitions, concrete, tiled utilities and aggregate yards. Shared physical textures add grain, seams, relief and roughness. See [the current material pass](docs/industrial-materials.md). Rust retains its supplied refinery layout and four deliberate jump routes. Stock Shipment replaces the previous Shipment2 variant; Nuketown is added from Stendby’s editable Nuked adaptation. Both Radiant imports preserve source architecture, interiors and cover, use cached bot navigation, and remove exterior scenery. Practice offers a map chooser and keeps your selected weapon/conversion when switching maps. [Design, source fidelity and validation](docs/industrial-presentation.md).
+All seventeen active maps now use industrial and construction finishes with authored physical districts: brick workshops, blue/green enamel plant rooms, ochre loading areas, timber partitions, concrete, tiled utilities and aggregate yards. Shared physical textures add grain, seams, relief and roughness. See [the current material pass](docs/industrial-materials.md). Rust retains its supplied refinery layout and four deliberate jump routes. Stock Shipment replaces the previous Shipment2 variant; Nuketown is added from Stendby’s editable Nuked adaptation. Both Radiant imports preserve source architecture, interiors and cover, use cached bot navigation, and remove exterior scenery. Practice offers a map chooser and keeps your selected weapon/conversion when switching maps. [Design, source fidelity and validation](docs/industrial-presentation.md).
 
 ### Pixel Forge
 
@@ -213,6 +213,9 @@ A surviving scoreboard continues directly to the dedicated shop; the shop starts
 
 ## GitHub and Vercel
 
-The source repository is https://github.com/mt-quinn/fragony. Import its `main` branch into Vercel using the repository root. `vercel.json` selects the static preset, runs `npm run build`, and serves `build/`. The build uses the existing prepared release pipeline and includes all 20 maps while excluding authoring archives and experimental art-lab pages. No environment variables or server functions are required.
+The source repository is https://github.com/mt-quinn/fragony. Import its `main` branch into Vercel using the repository root. `vercel.json` selects the static preset, runs `npm run build`, and serves `build/`. The build uses the existing prepared release pipeline and includes all 17 active maps while excluding authoring archives and experimental art-lab pages. No environment variables or server functions are required.
 
 Local preview: `npm start` serves `dist/`. Production package: `npm run build`. Validate the production package and prepared maps with `npm run test:release`. The between-round flow and copy are covered by `tests/round-shop.mjs` as part of `npm test`.
+
+
+Original playable sample: serve `dist/rainworks.html` (or its built copy). **Rainworks** has a dedicated one-map free-for-all entry and an exploration mode. Run `npm run test:rainworks` for its native geometry and movement checks.

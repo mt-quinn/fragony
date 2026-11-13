@@ -81,3 +81,10 @@ console.log('Surface texture: unjittered world reconstruction with TAA, mask dep
 const cutoutMask=new PixelForgeMask(),alphaMap=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1),fenceMaterial=new THREE.MeshStandardMaterial({alphaMap,alphaTest:.5,side:THREE.DoubleSide});
 const fenceBlack=cutoutMask.maskMaterial(fenceMaterial,false),fenceWhite=cutoutMask.maskMaterial(fenceMaterial,true);assert.notEqual(fenceBlack,cutoutMask.black);assert.equal(fenceBlack.alphaMap,alphaMap);assert.equal(fenceBlack.alphaTest,.5);assert.equal(fenceBlack.color.getHex(),0);assert.equal(fenceWhite.color.getHex(),0xffffff);assert.equal(cutoutMask.maskMaterial(fenceMaterial,false),fenceBlack);
 let cutoutsDisposed=0;for(const m of [fenceBlack,fenceWhite])m.addEventListener('dispose',()=>cutoutsDisposed++);cutoutMask.dispose();assert.equal(cutoutsDisposed,2);fenceMaterial.dispose();alphaMap.dispose();console.log('Actor masks preserve fence cutouts and dispose cached materials without owning their shared textures.');
+// Multipass rendering shares one scene pose and restores the caller's policy.
+const poseScene=new THREE.Scene();let poseUpdates=0;const updatePose=poseScene.updateMatrixWorld.bind(poseScene);poseScene.updateMatrixWorld=(...args)=>{poseUpdates++;return updatePose(...args);};
+const poseRenderer={...surfaceRenderer,shadowMap:{autoUpdate:true},render(s){if(s.matrixWorldAutoUpdate)s.updateMatrixWorld();}};
+const poseFrame=new FrameRenderer(poseRenderer,poseScene,surfaceCamera,{antialias:false,ao:false,bloom:false});
+poseFrame.render(poseScene,surfaceCamera,1/60);assert.equal(poseUpdates,1,'all world/mask/water/weapon passes share one matrix update');assert.equal(poseScene.matrixWorldAutoUpdate,true);
+poseRenderer.render=()=>{throw Error('pose failure');};assert.throws(()=>poseFrame.render(poseScene,surfaceCamera,1/60),/pose failure/);assert.equal(poseScene.matrixWorldAutoUpdate,true,'matrix update policy restored after render failure');poseFrame.dispose();
+console.log('Multipass scene poses: one matrix traversal per frame and caller-state restoration on failure pass.');

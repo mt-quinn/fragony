@@ -132,8 +132,11 @@ export class FrameRenderer{
  pass(material,target){this.quad.material=material;this.renderer.setRenderTarget(target);this.renderer.render(this.scene,this.camera)}
  render(scene,camera,dt,slow=false,waterVolumes=[]){
   this.syncMapPalette(scene);
-  const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate,override=scene.overrideMaterial;
+  const r=this.renderer,background=scene.background,mask=camera.layers.mask,airFog=scene.fog,autoShadow=r.shadowMap.autoUpdate,override=scene.overrideMaterial,autoMatrix=scene.matrixWorldAutoUpdate;
   try{
+  // Every pass shares one articulated pose. Updating the entire scene for
+  // world, water, AO, masks and the weapon separately multiplies CPU work.
+  if(autoMatrix)scene.updateMatrixWorld();scene.matrixWorldAutoUpdate=false;
   const underwater=updateWaterState(this.waterState,scene,camera,dt,waterVolumes);this.output.uniforms.underwater.value=underwater;
   if(underwater>.001){this.waterState.fog.color.copy(airFog?.color||this.waterState.airColor).lerp(this.waterState.color,underwater);this.waterState.fog.near=THREE.MathUtils.lerp(airFog?.near||38,10,underwater);this.waterState.fog.far=THREE.MathUtils.lerp(airFog?.far||120,90,underwater);scene.fog=this.waterState.fog;}this.slow=THREE.MathUtils.damp(this.slow,slow?1:0,9,dt);this.output.uniforms.slow.value=this.slow;
   this.temporal?.begin(camera,dt);
@@ -159,7 +162,7 @@ export class FrameRenderer{
   const worldTexture=this.temporal?this.temporal.resolve(camera,this.world,(m,t)=>this.pass(m,t)):this.world.texture;this.output.uniforms.worldTex.value=worldTexture;
   scene.fog=airFog;camera.layers.set(1);r.setRenderTarget(this.gun);r.setClearColor(0,0);r.clear();renderWeaponView(r,scene,camera);scene.background=background;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;
   this.finish();
-  }finally{scene.background=background;scene.fog=airFog;scene.overrideMaterial=override;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;if(r.getRenderTarget?.()!=null)r.setRenderTarget(null);}
+  }finally{scene.matrixWorldAutoUpdate=autoMatrix;scene.background=background;scene.fog=airFog;scene.overrideMaterial=override;camera.layers.mask=mask;r.shadowMap.autoUpdate=autoShadow;if(r.getRenderTarget?.()!=null)r.setRenderTarget(null);}
  }
  renderWeaponOnly(scene,camera){
   const r=this.renderer,mask=camera.layers.mask,background=scene.background,autoShadow=r.shadowMap.autoUpdate;

@@ -1,7 +1,12 @@
+import {COMPILED_MAP_IDS} from '../dist/maps/compiled-map-manifest.js';
+import {readSourceRender} from '../dist/maps/source-render.js';
 import fs from 'node:fs';import path from 'node:path';import specs from '../dist/maps/source-arena-specs.js';import {fileURLToPath} from 'node:url';import {gzipSync} from 'node:zlib';
 // Preserve authoring archives in source; ship the prepared render/physics used
 // by the active browser build. Local authoring and previews still use dist.
 const root=new URL('../',import.meta.url),source=new URL('dist/',root),output=new URL('build/',root),excluded=new Set(['art-lab.html','art-lab.css','art-lab.js','art-lab-shaders.js','art-lab-water.html']);
+// Validate prepared identity before publishing; compiled maps carry their exact
+// near indices, so their older detail sidecars are authoring-only duplicates.
+for(const id of COMPILED_MAP_IDS){await readSourceRender(new URL('dist/maps/'+id+'-render.json.gz',root),null,{detail:true});excluded.add('maps/'+id+'-detail.json.gz');}
 for(const spec of specs){
  if(!spec.precompiled)continue;
  for(const family of ['render','physics'])if(!fs.existsSync(new URL('maps/'+spec.id+'-'+family+'.json.gz',source)))throw Error('Missing prepared '+family+' for '+spec.id);

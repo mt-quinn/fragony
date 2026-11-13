@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';import fs from 'node:fs';import{createHa
 import {SOURCE_ARENAS}from'../dist/maps/source-arenas.js';import{MAPS}from'../dist/map.js';
 import{restoreNavigation,nearestNode}from'../dist/ai.js';import{launchTime}from'../dist/geometry.js';
 const expected=[['siege','hm_cam'],['mutiny','hm_for1'],['bravery','hm_kln1'],['ef-showdown','hm_noon'],['delta-station','ctf_voy1'],['beta-station','ctf_voy2'],['forge2','hm_for2'],['forge1','ctf_for1'],['blast-radius','hm_blastradius']],ref=new URL('../../reference-maps/eliteforce-next-map-round/',import.meta.url);
-assert.equal(MAPS.length,20);assert.notEqual(MAPS.find(m=>m.id==='showdown').name,MAPS.find(m=>m.id==='ef-showdown').name);
+assert.equal(MAPS.length,17);assert.notEqual(MAPS.find(m=>m.id==='showdown').name,MAPS.find(m=>m.id==='ef-showdown').name);
 let starts=0,items=0;
 for(const[id,engine]of expected){const map=await SOURCE_ARENAS.find(m=>m.id===id).load(),source=JSON.parse(fs.readFileSync(new URL(id+'/source-entities.json',ref))),bytes=fs.readFileSync(new URL('maps/'+engine+'.map',ref));
  assert.equal(map.sourceEngine,engine);assert.equal(map.source.sha256,createHash('sha256').update(bytes).digest('hex'));assert.equal(map.source.scale,1/32);assert.equal(map.stepHeight,.6);assert.ok(map.killBelow<Math.min(...map.spawns.map(p=>p[1])));

@@ -1,16 +1,16 @@
 // Shared geometry and finishes for the armory's loose parts and gun details.
-export function createHardware(T){
+export function createHardware(T,{world=false,resources=null}={}){
  const geometries=new Map(),materials=new Map(),textures=new Map();
- const geo=(key,create)=>{if(!geometries.has(key))geometries.set(key,create());return geometries.get(key);};
- const mat=(key,color,metalness=.2,roughness=.42)=>{if(!materials.has(key))materials.set(key,new T.MeshStandardMaterial({color,metalness,roughness}));return materials.get(key);};
+ const geo=(key,create)=>{if(!geometries.has(key))geometries.set(key,resources?resources.geometry('hardware:'+key,create):create());return geometries.get(key);};
+ const mat=(key,color,metalness=.2,roughness=.42)=>{if(!materials.has(key))materials.set(key,resources?resources.material('hardware:'+key,()=>new T.MeshStandardMaterial({color,metalness,roughness})):new T.MeshStandardMaterial({color,metalness,roughness}));return materials.get(key);};
  const M={ink:mat('ink',0x172b34,.2,.58),rubber:mat('rubber',0x101d23,.02,.85),steel:mat('steel',0xb3c1c0,.72,.28),edge:mat('edge',0x596d76,.6,.4),ivory:mat('ivory',0xe8ddba,.12,.5),blue:mat('blue',0x48719e,.25,.4),copper:mat('copper',0xb7723f,.68,.31),gold:mat('gold',0xd4af68,.65,.3),orange:mat('orange',0xe76d40,.15,.48)};
  const rank=r=>mat('rank'+r,[0xc7cbb8,0x8fbad1,0xc1a1d6,0xdec07c][r],.35,.34);
  function mesh(parent,g,m,x=0,y=0,z=0){const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
- function box(parent,x,y,z,w,h,d,m=M.steel,cut=1){const k=`b${w}:${h}:${d}:${cut}`;return mesh(parent,geo(k,()=>{const s=new T.Shape(),a=w/2,b=h/2,c=Math.min(cut,a*.25,b*.25);s.moveTo(-a+c,-b);s.lineTo(a-c,-b);s.lineTo(a,-b+c);s.lineTo(a,b-c);s.lineTo(a-c,b);s.lineTo(-a+c,b);s.lineTo(-a,b-c);s.lineTo(-a,-b+c);s.closePath();const g=new T.ExtrudeGeometry(s,{depth:d,bevelEnabled:true,bevelThickness:.45,bevelSize:.45,bevelSegments:1,steps:1});g.translate(0,0,-d/2);return g;}),m,x,y,z);}
- function cyl(parent,x,y,z,r,h,m=M.steel,axis='y',r2=r){const o=mesh(parent,geo(`c${r}:${r2}:${h}`,()=>new T.CylinderGeometry(r2,r,h,16)),m,x,y,z);if(axis==='z')o.rotation.x=Math.PI/2;if(axis==='x')o.rotation.z=Math.PI/2;return o;}
- function ring(parent,x,y,z,r,t,m=M.steel,axis='z'){const o=mesh(parent,geo(`r${r}:${t}`,()=>new T.TorusGeometry(r,t,5,24)),m,x,y,z);if(axis==='y')o.rotation.x=Math.PI/2;if(axis==='x')o.rotation.y=Math.PI/2;return o;}
+ function box(parent,x,y,z,w,h,d,m=M.steel,cut=1){const k=`b${w}:${h}:${d}:${cut}`;return mesh(parent,geo(k,()=>{const s=new T.Shape(),a=w/2,b=h/2,c=Math.min(cut,a*.25,b*.25);s.moveTo(-a+c,-b);s.lineTo(a-c,-b);s.lineTo(a,-b+c);s.lineTo(a,b-c);s.lineTo(a-c,b);s.lineTo(-a+c,b);s.lineTo(-a,b-c);s.lineTo(-a,-b+c);s.closePath();const g=new T.ExtrudeGeometry(s,{depth:d,bevelEnabled:!world,bevelThickness:.45,bevelSize:.45,bevelSegments:1,steps:1});g.translate(0,0,-d/2);return g;}),m,x,y,z);}
+ function cyl(parent,x,y,z,r,h,m=M.steel,axis='y',r2=r){const o=mesh(parent,geo(`c${r}:${r2}:${h}`,()=>new T.CylinderGeometry(r2,r,h,world?12:16)),m,x,y,z);if(axis==='z')o.rotation.x=Math.PI/2;if(axis==='x')o.rotation.z=Math.PI/2;return o;}
+ function ring(parent,x,y,z,r,t,m=M.steel,axis='z'){const o=mesh(parent,geo(`r${r}:${t}`,()=>new T.TorusGeometry(r,t,world?4:5,world?16:24)),m,x,y,z);if(axis==='y')o.rotation.x=Math.PI/2;if(axis==='x')o.rotation.y=Math.PI/2;return o;}
  const glyphs={pressure:'↑',service:'↻',momentum:'»',repair:'+',focus:'◷',rebound:'↗',brake:'Ⅱ',echo:'••',arc:'ϟ',assayer:'★'};
- function glyph(id){if(textures.has(id))return textures.get(id);if(typeof document==='undefined')return new T.MeshBasicMaterial({color:0xf5edce});const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');ctx.clearRect(0,0,128,128);ctx.fillStyle='#f5edce';ctx.font='bold 87px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(glyphs[id]||'+',64,67);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false});textures.set(id,m);return m;}
+ function glyph(id){if(textures.has(id))return textures.get(id);const make=()=>{if(typeof document==='undefined')return new T.MeshBasicMaterial({color:0xf5edce});const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');ctx.clearRect(0,0,128,128);ctx.fillStyle='#f5edce';ctx.font='bold 87px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(glyphs[id]||'+',64,67);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false});m.userData.worldOwnedTexture=true;return m;};const m=resources?resources.material('hardware:glyph:'+id,make):make();textures.set(id,m);return m;}
  function chip(parent,id,r=0){const tint=rank(r);box(parent,0,0,0,25,29,5,M.ink,2);box(parent,0,0,3.1,20,23,2,tint,1.5);box(parent,0,0,4.4,15,17,.5,M.blue,1);
   const label=mesh(parent,geo('label',()=>new T.PlaneGeometry(14,14)),glyph(id),0,0,4.9);label.castShadow=false;
   for(let i=0;i<5;i++)for(const sign of [-1,1])box(parent,sign*15,-11+i*5.5,0,6,2,2,M.gold,.2);
@@ -60,6 +60,6 @@ export function createHardware(T){
   x.fillStyle='#fff0cb';x.fillRect(35,35,165,25);x.fillStyle='#d6edf0';x.fillRect(330,45,85,58);x.fillStyle='#7e95a3';x.fillRect(235,70,18,112);
   const t=new T.CanvasTexture(c);t.mapping=T.EquirectangularReflectionMapping;t.colorSpace=T.SRGBColorSpace;const pm=new T.PMREMGenerator(renderer),target=pm.fromEquirectangular(t);pm.dispose();t.dispose();return target;
  }
- function dispose(){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(m=>{m.map.dispose();m.dispose();});}
+ function dispose(){if(resources)return;geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(m=>{m.map?.dispose();m.dispose();});}
  return{part,chip,environment,box,M,rank,dispose};
 }

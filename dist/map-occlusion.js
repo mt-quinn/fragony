@@ -6,10 +6,10 @@ import * as THREE from './vendor/three.module.js';
 // projected rectangle lies behind covered tiles. No rays, guessed portals,
 // previous-frame visibility, or GPU readbacks; camera movement cannot reveal gaps.
 export class MapOcclusion{
- constructor(surfaces,{width=64,height=36,maxTriangles=2048,minArea=1}={}){
-  this.width=width;this.height=height;this.depth=new Float32Array(width*height);this.matrix=new THREE.Matrix4();this.view=new THREE.Matrix4();this.previous=new Float64Array(32).fill(NaN);this.points=new Float64Array(24);this.lastCamera=null;
-  const candidates=[];
-  for(const {geometry,material}of surfaces){
+ constructor(surfaces,{width=64,height=36,maxTriangles=2048,minArea=1,triangles=null}={}){
+  this.width=width;this.height=height;this.depth=new Float32Array(width*height);this.matrix=new THREE.Matrix4();this.view=new THREE.Matrix4();this.previous=new Float64Array(32).fill(NaN);this.points=new Float64Array(24);this.lastCamera=null;this.edges=new Float64Array(9);
+  const candidates=triangles?triangles.slice():[];
+  for(const {geometry,material}of triangles?[]:surfaces){
    if(material.transparent||material.alphaTest>0||!material.depthWrite)continue;
    const p=geometry.attributes.position,ix=geometry.index.array;
    for(let i=0;i<ix.length;i+=3){const a=ix[i]*3,b=ix[i+1]*3,c=ix[i+2]*3,v=p.array,ux=v[b]-v[a],uy=v[b+1]-v[a+1],uz=v[b+2]-v[a+2],vx=v[c]-v[a],vy=v[c+1]-v[a+1],vz=v[c+2]-v[a+2],cx=uy*vz-uz*vy,cy=uz*vx-ux*vz,cz=ux*vy-uy*vx,area=Math.hypot(cx,cy,cz)*.5;if(area<minArea)continue;candidates.push({area,p:[v[a],v[a+1],v[a+2],v[b],v[b+1],v[b+2],v[c],v[c+1],v[c+2]],side:material.side});}
@@ -32,11 +32,13 @@ export class MapOcclusion{
    const q=projected.p,far=projected.far,triangle=projected;
    const ax=q[0],ay=q[1],bx=q[3],by=q[4],cx=q[6],cy=q[7],area=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax);if(Math.abs(area)<1e-8||triangle.side===THREE.FrontSide&&area<=0||triangle.side===THREE.BackSide&&area>=0)continue;
    const sign=area>0?1:-1,minX=Math.max(0,Math.ceil(Math.min(ax,bx,cx))),maxX=Math.min(w-1,Math.floor(Math.max(ax,bx,cx))-1),minY=Math.max(0,Math.ceil(Math.min(ay,by,cy))),maxY=Math.min(h-1,Math.floor(Math.max(ay,by,cy))-1);
-   for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++){
-    const index=y*w+x;if(this.depth[index]<=far)continue;
-    // Linear edge functions take their minimum at one of a square's corners.
-    let inside=true;for(let edge=0;edge<3;edge++){const a=edge*3,b=((edge+1)%3)*3,dx=(q[b]-q[a])*sign,dy=(q[b+1]-q[a+1])*sign,value=dx*(y-q[a+1])-dy*(x-q[a]);if(value+Math.min(0,dx)-Math.max(0,dy)<1e-5){inside=false;break;}}
-    if(inside)this.depth[index]=far;
+   // Clip each scanline against the three conservative tile-edge halfplanes.
+   // The minimum edge value over all four tile corners is affine in x/y;
+   // solving it once per row replaces three edge tests per candidate tile.
+   const edges=this.edges;for(let edge=0;edge<3;edge++){const a=edge*3,b=((edge+1)%3)*3,dx=(q[b]-q[a])*sign,dy=(q[b+1]-q[a+1])*sign;edges[edge*3]=-dy;edges[edge*3+1]=dx;edges[edge*3+2]=dy*q[a]-dx*q[a+1]+Math.min(0,dx)-Math.max(0,dy);}
+   for(let y=minY;y<=maxY;y++){
+    let low=minX,high=maxX;for(let edge=0;edge<9;edge+=3){const a=edges[edge],value=edges[edge+1]*y+edges[edge+2];if(a>0)low=Math.max(low,Math.ceil((1e-5-value)/a));else if(a<0)high=Math.min(high,Math.floor((1e-5-value)/a));else if(value<1e-5){high=-1;break;}}
+    for(let x=low;x<=high;x++){const index=y*w+x;if(this.depth[index]>far)this.depth[index]=far;}
    }
   }
   return true;

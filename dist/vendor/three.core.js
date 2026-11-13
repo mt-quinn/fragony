@@ -27777,6 +27777,7 @@ class BatchedMesh extends Mesh {
 	 * @return {number} The geometry ID.
 	 */
 	setGeometryAt( geometryId, geometry ) {
+		if ( this._geometryInfo[ geometryId ]?.baseGeometryId !== undefined || this._geometryInfo.some( g => g.active && g.baseGeometryId === geometryId ) ) throw new Error( 'Shared geometry views are immutable' );
 
 		if ( geometryId >= this._geometryCount ) {
 
@@ -27889,6 +27890,7 @@ class BatchedMesh extends Mesh {
 	 * @return {BatchedMesh} A reference to this batched mesh.
 	 */
 	deleteGeometry( geometryId ) {
+		if ( this._geometryInfo.some( g => g.active && g.baseGeometryId === geometryId ) ) throw new Error( 'Delete geometry views before their allocation' );
 
 		const geometryInfoList = this._geometryInfo;
 		if ( geometryId >= geometryInfoList.length || geometryInfoList[ geometryId ].active === false ) {
@@ -27942,6 +27944,7 @@ class BatchedMesh extends Mesh {
 	 * @return {BatchedMesh} A reference to this batched mesh.
 	 */
 	optimize() {
+		if ( this._geometryInfo.some( g => g.active && g.baseGeometryId !== undefined ) ) throw new Error( 'Cannot repack shared geometry views' );
 
 		// track the next indices to copy data to
 		let nextVertexStart = 0;
@@ -28254,7 +28257,10 @@ class BatchedMesh extends Mesh {
 		this.validateInstanceId( instanceId );
 		this.validateGeometryId( geometryId );
 
-		this._instanceInfo[ instanceId ].geometryIndex = geometryId;
+		if ( this._instanceInfo[ instanceId ].geometryIndex !== geometryId ) {
+			this._instanceInfo[ instanceId ].geometryIndex = geometryId;
+			this._visibilityChanged = true;
+		}
 
 		return this;
 
@@ -28286,6 +28292,32 @@ class BatchedMesh extends Mesh {
 	 * 	start:number,count:number
 	 * }} The result object with range data.
 	 */
+	// Fragony: immutable cluster levels share one vertex allocation and several
+	// index ranges. Selecting a range changes draw commands, never GPU buffers.
+	// Immutable geometry views share vertex/index allocations for per-instance LOD.
+	addGeometryView( geometryId, start, count ) {
+		this.validateGeometryId( geometryId );
+		const source = this._geometryInfo[ geometryId ];
+		if ( source.baseGeometryId !== undefined || ! Number.isInteger( start ) || ! Number.isInteger( count ) || start < 0 || count < 0 || start + count > source.indexCount || start % 3 || count % 3 ) throw new Error( 'Invalid geometry view' );
+		this.getBoundingBoxAt( geometryId, _box$1 );
+		this.getBoundingSphereAt( geometryId, _sphere$2 );
+		const id = this._geometryCount ++;
+		this._geometryInfo.push( { ...source, baseGeometryId: geometryId, reservedVertexCount: 0, reservedIndexCount: 0, indexStart: source.indexStart + start, indexCount: count, start: source.indexStart + start, count, boundingBox: source.boundingBox.clone(), boundingSphere: source.boundingSphere.clone() } );
+		return id;
+	}
+
+	setGeometryDrawRangeAt( geometryId, start, count ) {
+		this.validateGeometryId( geometryId );
+		const info = this._geometryInfo[ geometryId ];
+		if ( ! Number.isInteger( start ) || ! Number.isInteger( count ) || start < 0 || count < 0 || start + count > info.indexCount || start % 3 || count % 3 ) throw new Error( 'Invalid cluster draw range' );
+		if ( info.start !== info.indexStart + start || info.count !== count ) {
+			info.start = info.indexStart + start;
+			info.count = count;
+			this._visibilityChanged = true;
+		}
+		return this;
+	}
+
 	getGeometryRangeAt( geometryId, target = {} ) {
 
 		this.validateGeometryId( geometryId );

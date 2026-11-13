@@ -6,11 +6,12 @@ export class CrouchSlide{
  reset(){this.active=false;this.age=0;this.cooldown=0;this.buffer=0;this.lastCrouch=false;this.air=0;this.startSpeed=0;}
  stop(){if(this.active)this.cooldown=SLIDE.cooldown;this.active=false;this.age=0;this.air=0;this.buffer=0;}
  start(vx,vz){const speed=Math.hypot(vx,vz);if(this.cooldown>0||speed<SLIDE.entrySpeed)return false;this.active=true;this.age=this.air=0;this.startSpeed=speed;return true;}
- step(dt,{vx,vz,wishX=0,wishZ=0,crouch=false,grounded=true,swimming=false,slope=0}={}){
+ step(dt,{vx,vz,wishX=0,wishZ=0,crouch=false,grounded=true,swimming=false,slope=0,sampleSlope=null}={}){
   this.cooldown=Math.max(0,this.cooldown-dt);if(crouch&&!this.lastCrouch)this.buffer=SLIDE.buffer;this.lastCrouch=crouch;this.buffer=Math.max(0,this.buffer-dt);
   let entered=false;if(swimming){this.stop();return{x:vx,z:vz,active:false,entered};}
   if(!this.active&&crouch&&grounded&&this.buffer>0&&this.start(vx,vz)){entered=true;const speed=Math.hypot(vx,vz),boost=Math.min(SLIDE.boost,speed*.08);vx*=1+boost/speed;vz*=1+boost/speed;this.buffer=0;}
   if(!this.active)return{x:vx,z:vz,active:false,entered};
+  if(sampleSlope)slope=sampleSlope();
   this.age+=dt;this.air=grounded?0:this.air+dt;
   const speed=Math.hypot(vx,vz),limit=slope<-.08?SLIDE.downhillDuration:SLIDE.duration;
   if(!crouch||this.age>limit||speed<SLIDE.minSpeed||this.air>SLIDE.airGrace){this.stop();return{x:vx,z:vz,active:false,entered};}
@@ -25,7 +26,7 @@ export class CrouchSlide{
 // Sample actual support in the direction of travel. Reject abrupt drops/walls so
 // stairs remain traversable and stepping off a balcony cannot grant a speed boost.
 export function slideSlope(blocks,pos,vx,vz){const speed=Math.hypot(vx,vz);if(speed<.1)return 0;const r=.32,dx=vx/speed*r,dz=vz/speed*r;
- const height=(x,z)=>{let h=0;for(const b of nearBlocks(blocks,x,z,.1)){const span=blockSpan(b,x,z);if(span&&span.top<=pos.y+.55&&span.top>h)h=span.top;}return h;};
+ const height=(x,z)=>{let h=0;for(const b of nearBlocks(blocks,x,z,.1,pos.y-.55,pos.y+.55)){const span=blockSpan(b,x,z);if(span&&span.top<=pos.y+.55&&span.top>h)h=span.top;}return h;};
  const ahead=height(pos.x+dx,pos.z+dz),behind=height(pos.x-dx,pos.z-dz);return Math.abs(ahead-pos.y)>.55||Math.abs(behind-pos.y)>.55?0:clamp((ahead-behind)/(r*2),-.8,.8);
 }
 export function botSlideChoice({skill=0,speed=0,grounded=false,swimming=false,clear=false,precision=false,recover=false,goalDistance=0,targetDistance=0,preferredRange=10,visible=false,underFire=false,corner=false,goal='rotate',spawnAge=0},random=Math.random){

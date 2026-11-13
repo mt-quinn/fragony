@@ -1,26 +1,27 @@
+import {worldModelLease} from './world-model-resources.js';
 import * as T from './vendor/three.module.js';
 import {createHardware} from './armory/hardware.js';
-export function createModularGun(kit){
- const hardware=createHardware(T),mats={},geos={},mergedGeometries=[];let barrelGroup,flash;const model=new T.Group();
- const material=(name,color,metalness=.05,roughness=.65)=>mats[name]??=(new T.MeshStandardMaterial({color,metalness,roughness,flatShading:false}));
+export function createModularGun(kit,{world=false}={}){
+ const lease=world?worldModelLease():null,hardware=createHardware(T,{world,resources:lease}),mats={},geos={},mergedGeometries=[];let barrelGroup,flash;const model=new T.Group();
+ const material=(name,color,metalness=.05,roughness=.65)=>mats[name]??=(lease?lease.material('gun:'+name+':'+color+':'+metalness+':'+roughness,()=>new T.MeshStandardMaterial({color,metalness,roughness,flatShading:false})):new T.MeshStandardMaterial({color,metalness,roughness,flatShading:false}));
  const M={blue:material('blue',0x3f72a2),cream:material('cream',0xe6d9b8),ink:material('ink',0x202b2b,.3,.5),steel:material('steel',0x8f9fb5,.65,.35),coral:material('coral',0xe87844),lime:material('lime',0xd5da9c),pink:material('pink',0xb4a0d9),cyan:material('cyan',0x7fafbf),gold:material('gold',0xdabb76)};
  const rankMat=r=>[M.cream,M.cyan,M.pink,M.gold][r];
- const geo=(id,make)=>geos[id]??=make();
+ const geo=(id,make)=>geos[id]??=(lease?lease.geometry('gun:'+id,make):make());
  function box(parent,x,y,z,w,h,d,mat,rz=0){
   const id=`box-${w}-${h}-${d}`;
-  const geometry=geo(id,()=>{const c=Math.min(.018,w*.14,h*.14,d*.2),shape=new T.Shape(),a=w/2,b=h/2;shape.moveTo(-a+c,-b);shape.lineTo(a-c,-b);shape.lineTo(a,-b+c);shape.lineTo(a,b-c);shape.lineTo(a-c,b);shape.lineTo(-a+c,b);shape.lineTo(-a,b-c);shape.lineTo(-a,-b+c);shape.closePath();return new T.ExtrudeGeometry(shape,{depth:d,bevelEnabled:true,bevelThickness:c*.3,bevelSize:c*.3,bevelSegments:1,steps:1}).translate(0,0,-d/2);});
+  const geometry=geo(id,()=>{const c=Math.min(.018,w*.14,h*.14,d*.2),shape=new T.Shape(),a=w/2,b=h/2;shape.moveTo(-a+c,-b);shape.lineTo(a-c,-b);shape.lineTo(a,-b+c);shape.lineTo(a,b-c);shape.lineTo(a-c,b);shape.lineTo(-a+c,b);shape.lineTo(-a,b-c);shape.lineTo(-a,-b+c);shape.closePath();return new T.ExtrudeGeometry(shape,{depth:d,bevelEnabled:!world,bevelThickness:c*.3,bevelSize:c*.3,bevelSegments:1,steps:1}).translate(0,0,-d/2);});
   const mesh=new T.Mesh(geometry,mat);mesh.position.set(x,y,z);mesh.rotation.z=rz;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
  }
- function tube(parent,x,y,z,r,length,mat){const mesh=new T.Mesh(geo('tube-'+r+'-'+length,()=>new T.CylinderGeometry(r,r,length,16)),mat);mesh.rotation.z=Math.PI/2;mesh.position.set(x,y,z);parent.add(mesh);return mesh;}
- function ring(parent,x,y,z,r,thick,mat){const mesh=new T.Mesh(geo('ring-'+r+'-'+thick,()=>new T.TorusGeometry(r,thick,6,24)),mat);mesh.rotation.y=Math.PI/2;mesh.position.set(x,y,z);parent.add(mesh);return mesh;}
- function plate(parent,points,depth,mat,name){const shape=new T.Shape();points.forEach(([x,y],i)=>i?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();const geometry=geo(name,()=>new T.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelSize:.025,bevelThickness:.025,bevelSegments:1,steps:1}));const mesh=new T.Mesh(geometry,mat);mesh.position.z=-depth/2;parent.add(mesh);return mesh;}
+ function tube(parent,x,y,z,r,length,mat){const mesh=new T.Mesh(geo('tube-'+r+'-'+length,()=>new T.CylinderGeometry(r,r,length,world?12:16)),mat);mesh.rotation.z=Math.PI/2;mesh.position.set(x,y,z);parent.add(mesh);return mesh;}
+ function ring(parent,x,y,z,r,thick,mat){const mesh=new T.Mesh(geo('ring-'+r+'-'+thick,()=>new T.TorusGeometry(r,thick,world?4:6,world?16:24)),mat);mesh.rotation.y=Math.PI/2;mesh.position.set(x,y,z);parent.add(mesh);return mesh;}
+ function plate(parent,points,depth,mat,name){const shape=new T.Shape();points.forEach(([x,y],i)=>i?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();const geometry=geo(name,()=>new T.ExtrudeGeometry(shape,{depth,bevelEnabled:!world,bevelSize:.025,bevelThickness:.025,bevelSegments:1,steps:1}));const mesh=new T.Mesh(geometry,mat);mesh.position.z=-depth/2;parent.add(mesh);return mesh;}
  function batchGroup(group){
   group.updateMatrixWorld(true);const inverse=new T.Matrix4().copy(group.matrixWorld).invert(),byMaterial=new Map(),originals=[];
   const visit=o=>{if(o!==group&&o.userData.rotor)return;if(o.isMesh){if(!byMaterial.has(o.material))byMaterial.set(o.material,[]);byMaterial.get(o.material).push(o);originals.push(o);}for(const child of o.children)visit(child);};visit(group);
   for(const [material,meshes] of byMaterial){
    const pieces=meshes.map(mesh=>{const g=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();g.applyMatrix4(new T.Matrix4().multiplyMatrices(inverse,mesh.matrixWorld));return g;}),g=new T.BufferGeometry();
    for(const key of ['position','normal','uv']){const length=pieces.reduce((n,g)=>n+g.getAttribute(key).array.length,0),values=new Float32Array(length);let at=0;for(const piece of pieces){const a=piece.getAttribute(key).array;values.set(a,at);at+=a.length;}g.setAttribute(key,new T.BufferAttribute(values,key==='uv'?2:3));}
-   g.computeBoundingSphere();pieces.forEach(g=>g.dispose());mergedGeometries.push(g);const mesh=new T.Mesh(g,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
+   g.computeBoundingSphere();pieces.forEach(g=>g.dispose());const shared=lease?lease.intern(g):g;mergedGeometries.push(shared);const mesh=new T.Mesh(shared,material);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);
   }
   originals.forEach(mesh=>mesh.removeFromParent());
  }
@@ -83,5 +84,5 @@ export function createModularGun(kit){
   const f=new T.Mesh(fg,fm);f.scale.set(2.4,.65,.65);flash.add(f);flash.visible=false;
 
  for(const g of [receiver,barrel,ammo,circuit])batchGroup(g);model.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;m.userData.gunVisual=true;}});flash.visible=false;
- return {root:model,barrel:barrelGroup,ammo,flash,dispose(){mergedGeometries.forEach(g=>g.dispose());Object.values(geos).forEach(g=>g.dispose());Object.values(mats).forEach(m=>m.dispose());hardware.dispose();}};
+ return {root:model,barrel:barrelGroup,ammo,flash,dispose(){if(lease){lease.dispose();return;}mergedGeometries.forEach(g=>g.dispose());Object.values(geos).forEach(g=>g.dispose());Object.values(mats).forEach(m=>m.dispose());hardware.dispose();}};
 }

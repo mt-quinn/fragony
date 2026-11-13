@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import {CrouchSlide,slideSlope} from '../dist/slide.js';import {blockSpan} from '../dist/geometry.js';
+let seed=74291;const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);let calls=0,steps=0;
+for(const dt of [1/30,1/60,1/120]){const eager=new CrouchSlide(),lazy=new CrouchSlide();for(let i=0;i<3000;i++){const slope=Math.sin(i*.031)*.6,speed=5+random()*7,angle=i*.027,input={vx:Math.cos(angle)*speed,vz:Math.sin(angle)*speed,wishX:Math.cos(angle+.2)*8,wishZ:Math.sin(angle+.2)*8,crouch:i%240<180,grounded:i%300<270,swimming:i%500>480};const a=eager.step(dt,{...input,slope}),b=lazy.step(dt,{...input,sampleSlope:()=>{calls++;return slope;}});assert.deepEqual(b,a);assert.deepEqual({...lazy},{...eager});steps++;}}
+assert(calls>0&&calls<steps*.8);new CrouchSlide().step(1/120,{vx:7,vz:0,crouch:false,sampleSlope(){throw Error('inactive slope must never be sampled');}});
+const blocks=Array.from({length:260},(_,i)=>{const x=(random()-.5)*35,z=(random()-.5)*35,w=.2+random()*7,d=.2+random()*7,bottom=random()*20,top=bottom+.1+random()*4,yaw=(random()-.5)*Math.PI;return{x,z,w,d,bottom,top,yaw,dynamic:i%39===0};});
+// The reference scans every source body, independent of the optimized height
+// window. Floors below that window must produce the same abrupt-drop rejection.
+const reference=(pos,vx,vz)=>{const speed=Math.hypot(vx,vz);if(speed<.1)return 0;const r=.32,dx=vx/speed*r,dz=vz/speed*r,height=(x,z)=>{let h=0;for(const b of blocks){const span=blockSpan(b,x,z);if(span&&span.top<=pos.y+.55&&span.top>h)h=span.top;}return h;},a=height(pos.x+dx,pos.z+dz),b=height(pos.x-dx,pos.z-dz);return Math.abs(a-pos.y)>.55||Math.abs(b-pos.y)>.55?0:Math.max(-.8,Math.min(.8,(a-b)/(r*2)));};
+for(let i=0;i<8000;i++){const b=blocks[i%blocks.length];if(b.dynamic)b.top=b.bottom+.1+random()*3;const pos={x:(random()-.5)*38,z:(random()-.5)*38,y:random()*25},vx=(random()-.5)*18,vz=(random()-.5)*18;assert.equal(slideSlope(blocks,pos,vx,vz),reference(pos,vx,vz));}
+console.log(JSON.stringify({identicalSlideSteps:steps,slopeSamples:calls,exactStackedRotatedDynamicSlopeQueries:8000,inactiveQueriesSkipped:true}));

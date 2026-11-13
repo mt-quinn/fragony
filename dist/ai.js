@@ -138,7 +138,7 @@ export class ArenaAI{
     this.world.action?.(b,type,reason);
   }
   walkClear(from,to){
-    return !this.navigation.blocks||clearSegment(this.navigation.blocks,from,to,'walk',(x,z,y)=>nearBlocks(this.navigation.blocks,x,z,.42,y-.5,y+2.1),this.navigation.stepHeight??.3);
+    return !this.navigation.blocks||clearSegment(this.navigation.blocks,from,to,'walk',(x,z,y)=>{const near=nearBlocks(this.navigation.blocks,x,z,.42,y-.5,y+2.1);near.localized=true;return near;},this.navigation.stepHeight??.3);
   }
   localPosition(pos){
     let best=null,score=Infinity;
